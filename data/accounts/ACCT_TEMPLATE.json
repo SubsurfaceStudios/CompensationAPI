@@ -1,0 +1,53 @@
+{
+     "public": {
+          "nickname": "",
+          "username": "",
+          "tag": "",
+          "ownedRooms": [
+          ],
+          "moderatedRooms": [
+          ]
+     },
+     "private": {
+          "currency": 0,
+          "availableTags": [
+               ""
+          ],
+          "inventory": {
+               "clothes": {
+                    "hat": [
+                    ],
+                    "hairStyles": [
+                    ],
+                    "hairColors": [
+                    ],
+                    "glasses": [
+                    ],
+                    "shirts": [
+                    ],
+                    "pants": [
+                    ],
+                    "chest": [
+                    ]
+               },
+               "consumables": {
+                    "food": {
+                    }
+               }
+               
+          },
+          "acquaintances": [
+          ],
+          "friends": [
+          ],
+          "favoriteFriends": [
+          ]
+     },
+     "auth": {
+          "username": "",
+          "HASHED_PASSWORD": "",
+          "salt": "",
+          "bans": [
+          ]
+     }   
+}

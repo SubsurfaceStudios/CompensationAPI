@@ -13,7 +13,7 @@ APP.use(express.json());
 const config = require('./config.json');
 
 //Server test call
-APP.get("/api/ping", async (req, res) => {
+APP.get("/", async (req, res) => {
      await res.status(200).send({ message: "Pong!"});
 });
 

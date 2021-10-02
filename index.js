@@ -126,8 +126,6 @@ APP.post("/api/auth/create", async (req, res) => {
 
      const user = {username: username, id: id};
 
-     const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "24h"});
-
      const final = {public: public, private: private, auth: auth};
 
      try

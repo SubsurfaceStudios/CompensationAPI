@@ -89,13 +89,20 @@ APP.post("/api/auth/login", (req, res) => {
      return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
 });
 
-//Call to create an account from a set of credentials. ! No duplicate protection at present. !
+//Call to create an account from a set of credentials.
 APP.post("/api/auth/create", async (req, res) => {
      var { username, nickname, password } = req.body;
-     const id = getAccountCount() + 1;
+     const id = getAccountCount();
 
      if(username == null || password == null) return res.status(400).send("Username or password empty or null.")
      if(nickname == null) nickname = username;
+
+     const accounts = fs.readdirSync("./data/accounts/");
+
+     accounts.forEach(element => {
+          const {public} = JSON.parse(fs.readFileSync(`./data/accounts/${element}`));
+          if(public.username == username) return res.status(401).send("Username is taken! Please select a different username and try again!");
+     });
 
      const template = fs.readFileSync("./data/accounts/ACCT_TEMPLATE.json");
 

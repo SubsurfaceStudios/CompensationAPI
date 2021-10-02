@@ -144,6 +144,16 @@ APP.get("/api/accounts/:username/ID", async(req, res) => {
      return res.status(200).send({ id: id, message: `User ${username} found in database with ID ${id}`});
 });
 
+APP.get("/api/global/:key/get", async (req, res) => {
+     const { key } = req.params;
+
+     const global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
+
+     if(!(key in global)) return res.status(404).send("ID not in global title data.");
+
+     res.status(200).send(global[key]);
+});
+
 //#region Developer-only API calls
 
 //Modify a user's currency balance.
@@ -192,16 +202,17 @@ APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (re
      res.status(200).send("Action successful.");
 });
 
+//Ban a user's account
 APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      const { reason, duration } = req.body;
-     const moderator = JSON.parse(req).user;
+     const moderator = req.user;
 
      const data = fs.readFileSync(`./data/accounts/${id}.json`);
 
-     var {public, private, auth} = JSON.parse(data);
+     var {public, private, auth} = await JSON.parse(data);
 
-     const endTS = Date.now + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
+     const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
      
      const ban = {
           reason: reason,
@@ -209,8 +220,26 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
           moderator: moderator.id
      };
 
-     auth.bans.push(ban)
+     await auth.bans.push(ban);
+
+     const final = {public: public, private: private, auth: auth};
+     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
+
      auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`)
+     res.status(200).send();
+});
+
+APP.post("/api/global/:key/set", authenticateDeveloperToken, async (req, res) => {
+     const { key } = req.params;
+     const { value } = req.body;
+
+     var global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
+
+     global[key] = value;
+
+     fs.writeFileSync("./data/global/global.json", JSON.stringify(global, null, "    "));
+     auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
+     res.status(200).send();
 });
 
 //#endregion

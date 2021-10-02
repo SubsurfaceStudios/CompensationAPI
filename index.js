@@ -244,6 +244,8 @@ APP.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
 
 //#endregion
 
+
+//#region Functions
 function getUserID(username) {
      const files = fs.readdirSync('./data/accounts/');
 
@@ -347,6 +349,7 @@ function auditLog(message) {
      const final = JSON.stringify(data, null, "   ");
      fs.writeFileSync("./data/audit.json", final);
 }
+//#endregion
 
 APP.listen(PORT, '0.0.0.0');
 auditLog("Server Init");

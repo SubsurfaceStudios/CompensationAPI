@@ -144,7 +144,7 @@ APP.get("/api/accounts/:username/ID", async(req, res) => {
      return res.status(200).send({ id: id, message: `User ${username} found in database with ID ${id}`});
 });
 
-APP.get("/api/global/:key/get", async (req, res) => {
+APP.get("/api/global/:key", async (req, res) => {
      const { key } = req.params;
 
      const global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
@@ -229,7 +229,7 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
      res.status(200).send();
 });
 
-APP.post("/api/global/:key/set", authenticateDeveloperToken, async (req, res) => {
+APP.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
      const { key } = req.params;
      const { value } = req.body;
 

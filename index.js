@@ -139,6 +139,10 @@ APP.post("/api/auth/create", async (req, res) => {
      }
 });
 
+APP.post("/api/auth/check", authenticateToken, async (req, res) => {
+     return res.sendStatus(200);
+});
+
 //Call to get the first account with the specified username in the database, and return its ID.
 APP.get("/api/accounts/:username/ID", async(req, res) => {
      const { username } = req.params;

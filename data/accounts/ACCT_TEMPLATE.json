@@ -6,7 +6,16 @@
           "ownedRooms": [
           ],
           "moderatedRooms": [
-          ]
+          ],
+          "outfit": {
+               "hat": 0,
+               "hairStyle": 0,
+               "hairColor": 0,
+               "glasses": 0,
+               "shirt": 0,
+               "pants": 0,
+               "chest": 0
+          }
      },
      "private": {
           "currency": 0,

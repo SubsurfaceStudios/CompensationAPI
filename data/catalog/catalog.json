@@ -113,6 +113,13 @@
                "Rarity": "10%",
                "Description": "A hoodie given to people who have supported Compensation VR since the early days. Thank you for keeping us going, and have fun!",
                "ID": "14"
+          },
+          "15": {
+               "Name": "DementedSpy Hoodie",
+               "Price": 150,
+               "Rarity": "25%",
+               "Description": "A custom hoodie made for DementedSpy. Hey there dudes and dudeettes!",
+               "ID": "15"
           }
      },
      "Pants": {

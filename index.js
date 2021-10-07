@@ -35,8 +35,8 @@ APP.get("/api/accounts/:id/public", async (req, res) => {
      fs.exists(`./data/accounts/${id}.json`, async (e) => {
           if (e) {
                const json = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`))
-               const { public, private, auth} = json; 
-               res.status(200).send(public);
+               const data = json; 
+               res.status(200).send(data.public);
           } else {
                await res.status(404).send({ message: `Account with ID of ${id} not found. Please check your request for typos.` });
           }
@@ -51,8 +51,8 @@ APP.get("/api/accounts/:id/private", authenticateToken, async(req, res) => {
      fs.exists(`./data/accounts/${id}.json`, async (e) => {
           if (e) {
                const json = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`))
-               const { public, private, auth} = json; 
-               res.status(200).send(private);
+               const data = json; 
+               res.status(200).send(data.private);
           } else {
                await res.status(404).send({ message: `Account with ID of ${id} not found. Please check your request for typos.` });
           }
@@ -71,10 +71,10 @@ APP.post("/api/auth/login", (req, res) => {
      //now we read the correct user file for the authorization data
 
      const file = fs.readFileSync(`./data/accounts/${userID}.json`);
-     const { public, private, auth } = JSON.parse(file);
+     const data = JSON.parse(file);
 
 
-     const { HASHED_PASSWORD, salt } = auth;
+     const { HASHED_PASSWORD, salt } = data.auth;
 
      const externalHashed = bcrypt.hashSync(password, salt);
 
@@ -82,7 +82,7 @@ APP.post("/api/auth/login", (req, res) => {
      
      //User is authenticated, generate and send token.
 
-     const developer = private.availableTags.includes("Developer");
+     const developer = data.private.availableTags.includes("Developer");
 
      const user = {username: username, id: userID, developer: developer};
 
@@ -101,33 +101,33 @@ APP.post("/api/auth/create", async (req, res) => {
      const accounts = fs.readdirSync("./data/accounts/");
 
      accounts.forEach(element => {
-          const {public} = JSON.parse(fs.readFileSync(`./data/accounts/${element}`));
-          if(public.username == username) return res.status(401).send("Username is taken! Please select a different username and try again!");
+          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`));
+          if(data.public.username == username) return res.status(401).send("Username is taken! Please select a different username and try again!");
      });
 
      const template = fs.readFileSync("./data/accounts/ACCT_TEMPLATE.json");
 
-     var {public, private, auth} = JSON.parse(template);
+     let data = JSON.parse(template);
 
-     public.nickname = nickname;
-     public.username = username;
+     data.public.nickname = nickname;
+     data.public.username = username;
 
-     private.inventory.clothes.shirts = [0, 1];
-     private.inventory.clothes.hairStyles = [0, 1];
-     private.inventory.clothes.hairColors = [0, 1, 2];
+     data.private.inventory.clothes.shirts = [0, 1];
+     data.private.inventory.clothes.hairStyles = [0, 1];
+     data.private.inventory.clothes.hairColors = [0, 1, 2];
 
-     auth.username = username;
+     data.auth.username = username;
 
      const salt = bcrypt.genSaltSync(10);
 
      const HASHED_PASSWORD = bcrypt.hashSync(password, salt);
 
-     auth.HASHED_PASSWORD = HASHED_PASSWORD;
-     auth.salt = salt;
+     data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
+     data.auth.salt = salt;
 
      const user = {username: username, id: id};
 
-     const final = {public: public, private: private, auth: auth};
+     const final = data;
 
      try
      {
@@ -170,7 +170,7 @@ APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req
     const { id } = req.params;
     var { title, description } = req.body;
 
-    var {public, private, auth, notifications} = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+    let data = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 
     var notif = {
           "type": "API Notification",
@@ -178,9 +178,9 @@ APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req
           "description": description
     }
 
-    notifications.push(notif);
+    data.notifications.push(notif);
 
-    const final = JSON.stringify({public: public, private: private, auth: auth, notifications: notifications}, null, "  ");
+    const final = JSON.stringify(data, null, "  ");
     fs.writeFileSync(`./data/accounts/${id}.json`, final);
     auditLog(`Notified user ${id}.`);
     res.sendStatus(200);
@@ -189,11 +189,11 @@ APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req
 APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
      const id = req.user.id;
 
-     const {notifications} = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     const data = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 
-     if(notifications == null) return res.status(200).send("User has no pending notifications.");
+     if(data.notifications == null) return res.status(200).send("User has no pending notifications.");
 
-     res.status(200).json(notifications);
+     res.status(200).json(data.notifications);
 });
 
 //#region Developer-only API calls
@@ -206,17 +206,15 @@ APP.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async 
      const exists = fs.existsSync(`./data/accounts/${id}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     var { public, private, auth } = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     let data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 
-     if(!(private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
+     if(!(data.private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
 
-     private.currency += amount;
-
-     const data = { public: public, private: private, auth: auth };
+     data.private.currency += amount;
 
      fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "     "));
 
-     auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${[private.currency]}.`);
+     auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
 
      res.status(200).send("Action successful.");
 });
@@ -229,13 +227,11 @@ APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (re
      const exists = fs.existsSync(`./data/accounts/${id}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     var { public, private, auth } = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     let data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 
      if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
 
-     private.currency = amount;
-
-     const data = { public: public, private: private, auth: auth };
+     data.private.currency = amount;
 
      fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "     "));
 
@@ -250,9 +246,7 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
      const { reason, duration } = req.body;
      const moderator = req.user;
 
-     const data = fs.readFileSync(`./data/accounts/${id}.json`);
-
-     var {public, private, auth} = await JSON.parse(data);
+     let data = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 
      const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
      
@@ -262,10 +256,9 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
           moderator: moderator.id
      };
 
-     await auth.bans.push(ban);
+     await data.auth.bans.push(ban);
 
-     const final = {public: public, private: private, auth: auth};
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
+     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "    "));
 
      auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`)
      res.status(200).send();
@@ -285,13 +278,11 @@ APP.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
 });
 
 APP.patch("/api/dev/REGEN_SECRETS", authenticateDeveloperToken, async(req, res) => {
-     const { user } = req.body;
-
      const ACCESS_TOKEN_SECRET = crypto.randomBytes(64).toString('hex');
 
      process.env.ACCESS_TOKEN_SECRET = ACCESS_TOKEN_SECRET;
 
-     auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
+     auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${req.user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
 });
 //#endregion
 
@@ -304,9 +295,9 @@ function getUserID(username) {
      for (let index = 0; index < files.length; index++) {
           const element = files[index];
           
-          const { public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${element}`))
+          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`))
 
-          const username2 = auth.username;
+          const username2 = data.auth.username;
           if(username2 == username) {
                id = element.split(".")[0];
                break; 
@@ -332,10 +323,10 @@ function authenticateToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const {public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
+          const data = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
 
-          for (let index = 0; index < auth.bans.length; index++) {
-               const element = auth.bans[index];
+          for (let index = 0; index < data.auth.bans.length; index++) {
+               const element = data.auth.bans[index];
                
                if(element.endTS > Date.now) return res.status(403).send({
                     message: "USER IS BANNED", 
@@ -365,9 +356,9 @@ function authenticateDeveloperToken(req, res, next) {
 
           console.log(tokenData);
 
-          const {public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
+          const data = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
 
-          for (let index = 0; index < auth.bans.length; index++) {
+          for (let index = 0; index < data.auth.bans.length; index++) {
                const element = auth.bans[index];
                
                if(element.endTS > Date.now) return res.status(403).send({
@@ -390,7 +381,7 @@ function authenticateDeveloperToken(req, res, next) {
 
 function auditLog(message) {
      const file = fs.readFileSync("./data/audit.json");
-     var data = JSON.parse(file);
+     let data = JSON.parse(file);
 
      const ts = Date.now();
 

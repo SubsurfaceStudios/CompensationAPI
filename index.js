@@ -178,16 +178,16 @@ APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req
           "description": description
     }
 
-    if(notifications.includes(notif)) return res.sendStatus(200);
-
     notifications.push(notif);
+
+    const final = JSON.stringify({public: public, private: private, auth: auth, notifications: notifications}, null, "  ");
+    fs.writeFileSync(`./data/accounts/${id}.json`, final);
     auditLog(`Notified user ${id}.`);
+    res.sendStatus(200);
 });
 
 APP.get("/api/notifications/get/:id", authenticateToken, async (req, res) => {
      const { id } = req.params;
-     
-     if(req.body.user.id != id) return res.sendStatus(403);
 
      const {notifications} = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 
@@ -332,8 +332,7 @@ function authenticateToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = JSON.parse(tokenData)
-          const {public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${data.id}.json`));
+          const {public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
 
           for (let index = 0; index < auth.bans.length; index++) {
                const element = auth.bans[index];
@@ -364,8 +363,9 @@ function authenticateDeveloperToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = JSON.parse(tokenData);
-          const {public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${data.id}.json`));
+          console.log(tokenData);
+
+          const {public, private, auth} = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
 
           for (let index = 0; index < auth.bans.length; index++) {
                const element = auth.bans[index];

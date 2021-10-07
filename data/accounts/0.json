@@ -1,0 +1,65 @@
+{
+  "public": {
+    "nickname": "Bubby",
+    "username": "bubby932",
+    "tag": "",
+    "ownedRooms": [],
+    "moderatedRooms": [],
+    "outfit": {
+      "hat": 0,
+      "hairStyle": 0,
+      "hairColor": 0,
+      "glasses": 0,
+      "shirt": 0,
+      "pants": 0,
+      "chest": 0
+    }
+  },
+  "private": {
+    "currency": 0,
+    "availableTags": [
+      "",
+      "Developer"
+    ],
+    "inventory": {
+      "clothes": {
+        "hat": [],
+        "hairStyles": [
+          0,
+          1
+        ],
+        "hairColors": [
+          0,
+          1,
+          2
+        ],
+        "glasses": [],
+        "shirts": [
+          0,
+          1
+        ],
+        "pants": [],
+        "chest": []
+      },
+      "consumables": {
+        "food": {}
+      }
+    },
+    "acquaintances": [],
+    "friends": [],
+    "favoriteFriends": []
+  },
+  "auth": {
+    "username": "bubby932",
+    "HASHED_PASSWORD": "$2b$10$hlEZM0PH64OCKxTa/VfN/O0L3dv.CkVJ.cyeEleabz4piYX0kdpmq",
+    "salt": "$2b$10$hlEZM0PH64OCKxTa/VfN/O",
+    "bans": []
+  },
+  "notifications": [
+    {
+      "type": "API Notification",
+      "title": "aaaa",
+      "description": "what even is this???"
+    }
+  ]
+}

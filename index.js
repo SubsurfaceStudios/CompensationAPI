@@ -154,6 +154,7 @@ APP.get("/api/accounts/:username/ID", async(req, res) => {
      return res.status(200).send({ id: id, message: `User ${username} found in database with ID ${id}`});
 });
 
+//Get the global data associated with a KVP.
 APP.get("/api/global/:key", async (req, res) => {
      const { key } = req.params;
 
@@ -162,6 +163,37 @@ APP.get("/api/global/:key", async (req, res) => {
      if(!(key in global)) return res.status(404).send("ID not in global title data.");
 
      res.status(200).send(global[key]);
+});
+
+//Post a notification to a user.
+APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req, res) => {
+    const { id } = req.params;
+    var { title, description } = req.body;
+
+    var {public, private, auth, notifications} = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+
+    var notif = {
+          "type": "API Notification",
+          "title": title,
+          "description": description
+    }
+
+    if(notifications.includes(notif)) return res.sendStatus(200);
+
+    notifications.push(notif);
+    auditLog(`Notified user ${id}.`);
+});
+
+APP.get("/api/notifications/get/:id", authenticateToken, async (req, res) => {
+     const { id } = req.params;
+     
+     if(req.body.user.id != id) return res.sendStatus(403);
+
+     const {notifications} = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+
+     if(notifications == null) return res.status(200).send("User has no pending notifications.");
+
+     res.status(200).json(notifications);
 });
 
 //#region Developer-only API calls
@@ -261,11 +293,10 @@ APP.patch("/api/dev/REGEN_SECRETS", authenticateDeveloperToken, async(req, res) 
 
      auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
 });
-
 //#endregion
 
-
 //#region Functions
+
 function getUserID(username) {
      const files = fs.readdirSync('./data/accounts/');
 

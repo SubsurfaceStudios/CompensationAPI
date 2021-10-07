@@ -1,0 +1,65 @@
+{
+     "Hats": {
+          "0": {
+               "Name": "None",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "No hat.",
+               "ID": "0"
+          }
+     },
+     "Shirts": {
+          "0": {
+               "Name": "Post Vigor Hoodie",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "The promotional hoodie you recieved after joining the Vigor Underwater Research Initiative. Do not dry clean.",
+               "ID": "0"
+          }
+     },
+     "Pants": {
+          "0": {
+               "Name": "None",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "No extra pants.",
+               "ID": "0"
+          }
+     },
+     "Glasses": {
+          "0": {
+               "Name": "None",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "No glasses.",
+               "ID": "0"
+          }
+     },
+     "Chest": {
+          "0": {
+               "Name": "None",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "No chest accessory.",
+               "ID": "0"
+          }
+     },
+     "HairStyles": {
+          "0": {
+               "Name": "Short Hair",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Short spiky hair.",
+               "ID": "0"
+          }
+     },
+     "HairColors": {
+          "0": {
+               "Name": "Brown",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Medium brown hair color.",
+               "ID": "0"
+          }
+     }
+}

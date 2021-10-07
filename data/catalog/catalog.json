@@ -15,6 +15,104 @@
                "Rarity": "100%",
                "Description": "The promotional hoodie you recieved after joining the Vigor Underwater Research Initiative. Do not dry clean.",
                "ID": "0"
+          },
+          "1": {
+               "Name": "Bug Bounty Hoodie",
+               "Price": 0,
+               "Rarity": "1%",
+               "Description": "A hoodie given only to those who have found security vulnerabilities in Compensation VR. Anyone who's wearing this is worthy of respect.",
+               "ID": "1"
+          },
+          "2": {
+               "Name": "Skittles Hoodie",
+               "Price": 0,
+               "Rarity": "1%",
+               "Description": "Developer-Only item, made as a joke.",
+               "ID": "2"
+          },
+          "3": {
+               "Name": "Maid Dress",
+               "Price": 150,
+               "Rarity": "75%",
+               "Description": "A maid dress from approx. 1930. Purchasable in the store and can be obtained from activities.",
+               "ID": "3"
+          },
+          "4": {
+               "Name": "LGBT Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A rainbow shirt, obtainable from the store and from Pride Month events.",
+               "ID": "4"
+          },
+          "5": {
+               "Name": "Asexual Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Asexual Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby nicely ;D)",
+               "ID": "5"
+          },
+          "6": {
+               "Name": "Asexual Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Asexual Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
+               "ID": "6"
+          },
+          "7": {
+               "Name": "Aromantic Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Aromantic Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bobrobot1 nicely ;D)",
+               "ID": "7"
+          },
+          "8": {
+               "Name": "Agender Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Agender Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
+               "ID": "8"
+          },
+          "9": {
+               "Name": "Transgender Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Transgender Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
+               "ID": "9"
+          },
+          "10": {
+               "Name": "Bisexual Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Bisexual Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby nicely, or if DementedSpy gifts it to you.)",
+               "ID": "10"
+          },
+          "11": {
+               "Name": "Lesbian Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Lesbian Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby nicely.)",
+               "ID": "11"
+          },
+          "12": {
+               "Name": "Non Binary Pride Hoodie",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "A shirt with the Non Binary Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
+               "ID": "10"
+          },
+          "13": {
+               "Name": "Drysuit",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "A sealed plastic suit designed to keep you warm and dry in the freezing water around Post Vigor. Issued upon joining the Vigor Underwater Research Initiative.",
+               "ID": "13"
+          },
+          "14": {
+               "Name": "Early Supporter Hoodie",
+               "Price": 100,
+               "Rarity": "10%",
+               "Description": "A hoodie given to people who have supported Compensation VR since the early days. Thank you for keeping us going, and have fun!",
+               "ID": "14"
           }
      },
      "Pants": {

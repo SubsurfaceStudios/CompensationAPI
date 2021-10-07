@@ -186,8 +186,8 @@ APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req
     res.sendStatus(200);
 });
 
-APP.get("/api/notifications/get/:id", authenticateToken, async (req, res) => {
-     const { id } = req.params;
+APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
+     const id = req.user.id;
 
      const {notifications} = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
 

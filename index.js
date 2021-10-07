@@ -4,6 +4,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const { PORT } = require('./config.json');
 
@@ -249,6 +250,16 @@ APP.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
      fs.writeFileSync("./data/global/global.json", JSON.stringify(global, null, "    "));
      auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
      res.status(200).send();
+});
+
+APP.patch("/api/dev/REGEN_SECRETS", authenticateDeveloperToken, async(req, res) => {
+     const { user } = req.body;
+
+     const ACCESS_TOKEN_SECRET = crypto.randomBytes(64).toString('hex');
+
+     process.env.ACCESS_TOKEN_SECRET = ACCESS_TOKEN_SECRET;
+
+     auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
 });
 
 //#endregion

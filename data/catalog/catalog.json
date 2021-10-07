@@ -122,6 +122,20 @@
                "Rarity": "100%",
                "Description": "No extra pants.",
                "ID": "0"
+          },
+          "1": {
+               "Name": "Basic Skirt",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "hehe skirt go spinny",
+               "ID": "1"
+          },
+          "2": {
+               "Name": "Checkered Skirt",
+               "Price": 100,
+               "Rarity": "90%",
+               "Description": "hehe skirt go spinny, now in pretty colors :>",
+               "ID": "2"
           }
      },
      "Glasses": {
@@ -131,6 +145,13 @@
                "Rarity": "100%",
                "Description": "No glasses.",
                "ID": "0"
+          },
+          "1": {
+               "Name": "Sunglasses",
+               "Price": 25,
+               "Rarity": "100%",
+               "Description": "A pair of cheap sunglasses from the on-post store. They'd probably break if you dropped them.",
+               "ID": "1"
           }
      },
      "Chest": {
@@ -144,11 +165,39 @@
      },
      "HairStyles": {
           "0": {
-               "Name": "Short Hair",
+               "Name": "Short Hair 1",
                "Price": 0,
                "Rarity": "100%",
                "Description": "Short spiky hair.",
                "ID": "0"
+          },
+          "1": {
+               "Name": "Short Hair 2",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Short hair with a part.",
+               "ID": "1"
+          },
+          "2": {
+               "Name": "Long Hair 1",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Long hair without much extra styling.",
+               "ID": "2"
+          },
+          "3": {
+               "Name": "Long Hair 2",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Long hair with a bit of an angle cut into it.",
+               "ID": "3"
+          },
+          "4": {
+               "Name": "Short Hair 3",
+               "Price": 0,
+               "Rarity": "10%",
+               "Description": "i recreated bobrobot1's hair from rec room for some reason and this was the result.",
+               "ID": "4"
           }
      },
      "HairColors": {
@@ -158,6 +207,27 @@
                "Rarity": "100%",
                "Description": "Medium brown hair color.",
                "ID": "0"
+          },
+          "1": {
+               "Name": "Blonde",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "A light yellow hair color.",
+               "ID": "1"
+          },
+          "2": {
+               "Name": "Orange",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Orange hair color.",
+               "ID": "2"
+          },
+          "3": {
+               "Name": "Brown",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Dyed red hair color.",
+               "ID": "3"
           }
      }
 }

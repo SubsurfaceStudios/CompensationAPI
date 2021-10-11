@@ -237,8 +237,9 @@ APP.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
 
      var data = await PullPlayerData(req.user.id);
      const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
-     
+
      data.public.pronouns = array[pronouns];
+     PushPlayerData(req.body.id, data);
 });
 
 //#endregion

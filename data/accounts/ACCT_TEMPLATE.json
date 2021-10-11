@@ -15,7 +15,9 @@
                "shirt": 0,
                "pants": 0,
                "chest": 0
-          }
+          },
+          "bio": "",
+          "pronouns": ""
      },
      "private": {
           "currency": 0,

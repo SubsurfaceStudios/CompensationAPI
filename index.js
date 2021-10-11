@@ -242,6 +242,20 @@ APP.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
      PushPlayerData(req.body.id, data);
 });
 
+APP.post("/api/accounts/tag", authenticateToken, async (req, res) => {
+     const {tag} = req.body;
+     
+     var data = await PullPlayerData(req.user.id);
+     
+     if(!data.private.availableTags.includes(tag)) return res.status(400).send("You do not have access to this tag!");
+
+     data.public.tag = tag;
+
+     PushPlayerData(req.user.id, data);
+
+     res.sendStatus(200);
+});
+
 //#endregion
 
 //#region Developer-only API calls

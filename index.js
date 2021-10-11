@@ -393,5 +393,16 @@ function auditLog(message) {
 }
 //#endregion
 
+//#region Helper Functions
+function PullPlayerData(id) {
+     var data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     return data;
+}
+function PushPlayerData(id, data) {
+     data = JSON.stringify(data, null, "     ");
+     fs.writeFileSync(`./data/accounts/${id}.json`);
+}
+//#endregion
+
 APP.listen(PORT, '0.0.0.0');
 auditLog("Server Init");

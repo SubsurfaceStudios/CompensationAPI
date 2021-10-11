@@ -256,6 +256,22 @@ APP.post("/api/accounts/tag", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
+APP.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
+     const {type, id} = req.body;
+
+     var data = await PullPlayerData(req.user.id);
+
+     if(!data.private.inventory.clothes.includes(type)) return res.status(400).send("Invalid clothing type.");
+
+     if(!data.private.inventory.clothes[type].includes(id)) return res.status(400).send("You do not own this item.");
+
+     data.public.outfit[type] = id;
+
+     PushPlayerData(req.user.id, data);
+
+     res.sendStatus(200);
+});
+
 //#endregion
 
 //#region Developer-only API calls

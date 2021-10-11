@@ -13,6 +13,8 @@ APP.use(express.json());
 
 const config = require('./config.json');
 
+//#region endpoints
+
 //Server test call
 APP.get("/", async (req, res) => {
      await res.status(200).send({ message: "Pong!"});
@@ -195,6 +197,24 @@ APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
 
      res.status(200).json(data.notifications);
 });
+
+APP.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
+     const { nickname } = req.body;
+     var data = await PullPlayerData(req.user.id);
+
+     const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
+
+     //Filter nickname
+     BadWordList.forEach(element => {
+          if(nickname.toLowerCase().contains(element)) return res.status(403).send("Your nickname contains profanity or inappropriate language. You must change it before you can continue.");
+     });
+     data.public.nickname = nickname;
+
+     PushPlayerData(req.user.id, data);
+     return res.sendStatus(200);
+});
+
+//#endregion
 
 //#region Developer-only API calls
 

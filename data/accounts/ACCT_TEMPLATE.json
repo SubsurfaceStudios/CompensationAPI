@@ -14,7 +14,8 @@
                "glasses": 0,
                "shirt": 0,
                "pants": 0,
-               "chest": 0
+               "chest": 0,
+               "skinTone": 0
           },
           "bio": "",
           "pronouns": ""
@@ -39,6 +40,14 @@
                     "pants": [
                     ],
                     "chest": [
+                    ],
+                    "skinTones": [
+                         0,
+                         1,
+                         2,
+                         3,
+                         4,
+                         5
                     ]
                },
                "consumables": {

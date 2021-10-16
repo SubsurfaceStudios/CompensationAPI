@@ -17,7 +17,7 @@ const config = require('./config.json');
 
 //Server test call
 APP.get("/", async (req, res) => {
-     await res.status(200).send({ message: "Pong!"});
+     await res.status(200).send("Pong!");
 });
 
 //Check if a token is valid as developer.
@@ -257,11 +257,13 @@ APP.post("/api/accounts/tag", authenticateToken, async (req, res) => {
 });
 
 APP.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
-     const {type, id} = req.body;
+     var {type, id} = req.body;
+
+     id = parseInt(id);
 
      var data = await PullPlayerData(req.user.id);
 
-     if(!data.private.inventory.clothes.includes(type)) return res.status(400).send("Invalid clothing type.");
+     if(!(type in data.private.inventory.clothes)) return res.status(400).send("Invalid clothing type.");
 
      if(!data.private.inventory.clothes[type].includes(id)) return res.status(400).send("You do not own this item.");
 
@@ -478,7 +480,7 @@ function PullPlayerData(id) {
 }
 function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");
-     fs.writeFileSync(`./data/accounts/${id}.json`);
+     fs.writeFileSync(`./data/accounts/${id}.json`, data);
 }
 //#endregion
 

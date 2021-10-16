@@ -52,74 +52,67 @@
                "ID": "5"
           },
           "6": {
-               "Name": "Asexual Pride Hoodie",
-               "Price": 100,
-               "Rarity": "90%",
-               "Description": "A shirt with the Asexual Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
-               "ID": "6"
-          },
-          "7": {
                "Name": "Aromantic Pride Hoodie",
                "Price": 100,
                "Rarity": "90%",
                "Description": "A shirt with the Aromantic Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bobrobot1 nicely ;D)",
-               "ID": "7"
+               "ID": "6"
           },
-          "8": {
+          "7": {
                "Name": "Agender Pride Hoodie",
                "Price": 100,
                "Rarity": "90%",
                "Description": "A shirt with the Agender Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
-               "ID": "8"
+               "ID": "7"
           },
-          "9": {
+          "8": {
                "Name": "Transgender Pride Hoodie",
                "Price": 100,
                "Rarity": "90%",
                "Description": "A shirt with the Transgender Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
-               "ID": "9"
+               "ID": "8"
           },
-          "10": {
+          "9": {
                "Name": "Bisexual Pride Hoodie",
                "Price": 100,
                "Rarity": "90%",
                "Description": "A shirt with the Bisexual Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby nicely, or if DementedSpy gifts it to you.)",
-               "ID": "10"
+               "ID": "9"
           },
-          "11": {
+          "10": {
                "Name": "Lesbian Pride Hoodie",
                "Price": 100,
                "Rarity": "90%",
                "Description": "A shirt with the Lesbian Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby nicely.)",
-               "ID": "11"
+               "ID": "10"
           },
-          "12": {
+          "11": {
                "Name": "Non Binary Pride Hoodie",
                "Price": 100,
                "Rarity": "90%",
                "Description": "A shirt with the Non Binary Pride flag emblazened across it. Purchasable from the store and obtained from Pride Month events. (you can also get it if you ask Bubby or Bobrobot1 nicely ;D)",
-               "ID": "10"
+               "ID": "11"
           },
-          "13": {
+          "12": {
                "Name": "Drysuit",
                "Price": 0,
                "Rarity": "100%",
                "Description": "A sealed plastic suit designed to keep you warm and dry in the freezing water around Post Vigor. Issued upon joining the Vigor Underwater Research Initiative.",
-               "ID": "13"
+               "ID": "12"
           },
-          "14": {
+          "13": {
                "Name": "Early Supporter Hoodie",
                "Price": 100,
                "Rarity": "10%",
                "Description": "A hoodie given to people who have supported Compensation VR since the early days. Thank you for keeping us going, and have fun!",
-               "ID": "14"
+               "ID": "13"
           },
-          "15": {
+          "14": {
                "Name": "DementedSpy Hoodie",
                "Price": 150,
                "Rarity": "25%",
                "Description": "A custom hoodie made for DementedSpy. Hey there dudes and dudeettes!",
-               "ID": "15"
+               "ID": "14"
           }
      },
      "Pants": {

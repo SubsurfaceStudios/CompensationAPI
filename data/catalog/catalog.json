@@ -143,6 +143,20 @@
                "Rarity": "90%",
                "Description": "hehe skirt go spinny, now in pretty colors :>",
                "ID": "2"
+          },
+          "3": {
+               "Name": "Khaki Pants",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "Tan colored cargo pants.",
+               "ID": "3"
+          },
+          "4": {
+               "Name": "Jeans",
+               "Price": 0,
+               "Rarity": "100%",
+               "Description": "A simple pair of blue jeans. It has pockets!",
+               "ID": "4"
           }
      },
      "Glasses": {
@@ -159,6 +173,13 @@
                "Rarity": "100%",
                "Description": "A pair of cheap sunglasses from the on-post store. They'd probably break if you dropped them.",
                "ID": "1"
+          },
+          "2": {
+               "Name": "Mirrored Sunglasses",
+               "Price": 200,
+               "Rarity": "50%",
+               "Description": "A nice pair of aviator sunglasses.",
+               "ID": "2"
           }
      },
      "Chest": {

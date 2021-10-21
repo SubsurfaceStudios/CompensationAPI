@@ -100,16 +100,11 @@ APP.post("/api/auth/create", async (req, res) => {
      if(username == null || password == null) return res.status(400).send("Username or password empty or null.")
      if(nickname == null) nickname = username;
 
-     const accounts = fs.readdirSync("./data/accounts/");
+     const check = getUserID(username);
 
-     accounts.forEach(element => {
-          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`));
-          if(data.public.username == username) return res.status(401).send("Username is taken! Please select a different username and try again!");
-     });
+     if(check != null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
 
-     const template = fs.readFileSync("./data/accounts/ACCT_TEMPLATE.json");
-
-     let data = JSON.parse(template);
+     const data = PullPlayerData("ACCT_TEMPLATE");
 
      data.public.nickname = nickname;
      data.public.username = username;
@@ -131,15 +126,8 @@ APP.post("/api/auth/create", async (req, res) => {
 
      const final = data;
 
-     try
-     {
-          fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
-          res.sendStatus(200);
-     }
-     catch
-     {
-          res.sendStatus(500);
-     }
+     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
+     res.sendStatus(200);
 });
 
 APP.post("/api/auth/check", authenticateToken, async (req, res) => {

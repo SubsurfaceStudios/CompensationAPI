@@ -262,6 +262,15 @@ APP.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
+APP.get("/api/catalog", async (req, res) => {
+     try {
+          const data = await fs.readFileSync("./data/catalog/catalog.json");
+          return res.status(200).send(data);
+     } catch {
+          return res.sendStatus(500);
+     }
+});
+
 //#endregion
 
 //#region Developer-only API calls

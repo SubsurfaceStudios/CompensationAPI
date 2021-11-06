@@ -203,7 +203,7 @@ APP.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
 });
 
 APP.post("/api/accounts/bio", authenticateToken, async (req, res) => {
-     const { bio } = req.body;
+     var { bio } = req.body;
 
      var data = await PullPlayerData(req.user.id);
 
@@ -211,13 +211,15 @@ APP.post("/api/accounts/bio", authenticateToken, async (req, res) => {
      const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
 
      BadWordList.forEach(element => {
-          if(bio.toLowerCase().contains(element)) return res.status(403).send("Your bio contains profanity or inappropriate language. You must change it before you can continue.");
+          if(bio.toLowerCase().includes(element)) return res.status(403).send("Your bio contains profanity or inappropriate language. You must change it before you can continue.");
      });
 
      if(bio.length > 3000) return res.status(400).send("Bio is too long!");
 
      data.public.bio = bio;
      PushPlayerData(req.user.id, data);
+
+     return res.sendStatus(200);
 });
 
 APP.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
@@ -360,6 +362,15 @@ APP.patch("/api/dev/REGEN_SECRETS", authenticateDeveloperToken, async(req, res) 
      process.env.ACCESS_TOKEN_SECRET = ACCESS_TOKEN_SECRET;
 
      auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${req.user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
+});
+
+APP.post("/api/images", authenticateDeveloperToken, async (req, res) => {
+     return res.status(400).send("Not integrated, you should NOT be using this.");
+
+     var timestamp = Date.now();
+     var dir = await fs.readdirSync("./data/images/");
+
+
 });
 //#endregion
 

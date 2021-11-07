@@ -210,9 +210,9 @@ APP.post("/api/accounts/bio", authenticateToken, async (req, res) => {
      //check bio
      const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
 
-     BadWordList.forEach(element => {
-          if(bio.toLowerCase().includes(element)) return res.status(403).send("Your bio contains profanity or inappropriate language. You must change it before you can continue.");
-     });
+     for (let index = 0; index < BadWordList.length; index++) {
+          if(bio.toLowerCase().includes(BadWordList[index])) return res.status(403).send("Your bio contains profanity or inappropriate language. You must change it before you can continue.");
+     }
 
      if(bio.length > 3000) return res.status(400).send("Bio is too long!");
 

@@ -113,6 +113,13 @@
                "Rarity": "25%",
                "Description": "A custom hoodie made for DementedSpy. Hey there dudes and dudeettes!",
                "ID": "14"
+          },
+          "15": {
+               "name": "Dark Hoodie",
+               "Price": 999,
+               "Rarity": "1%",
+               "Description": "A custom hoodie made for Dark.",
+               "ID": "15"
           }
      },
      "Pants": {

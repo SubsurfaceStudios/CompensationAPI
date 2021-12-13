@@ -306,6 +306,21 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
 
 //#endregion
 
+//#region Build download
+
+APP.get("/src/:ver/PC", async (req, res) => {
+     const { ver } = req.params;
+     if(!fs.existsSync(`src/${ver}/PC/build.zip`)) return res.status(404).send("Build does not exist!");
+     res.sendFile(`${__dirname}/src/${ver}/PC/build.zip`);
+});
+
+APP.get("/src/:ver/QUEST", async (req, res) => {
+     const { ver } = req.params;
+     if(!fs.existsSync(`src/${ver}/QUEST/build.zip`)) return res.status(404).send("Build does not exist!");
+     res.sendFile(`${__dirname}/src/${ver}/QUEST/build.apk`);
+});
+//#endregion
+
 //#region Developer-only API calls
 
 //Modify a user's currency balance.

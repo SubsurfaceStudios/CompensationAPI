@@ -66,6 +66,10 @@
           "HASHED_PASSWORD": "",
           "salt": "",
           "bans": [
+          ],
+          "reportedUsers": [
+          ],
+          "recievedReports": [
           ]
      },
      "notifications": [

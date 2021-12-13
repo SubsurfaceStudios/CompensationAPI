@@ -273,6 +273,37 @@ APP.get("/api/catalog", async (req, res) => {
      }
 });
 
+APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
+     if(!"target" in req.body || !"reason" in req.body) return res.status(400).send("Insufficient data sent!");
+     const { target, reason } = req.body;
+
+     var report = {
+          timestamp: Date.now(),
+          reportingUser: req.user.id,
+          reportedUser: target,
+          reason: reason
+     }
+
+     var reportingData = PullPlayerData(req.user.id);
+
+     if(reportingData.auth.reportedUsers.includes(target)) return res.status(400).send("You have already reported this user!");
+     if(req.user.id == target) return res.status(403).send("You cannot report yourself.");
+
+     var data = PullPlayerData(target);
+
+     data.auth.recievedReports.push(report);
+
+     PushPlayerData(target, data);
+
+     reportingData.auth.reportedUsers.push(target);
+
+     PushPlayerData(req.user.id, reportingData);
+
+     auditLog(`!MODERATION! User ${req.user.id} filed a report against user ${target} for the reason of ${reason}`);
+     
+     res.status(200).send("Report successfully applied. Thank you for helping keep Compensation VR safe.");
+});
+
 //#endregion
 
 //#region Developer-only API calls

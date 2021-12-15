@@ -334,7 +334,7 @@ APP.patch("/src/refresh", authenticateDeveloperToken, async (req, res) => {
      return res.status(200).send("Successfully refreshed version cache.");
 });
 
-APP.get("src/versions", async (req, res) => {
+APP.get("/src/versions", async (req, res) => {
      res.status(200).send(fs.readFileSync("data/catalog/version-cache.json"));
 });
 //#endregion

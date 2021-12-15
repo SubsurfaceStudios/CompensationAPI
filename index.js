@@ -6,8 +6,6 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const { PORT } = require('./config.json');
-
 const APP = express();
 APP.use(express.json());
 
@@ -319,6 +317,26 @@ APP.get("/src/:ver/QUEST", async (req, res) => {
      if(!fs.existsSync(`src/${ver}/QUEST/build.zip`)) return res.status(404).send("Build does not exist!");
      res.sendFile(`${__dirname}/src/${ver}/QUEST/build.apk`);
 });
+
+APP.patch("/src/refresh", authenticateDeveloperToken, async (req, res) => {
+     try {
+          var files = fs.readdirSync("src");
+          var versions = [];
+          for (let index = 0; index < files.length; index++) {
+               versions.push(files[index]);
+          }
+          fs.writeFileSync("data/catalog/version-cache.json", JSON.stringify(versions, null, "     "));
+     }
+     catch (exception) {
+          console.log(exception);
+          return res.status(500).send("Failed to refresh version cache. Check serverside.");
+     }
+     return res.status(200).send("Successfully refreshed version cache.");
+});
+
+APP.get("src/versions", async (req, res) => {
+     res.status(200).send(fs.readFileSync("data/catalog/version-cache.json"));
+});
 //#endregion
 
 //#region Developer-only API calls
@@ -488,8 +506,6 @@ function authenticateDeveloperToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          console.log(tokenData);
-
           const data = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
 
           for (let index = 0; index < data.auth.bans.length; index++) {
@@ -538,5 +554,6 @@ function PushPlayerData(id, data) {
 }
 //#endregion
 
-APP.listen(PORT, '0.0.0.0');
+APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
+console.log("API is ready at http://localhost:3000/ \n:D");

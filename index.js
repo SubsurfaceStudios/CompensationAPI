@@ -318,7 +318,7 @@ APP.get("/src/:ver/PC", async (req, res) => {
 
 APP.get("/src/:ver/QUEST", async (req, res) => {
      const { ver } = req.params;
-     if(!fs.existsSync(`src/${ver}/QUEST/build.zip`)) return res.status(404).send("Build does not exist!");
+     if(!fs.existsSync(`src/${ver}/QUEST/build.apk`)) return res.status(404).send("Build does not exist!");
      res.sendFile(`${__dirname}/src/${ver}/QUEST/build.apk`);
 });
 
@@ -344,7 +344,7 @@ APP.get("/src/versions", async (req, res) => {
 
 APP.post("/src/:ver/PC/upload", authenticateDeveloperToken, async (req, res) => {
      if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
-     let file = req.files.image;
+     let file = req.files.build;
 
      const {ver} = req.params;
      
@@ -366,7 +366,7 @@ APP.post("/src/:ver/PC/upload", authenticateDeveloperToken, async (req, res) => 
 
 APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) => {
      if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
-     let file = req.files.image;
+     let file = req.files.build;
 
      const {ver} = req.params;
      

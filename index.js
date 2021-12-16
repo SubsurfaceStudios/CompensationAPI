@@ -5,9 +5,13 @@ const bcrypt = require('bcrypt');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fileUpload = require('express-fileupload');
 
 const APP = express();
 APP.use(express.json());
+APP.use(fileUpload({
+     createParentPath: true
+}));
 
 const config = require('./config.json');
 
@@ -337,6 +341,50 @@ APP.patch("/src/refresh", authenticateDeveloperToken, async (req, res) => {
 APP.get("/src/versions", async (req, res) => {
      res.status(200).send(fs.readFileSync("data/catalog/version-cache.json"));
 });
+
+APP.post("/src/:ver/PC/upload", authenticateDeveloperToken, async (req, res) => {
+     if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
+     let file = req.files.image;
+
+     const {ver} = req.params;
+     
+     if(!fs.existsSync(`src/${ver}`)) fs.mkdirSync(`src/${ver}`);
+     if(!fs.existsSync(`src/${ver}/PC`)) fs.mkdirSync(`src/${ver}/PC`);
+
+     file.mv(`src/${ver}/PC/${file.name}`);
+
+     res.send({
+          status: 200,
+          message: 'File is uploaded',
+          data: {
+              name: file.name,
+              mimetype: file.mimetype,
+              size: file.size
+          }
+     });
+})
+
+APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) => {
+     if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
+     let file = req.files.image;
+
+     const {ver} = req.params;
+     
+     if(!fs.existsSync(`src/${ver}`)) fs.mkdirSync(`src/${ver}`);
+     if(!fs.existsSync(`src/${ver}/QUEST`)) fs.mkdirSync(`src/${ver}/QUEST`);
+
+     file.mv(`src/${ver}/QUEST/${file.name}`);
+
+     res.send({
+          status: 200,
+          message: 'File is uploaded',
+          data: {
+              name: file.name,
+              mimetype: file.mimetype,
+              size: file.size
+          }
+     });
+})
 //#endregion
 
 //#region Developer-only API calls

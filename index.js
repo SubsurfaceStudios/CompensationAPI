@@ -73,9 +73,7 @@ APP.post("/api/auth/login", (req, res) => {
      if(userID == null) return res.status(404).send("User not found!");
 
      //now we read the correct user file for the authorization data
-
-     const file = fs.readFileSync(`./data/accounts/${userID}.json`);
-     const data = JSON.parse(file);
+     const data = PullPlayerData(userID);
 
 
      const { HASHED_PASSWORD, salt } = data.auth;
@@ -83,6 +81,16 @@ APP.post("/api/auth/login", (req, res) => {
      const externalHashed = bcrypt.hashSync(password, salt);
 
      if(externalHashed !== HASHED_PASSWORD) return res.status(403).send("Incorrect password!");
+
+     for (let index = 0; index < data.auth.bans.length; index++) {
+          const element = data.auth.bans[index];
+          
+          if(element.endTS > Date.now()) return res.status(403).send({
+               message: "USER IS BANNED", 
+               endTimeStamp: element.endTS, 
+               reason: element.reason
+          });
+     }
      
      //User is authenticated, generate and send token.
 
@@ -437,7 +445,7 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
      const { reason, duration } = req.body;
      const moderator = req.user;
 
-     let data = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     let data = PullPlayerData(id);
 
      const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
      
@@ -523,14 +531,14 @@ function authenticateToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
+          const data = PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
                const element = data.auth.bans[index];
                
-               if(element.endTS > Date.now) return res.status(403).send({
+               if(element.endTS > Date.now()) return res.status(403).send({
                     message: "USER IS BANNED", 
-                    endTimeStamp: endTS, 
+                    endTimeStamp: element.endTS, 
                     reason: element.reason
                });
           }
@@ -554,14 +562,14 @@ function authenticateDeveloperToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = JSON.parse(fs.readFileSync(`./data/accounts/${tokenData.id}.json`));
+          const data = PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
                const element = auth.bans[index];
                
-               if(element.endTS > Date.now) return res.status(403).send({
+               if(element.endTS > Date.now()) return res.status(403).send({
                     message: "USER IS BANNED", 
-                    endTimeStamp: endTS, 
+                    endTimeStamp: element.endTS, 
                     reason: element.reason
                });
                console.log(element);

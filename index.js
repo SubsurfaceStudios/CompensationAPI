@@ -314,6 +314,56 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
      res.status(200).send("Report successfully applied. Thank you for helping keep Compensation VR safe.");
 });
 
+APP.post("/img/upload/:others", authenticateToken, async (req, res) => {
+     var timestamp = Date.now();
+     var dir = await fs.readdirSync("./data/images/");
+     
+     var {others} = req.params;
+
+     if(!others) others = "[]";
+     others = JSON.parse(others);
+
+     if(!req.files)
+          return res.status(400).send("Request does not contain any files.");
+     if(req.files.length > 1)
+          return res.status(400).send("You can only upload one image at a time.");
+     var file = req.files.img;
+
+     if(file.mimetype !== "image/png")
+          return res.status(400).send("Sent file is not an image!");
+          
+     const filename = `${Math.floor(dir.length / 2) + 1}`;
+
+     const authordata = PullPlayerData(req.user.id);
+
+     var dotfiledata = {
+          AuthorId: req.user.id,
+          UploadTime: timestamp,
+          TaggedPlayers: others,
+          AuthorUsername: authordata.public.username,
+          AuthorNickname: authordata.public.nickname
+     };
+
+     if(!fs.existsSync(`data/images/${filename}.png`)) {
+          file.mv(`data/images/${filename}.png`);
+          fs.writeFileSync(`data/images/.${filename}`, JSON.stringify(dotfiledata));
+          return res.status(200).send();
+     }
+     res.sendStatus(500);
+});
+
+APP.get("/img/:id/info", async (req, res) => {
+     const {id} = req.params;
+     if(!fs.existsSync(`data/images/.${id}`)) return res.status(404).send("Image with that ID does not exist.");
+     res.status(200).send(fs.readFileSync(`data/images/.${id}`));
+});
+
+APP.get("/img/:id", async (req, res) => {
+     const {id} = req.params;
+     if(!fs.existsSync(`data/images/${id}.png`)) return res.status(404).send("Image with that ID does not exist.");
+     res.sendFile(`${__dirname}/data/images/${id}.png`);
+})
+
 //#endregion
 
 //#region Build download
@@ -484,14 +534,7 @@ APP.patch("/api/dev/REGEN_SECRETS", authenticateDeveloperToken, async(req, res) 
      auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${req.user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
 });
 
-APP.post("/api/images", authenticateDeveloperToken, async (req, res) => {
-     return res.status(400).send("Not integrated, you should NOT be using this.");
 
-     var timestamp = Date.now();
-     var dir = await fs.readdirSync("./data/images/");
-
-
-});
 //#endregion
 
 //#region Functions
@@ -612,4 +655,4 @@ function PushPlayerData(id, data) {
 
 APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
-console.log("API is ready at http://localhost:3000/ \n:D");
+console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);

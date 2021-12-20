@@ -10,7 +10,8 @@ const fileUpload = require('express-fileupload');
 const APP = express();
 APP.use(express.json());
 APP.use(fileUpload({
-     createParentPath: true
+     createParentPath: true,
+     limit: '50mb'
 }));
 
 const config = require('./config.json');

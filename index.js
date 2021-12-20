@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const fileUpload = require('express-fileupload');
 
 const APP = express();
+app.use(express.bodyParser({limit: '50mb'}));
 APP.use(express.json());
 APP.use(fileUpload({
      createParentPath: true,

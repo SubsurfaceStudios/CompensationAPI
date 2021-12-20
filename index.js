@@ -13,6 +13,7 @@ APP.use(fileUpload({
      createParentPath: true,
      limit: '50mb'
 }));
+APP.use()
 
 const config = require('./config.json');
 

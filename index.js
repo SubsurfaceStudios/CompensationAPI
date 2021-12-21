@@ -348,7 +348,8 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
           RoomName: roomName,
           RoomId: roomId,
           PhotoId: `${filename}.png`,
-          UploadTimePrettyPrint: Date.now().toLocaleString()
+          UploadTimePrettyPrint: Date.now().toLocaleString(),
+          privacy: 'public'
      };
 
      if(!fs.existsSync(`data/images/${filename}.png`)) {

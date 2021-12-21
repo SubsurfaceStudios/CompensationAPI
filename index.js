@@ -347,7 +347,7 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
           AuthorNickname: authordata.public.nickname,
           RoomName: roomName,
           RoomId: roomId,
-          PhotoId: `${filename}.png`,
+          PhotoId: `${filename}`,
           UploadTimePrettyPrint: Date.now().toLocaleString(),
           privacy: 'public'
      };
@@ -397,6 +397,26 @@ APP.get("/api/social/imgfeed", async (req, res) => {
           return res.status(500).send(exception);
      }
      
+});
+
+APP.get("/api/social/takenby", async (req, res) => {
+     var {user} = req.body;
+     if(typeof(user) == 'undefined') return res.status(400).send("Request body does not contain the required parameter of 'user'");
+     var dir = fs.readdirSync("data/images");
+
+     if(dir.length < 1) return res.status(500).send("No images available on the API.");
+     
+     const playerdata = PullPlayerData(user);
+     if(playerdata == null) return res.status(404).send("User does not exist!");
+
+     dir = dir.filter((item => item.substring(0, 1) == '.'));
+     dir = dir.map((item => JSON.parse(fs.readFileSync(`data/images/${item}`))));
+
+     var playerTakenPhotos = dir.filter((item => item.AuthorId == user));
+     
+     if(playerTakenPhotos.length < 1) return res.status(404).send("Player has not taken or uploaded any photos.");
+
+     return res.status(200).json(playerTakenPhotos);
 });
 
 //#endregion

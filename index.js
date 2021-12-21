@@ -419,6 +419,26 @@ APP.get("/api/social/takenby", async (req, res) => {
      return res.status(200).json(playerTakenPhotos);
 });
 
+APP.get("/api/social/takenwith", async (req, res) => {
+     var {user} = req.body;
+     if(typeof(user) == 'undefined') return res.status(400).send("Request body does not contain the required parameter of 'user'");
+     var dir = fs.readdirSync("data/images");
+
+     if(dir.length < 1) return res.status(500).send("No images available on the API.");
+     
+     const playerdata = PullPlayerData(user);
+     if(playerdata == null) return res.status(404).send("User does not exist!");
+
+     dir = dir.filter((item => item.substring(0, 1) == '.'));
+     dir = dir.map((item => JSON.parse(fs.readFileSync(`data/images/${item}`))));
+
+     var playerTaggedPhotos = dir.filter((item => item.TaggedPlayers.includes(user)));
+     
+     if(playerTaggedPhotos.length < 1) return res.status(404).send("Player has not been tagged in any photos.");
+
+     return res.status(200).json(playerTaggedPhotos);
+});
+
 //#endregion
 
 //#region Build download
@@ -699,8 +719,13 @@ function auditLog(message) {
 
 //#region Helper Functions
 function PullPlayerData(id) {
-     var data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
-     return data;
+     try {
+          var data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+          return data;
+     } catch (exception) {
+          console.error(exception);
+          return null;
+     }
 }
 function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");

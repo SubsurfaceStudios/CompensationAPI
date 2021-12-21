@@ -8,13 +8,13 @@ const crypto = require('crypto');
 const fileUpload = require('express-fileupload');
 
 const APP = express();
-app.use(express.bodyParser({limit: '50mb'}));
-APP.use(express.json());
+APP.use(express.json({
+     limit: '50mb'
+}));
 APP.use(fileUpload({
      createParentPath: true,
      limit: '50mb'
 }));
-APP.use()
 
 const config = require('./config.json');
 
@@ -371,6 +371,33 @@ APP.get("/img/:id", async (req, res) => {
      if(!fs.existsSync(`data/images/${id}.png`)) return res.status(404).send("Image with that ID does not exist.");
      res.sendFile(`${__dirname}/data/images/${id}.png`);
 })
+
+APP.get("/api/social/imgfeed", async (req, res) => {
+     try {
+          var {count, offset, order} = req.body;
+          if(typeof(count) == 'undefined' || typeof(offset) == 'undefined' || typeof(order) == 'undefined') return res.status(400).send("Insufficient data in request JSON body. Required parameters are 'count', 'offset', and 'order'.");
+
+          var files = fs.readdirSync("data/images");
+          if(files.length < 1) return res.status(400).send("No photos available.")
+          files = files.filter((item => item.substring(0, 1) == '.'));
+          if(order == 0)
+               files = files.reverse();
+
+          if(count > files.length - offset) count = files.length - offset;
+          if(count < 1) count = 1;
+
+          var filesArray = [];
+          let i;
+          for(i = offset + 1; i < count; i++)
+               filesArray.push(JSON.parse(fs.readFileSync(`data/images/.${i}`)));
+          
+          res.status(200).json(filesArray);
+     } catch (exception) {
+          console.error(exception);
+          return res.status(500).send(exception);
+     }
+     
+});
 
 //#endregion
 

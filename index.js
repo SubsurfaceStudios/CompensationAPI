@@ -317,11 +317,11 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
      res.status(200).send("Report successfully applied. Thank you for helping keep Compensation VR safe.");
 });
 
-APP.post("/img/upload/:others", authenticateToken, async (req, res) => {
+APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req, res) => {
      var timestamp = Date.now();
      var dir = await fs.readdirSync("./data/images/");
      
-     var {others} = req.params;
+     var {others, roomName, roomId} = req.params;
 
      if(!others) others = "[]";
      others = JSON.parse(others);
@@ -344,7 +344,11 @@ APP.post("/img/upload/:others", authenticateToken, async (req, res) => {
           UploadTime: timestamp,
           TaggedPlayers: others,
           AuthorUsername: authordata.public.username,
-          AuthorNickname: authordata.public.nickname
+          AuthorNickname: authordata.public.nickname,
+          RoomName: roomName,
+          RoomId: roomId,
+          PhotoId: `${filename}.png`,
+          UploadTimePrettyPrint: Date.now().toLocaleString()
      };
 
      if(!fs.existsSync(`data/images/${filename}.png`)) {

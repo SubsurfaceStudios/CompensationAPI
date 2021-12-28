@@ -1,7 +1,7 @@
 {
      "public": {
-          "nickname": "",
-          "username": "",
+          "nickname": "NULL_ACCOUNT",
+          "username": "NULL_ACCOUNT",
           "tag": "",
           "ownedRooms": [
           ],
@@ -30,12 +30,15 @@
                     "hat": [
                     ],
                     "hairStyles": [
+                         0
                     ],
                     "hairColors": [
+                         0
                     ],
                     "glasses": [
                     ],
                     "shirts": [
+                         0
                     ],
                     "pants": [
                     ],
@@ -62,9 +65,9 @@
           ]
      },
      "auth": {
-          "username": "",
-          "HASHED_PASSWORD": "",
-          "salt": "",
+          "username": "NULL_ACCOUNT",
+          "HASHED_PASSWORD": "$2b$10$oY0P9fF.2WRfKEso9gKd7OB5o0W0La2IDithiXkQb2ctsdngx6Cm2",
+          "salt": "$2b$10$oY0P9fF.2WRfKEso9gKd7O",
           "bans": [
           ],
           "reportedUsers": [

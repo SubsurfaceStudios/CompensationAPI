@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ."
+    "start": "forever index.js --minUptime 2000ms --spinSleepTime 5000ms",
+    "account-update": "node accountupdater.js"
   },
   "keywords": [],
   "author": "",

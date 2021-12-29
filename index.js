@@ -298,7 +298,7 @@ APP.get("/api/catalog", async (req, res) => {
 });
 
 APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
-     if(!(req.body.includes("target") && req.body.includes("reason"))) return res.status(400).send("Insufficient data sent!");
+     if(!(Object.keys(req.body).includes("target") && Object.keys(req.body).includes("reason"))) return res.status(400).send("Insufficient data sent!");
      const { target, reason } = req.body;
 
      var report = {

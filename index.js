@@ -499,6 +499,17 @@ APP.post("/api/social/acceptRequest", async (req, res) => {
      res.status(200).send("Successfully added acquaintance.");
 });
 
+APP.post("/api/social/makeFriend", async (req, res) => {
+     var {target} = req.body;
+
+     var recievingData = PullPlayerData(target);
+     var sendingData = PullPlayerData(req.user.id);
+
+     if(!(sendingData.private.acquaintances.includes(target) || sendingData.private.friends.includes(target) || sendingData.private.favoriteFriends.includes(target))) 
+          return res.status(400).send("You are not acquaintances, friends, or favorite friends with this player.");
+     
+     recievingData.private.acquaintances.splice(recievingData.private.acquaintances.findIndex())
+});
 
 //#endregion
 

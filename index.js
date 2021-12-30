@@ -530,7 +530,7 @@ APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) 
      });
 });
 
-APP.get("api/analytics/accountCount", async (req, res) => {
+APP.get("/api/analytics/accountCount", async (req, res) => {
      var files = fs.readdirSync("data/accounts");
      res.status(200).send(files.length - 1);
 });

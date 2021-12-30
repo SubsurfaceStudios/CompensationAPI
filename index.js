@@ -506,7 +506,7 @@ APP.post("/src/:ver/PC/upload", authenticateDeveloperToken, async (req, res) => 
               size: file.size
           }
      });
-})
+});
 
 APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) => {
      if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
@@ -528,7 +528,12 @@ APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) 
               size: file.size
           }
      });
-})
+});
+
+APP.get("api/analytics/accountCount", async (req, res) => {
+     var files = fs.readdirSync("data/accounts");
+     res.status(200).send(files.length - 1);
+});
 //#endregion
 
 //#region Developer-only API calls

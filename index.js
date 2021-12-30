@@ -29,6 +29,12 @@ APP.use(fileUpload({
 
 const config = require('./config.json');
 
+const notificationTemplates = {
+     invite: "invite",
+     friendRequest: "friendRequest",
+     messageRecieved: "messageRecieved"
+}
+
 //#region endpoints
 
 //Server test call
@@ -450,6 +456,50 @@ APP.get("/api/social/takenwith", async (req, res) => {
      return res.status(200).json(playerTaggedPhotos);
 });
 
+APP.post("/api/social/friendRequest", async (req, res) => {
+     var {target} = req.body;
+
+     var sendingData = PullPlayerData(req.user.id);
+     var recievingData = PullPlayerData(target);
+
+     if(sendingData.private.acquaintances.includes(target) || sendingData.private.friends.includes(target) || sendingData.private.favoriteFriends.includes(target)) return res.status(400).send("You are already friends with this player.")
+
+     NotifyPlayer(target, notificationTemplates.friendRequest, {
+          "sendingPlayer": req.user.id,
+          "headerText": `Friend Request`,
+          "bodyText": `Hey there ${recievingData.public.nickname}! ${sendingData.public.nickname} has sent you a friend request! Press the "Profile" button to see their profile. Press "Accept" to become friends with them, or press "Ignore" to decline the request!`,
+          "continueText": `Accept`,
+          "cancelText": "Ignore"
+     });
+
+     res.status(200).send("Successfully sent friend request to player!");
+});
+
+APP.post("/api/social/acceptRequest", async (req, res) => {
+     var {target} = req.body;
+
+     var recievingData = PullPlayerData(req.user.id);
+     var sendingData = PullPlayerData(target);
+
+     if(recievingData.private.acquaintances.includes(target) || recievingData.private.friends.includes(target) || recievingData.private.favoriteFriends.includes(target)) return res.status(400).send("You are already friends with this player.")
+
+     var notificationsFiltered = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.sendingPlayer == target);
+
+     if(Array.length(notificationsFiltered) < 1) return res.status(400).send("You do not have a pending friend request from this player.");
+     
+     var index = recievingData.notifications.findIndex(item => item == notificationsFiltered[0]);
+
+     recievingData.notifications.splice(index);
+     recievingData.private.acquaintances.push(target);
+     sendingData.private.acquaintances.push(req.user.id);
+
+     PushPlayerData(req.user.id, recievingData);
+     PushPlayerData(target, sendingData);
+
+     res.status(200).send("Successfully added acquaintance.");
+});
+
+
 //#endregion
 
 //#region Build download
@@ -741,6 +791,20 @@ function PullPlayerData(id) {
 function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");
      fs.writeFileSync(`./data/accounts/${id}.json`, data);
+}
+function NotifyPlayer(id, template, params) {
+     if(!(notificationTemplates.values.includes(template))) return false;
+     var data = PullPlayerData(id);
+     if(data == null) return false;
+
+     const notification = {
+          template: template,
+          params: params
+     }
+     data.notifications.push(notification);
+
+     PushPlayerData(id, data);
+     return true;
 }
 //#endregion
 

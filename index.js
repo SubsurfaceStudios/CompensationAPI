@@ -603,7 +603,7 @@ APP.post("/src/:ver/PC/upload", authenticateDeveloperToken, async (req, res) => 
               size: file.size
           }
      });
-})
+});
 
 APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) => {
      if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
@@ -625,7 +625,12 @@ APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) 
               size: file.size
           }
      });
-})
+});
+
+APP.get("/api/analytics/accountCount", async (req, res) => {
+     var files = fs.readdirSync("data/accounts");
+     res.status(200).send(`${files.length - 1}`);
+});
 //#endregion
 
 //#region Developer-only API calls
@@ -731,8 +736,8 @@ function getUserID(username) {
           
           const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`))
 
-          const username2 = data.auth.username;
-          if(username2 == username) {
+          const username2 = data.auth.username.toLowerCase();
+          if(username2 == username.toLowerCase()) {
                id = element.split(".")[0];
                break; 
           }
@@ -839,6 +844,7 @@ function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");
      fs.writeFileSync(`./data/accounts/${id}.json`, data);
 }
+
 function NotifyPlayer(id, template, params) {
      if(!(notificationTemplates.values.includes(template))) return false;
      var data = PullPlayerData(id);
@@ -982,8 +988,12 @@ function ClearPlayerNotification(id, IndexOrData) {
 
      PushPlayerData(id, data);
 }
+
+function dispose_room_cache() {
+     fs.rmSync('data/cache/rooms/*', {recursive: true});
 //#endregion
 
 APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
+setInterval(dispose_room_cache, 300000);
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);

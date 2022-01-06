@@ -462,7 +462,7 @@ APP.post("/api/social/friendRequest", async (req, res) => {
      var sendingData = PullPlayerData(req.user.id);
      var recievingData = PullPlayerData(target);
 
-     if(sendingData.private.acquaintances.includes(target) || sendingData.private.friends.includes(target) || sendingData.private.favoriteFriends.includes(target)) return res.status(400).send("You are already friends with this player.")
+     if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
 
      NotifyPlayer(target, notificationTemplates.friendRequest, {
           "sendingPlayer": req.user.id,
@@ -481,7 +481,7 @@ APP.post("/api/social/acceptRequest", async (req, res) => {
      var recievingData = PullPlayerData(req.user.id);
      var sendingData = PullPlayerData(target);
 
-     if(recievingData.private.acquaintances.includes(target) || recievingData.private.friends.includes(target) || recievingData.private.favoriteFriends.includes(target)) return res.status(400).send("You are already friends with this player.")
+     if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
 
      var notificationsFiltered = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.sendingPlayer == target);
 
@@ -489,14 +489,24 @@ APP.post("/api/social/acceptRequest", async (req, res) => {
      
      var index = recievingData.notifications.findIndex(item => item == notificationsFiltered[0]);
 
-     recievingData.notifications.splice(index);
-     recievingData.private.acquaintances.push(target);
-     sendingData.private.acquaintances.push(req.user.id);
+     ClearPlayerNotification(req.user.id, index);
 
-     PushPlayerData(req.user.id, recievingData);
-     PushPlayerData(target, sendingData);
+     AddAcquaintance(req.user.id, target, true);
 
      res.status(200).send("Successfully added acquaintance.");
+});
+
+APP.post("/api/social/makeAcquaintance", async (req, res) => {
+     var {target} = req.body;
+     var sender = req.user.id;
+
+     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+
+     RemoveFriend(sender, target, false);
+     RemoveFavoriteFriend(sender, target, false);
+
+     AddAcquaintance(sender, target, false);
+     res.sendStatus(200);
 });
 
 APP.post("/api/social/makeFriend", async (req, res) => {
@@ -505,10 +515,10 @@ APP.post("/api/social/makeFriend", async (req, res) => {
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveAcquaintance(sender, target);
-     RemoveFavoriteFriend(sender, target);
+     RemoveAcquaintance(sender, target, false);
+     RemoveFavoriteFriend(sender, target, false);
 
-     AddFriend(sender, target);
+     AddFriend(sender, target, false);
      res.sendStatus(200);
 });
 
@@ -518,10 +528,10 @@ APP.post("/api/social/makeFavoriteFriend", async (req, res) => {
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveAcquaintance(sender, target);
-     RemoveFriend(sender, target);
+     RemoveAcquaintance(sender, target, false);
+     RemoveFriend(sender, target, false);
 
-     AddFavoriteFriend(sender, target);
+     AddFavoriteFriend(sender, target, false);
      res.sendStatus(200);
 });
 
@@ -531,9 +541,9 @@ APP.post("/api/social/removeFriend", async (req, res) => {
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveAcquaintance(sender, target);
-     RemoveFriend(sender, target);
-     RemoveFavoriteFriend(sender, target);
+     RemoveAcquaintance(sender, target, true);
+     RemoveFriend(sender, target, true);
+     RemoveFavoriteFriend(sender, target, true);
      res.sendStatus(200);
 });
 
@@ -865,7 +875,7 @@ function ArePlayersFavoriteFriends(player1, player2) {
      return data.private.favoriteFriends.includes(player2);
 }
 
-function RemoveAcquaintance(player1, player2) {
+function RemoveAcquaintance(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
@@ -873,13 +883,13 @@ function RemoveAcquaintance(player1, player2) {
      if(index1 > 0) data1.private.acquaintances.splice(index1);
 
      var index2 = data2.private.acquaintances.findIndex(item => item == player1);
-     if(index2 > 0) data2.private.acquaintances.splice(index2);
+     if(index2 > 0 && both) data2.private.acquaintances.splice(index2);
 
      PushPlayerData(player1, data1);
      PushPlayerData(player2, data2);
 }
 
-function RemoveFriend(player1, player2) {
+function RemoveFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
@@ -887,13 +897,13 @@ function RemoveFriend(player1, player2) {
      if(index1 > 0) data1.private.friends.splice(index1);
 
      var index2 = data2.private.friends.findIndex(item => item == player1);
-     if(index2 > 0) data2.private.friends.splice(index2);
+     if(index2 > 0 && both) data2.private.friends.splice(index2);
 
      PushPlayerData(player1, data1);
      PushPlayerData(player2, data2);
 }
 
-function RemoveFavoriteFriend(player1, player2) {
+function RemoveFavoriteFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
@@ -901,13 +911,13 @@ function RemoveFavoriteFriend(player1, player2) {
      if(index1 > 0) data1.private.favoriteFriends.splice(index1);
 
      var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
-     if(index2 > 0) data2.private.favoriteFriends.splice(index2);
+     if(index2 > 0 && both) data2.private.favoriteFriends.splice(index2);
 
      PushPlayerData(player1, data1);
      PushPlayerData(player2, data2);
 }
 
-function AddAcquaintance(player1, player2) {
+function AddAcquaintance(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
@@ -916,13 +926,13 @@ function AddAcquaintance(player1, player2) {
           data1.private.acquaintances.push(player2);
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.acquaintances.includes(player1)) {
+     if(!data2.private.acquaintances.includes(player1) && both) {
           data2.private.acquaintances.push(player1);
           PushPlayerData(player2, data2);
      }
 }
 
-function AddFriend(player1, player2) {
+function AddFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
@@ -931,13 +941,13 @@ function AddFriend(player1, player2) {
           data1.private.friends.push(player2);
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.friends.includes(player1)) {
+     if(!data2.private.friends.includes(player1) && both) {
           data2.private.friends.push(player1);
           PushPlayerData(player2, data2);
      }
 }
 
-function AddFavoriteFriend(player1, player2) {
+function AddFavoriteFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
@@ -946,10 +956,31 @@ function AddFavoriteFriend(player1, player2) {
           data1.private.favoriteFriends.push(player2);
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.favoriteFriends.includes(player1)) {
+     if(!data2.private.favoriteFriends.includes(player1) && both) {
           data2.private.favoriteFriends.push(player1);
           PushPlayerData(player2, data2);
      }
+}
+
+function ClearPlayerNotification(id, IndexOrData) {
+     var data = PullPlayerData(id);
+
+
+     var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
+
+     if(mode == "id") {
+          data.notifications = data.notifications.splice(IndexOrData);
+     } else {
+          if(data.notifications.includes(IndexOrData)) {
+               while (data.notifications.includes(IndexOrData)) {
+                    var index = data.notifications.findIndex(item => item == IndexOrData);
+                    if(index > 0) data.notifications = data.notifications.splice(index);
+                    else break;
+               }
+          }
+     }
+
+     PushPlayerData(id, data);
 }
 //#endregion
 

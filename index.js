@@ -991,6 +991,7 @@ function ClearPlayerNotification(id, IndexOrData) {
 
 function dispose_room_cache() {
      fs.rmSync('data/cache/rooms/*', {recursive: true});
+}
 //#endregion
 
 APP.listen(config.PORT, '0.0.0.0');

@@ -1,0 +1,2 @@
+- name: Discord Commits
+  uses: Sniddl/discord-commits@v1.3

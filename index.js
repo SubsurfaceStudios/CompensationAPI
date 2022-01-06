@@ -639,8 +639,8 @@ function getUserID(username) {
           
           const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`))
 
-          const username2 = data.auth.username;
-          if(username2 == username) {
+          const username2 = data.auth.username.toLower();
+          if(username2 == username.toLower()) {
                id = element.split(".")[0];
                break; 
           }

@@ -501,14 +501,40 @@ APP.post("/api/social/acceptRequest", async (req, res) => {
 
 APP.post("/api/social/makeFriend", async (req, res) => {
      var {target} = req.body;
+     var sender = req.user.id;
 
-     var recievingData = PullPlayerData(target);
-     var sendingData = PullPlayerData(req.user.id);
+     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     if(!(sendingData.private.acquaintances.includes(target) || sendingData.private.friends.includes(target) || sendingData.private.favoriteFriends.includes(target))) 
-          return res.status(400).send("You are not acquaintances, friends, or favorite friends with this player.");
-     
-     recievingData.private.acquaintances.splice(recievingData.private.acquaintances.findIndex())
+     RemoveAcquaintance(sender, target);
+     RemoveFavoriteFriend(sender, target);
+
+     AddFriend(sender, target);
+     res.sendStatus(200);
+});
+
+APP.post("/api/social/makeFavoriteFriend", async (req, res) => {
+     var {target} = req.body;
+     var sender = req.user.id;
+
+     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+
+     RemoveAcquaintance(sender, target);
+     RemoveFriend(sender, target);
+
+     AddFavoriteFriend(sender, target);
+     res.sendStatus(200);
+});
+
+APP.post("/api/social/removeFriend", async (req, res) => {
+     var {target} = req.body;
+     var sender = req.user.id;
+
+     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+
+     RemoveAcquaintance(sender, target);
+     RemoveFriend(sender, target);
+     RemoveFavoriteFriend(sender, target);
+     res.sendStatus(200);
 });
 
 //#endregion
@@ -816,6 +842,114 @@ function NotifyPlayer(id, template, params) {
 
      PushPlayerData(id, data);
      return true;
+}
+function ArePlayersAnyFriendType(player1, player2) {
+     var data = PullPlayerData(player1);
+     return data.private.acquaintances.includes(player2) || 
+          data.private.friends.includes(player2) || 
+          data.private.favoriteFriends.includes(player2);
+}
+
+function ArePlayersAcquantances(player1, player2) {
+     var data = PullPlayerData(player1);
+     return data.private.acquaintances.includes(player2);
+}
+
+function ArePlayersFriends(player1, player2) {
+     var data = PullPlayerData(player1);
+     return data.private.friends.includes(player2);
+}
+
+function ArePlayersFavoriteFriends(player1, player2) {
+     var data = PullPlayerData(player1);
+     return data.private.favoriteFriends.includes(player2);
+}
+
+function RemoveAcquaintance(player1, player2) {
+     var data1 = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
+
+     var index1 = data1.private.acquaintances.findIndex(item => item == player2);
+     if(index1 > 0) data1.private.acquaintances.splice(index1);
+
+     var index2 = data2.private.acquaintances.findIndex(item => item == player1);
+     if(index2 > 0) data2.private.acquaintances.splice(index2);
+
+     PushPlayerData(player1, data1);
+     PushPlayerData(player2, data2);
+}
+
+function RemoveFriend(player1, player2) {
+     var data1 = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
+
+     var index1 = data1.private.friends.findIndex(item => item == player2);
+     if(index1 > 0) data1.private.friends.splice(index1);
+
+     var index2 = data2.private.friends.findIndex(item => item == player1);
+     if(index2 > 0) data2.private.friends.splice(index2);
+
+     PushPlayerData(player1, data1);
+     PushPlayerData(player2, data2);
+}
+
+function RemoveFavoriteFriend(player1, player2) {
+     var data1 = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
+
+     var index1 = data1.private.favoriteFriends.findIndex(item => item == player2);
+     if(index1 > 0) data1.private.favoriteFriends.splice(index1);
+
+     var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
+     if(index2 > 0) data2.private.favoriteFriends.splice(index2);
+
+     PushPlayerData(player1, data1);
+     PushPlayerData(player2, data2);
+}
+
+function AddAcquaintance(player1, player2) {
+     var data1 = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
+
+     if(!data1.private.acquaintances.includes(player2)) 
+     {
+          data1.private.acquaintances.push(player2);
+          PushPlayerData(player1, data1);
+     }
+     if(!data2.private.acquaintances.includes(player1)) {
+          data2.private.acquaintances.push(player1);
+          PushPlayerData(player2, data2);
+     }
+}
+
+function AddFriend(player1, player2) {
+     var data1 = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
+
+     if(!data1.private.friends.includes(player2)) 
+     {
+          data1.private.friends.push(player2);
+          PushPlayerData(player1, data1);
+     }
+     if(!data2.private.friends.includes(player1)) {
+          data2.private.friends.push(player1);
+          PushPlayerData(player2, data2);
+     }
+}
+
+function AddFavoriteFriend(player1, player2) {
+     var data1 = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
+
+     if(!data1.private.favoriteFriends.includes(player2)) 
+     {
+          data1.private.favoriteFriends.push(player2);
+          PushPlayerData(player1, data1);
+     }
+     if(!data2.private.favoriteFriends.includes(player1)) {
+          data2.private.favoriteFriends.push(player1);
+          PushPlayerData(player2, data2);
+     }
 }
 //#endregion
 

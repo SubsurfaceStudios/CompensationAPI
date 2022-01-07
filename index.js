@@ -259,7 +259,7 @@ APP.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
      const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
 
      data.public.pronouns = array[pronouns];
-     PushPlayerData(req.body.id, data);
+     PushPlayerData(req.user.id, data);
 });
 
 APP.post("/api/accounts/tag", authenticateToken, async (req, res) => {

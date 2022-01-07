@@ -336,7 +336,7 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
 
 APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req, res) => {
      var timestamp = Date.now();
-     var dir = await fs.readdirSync("./data/images/");
+     var dir = fs.readdirSync("./data/images/");
      
      var {others, roomName, roomId} = req.params;
 
@@ -345,6 +345,9 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
 
      if(!req.files)
           return res.status(400).send("Request does not contain any files.");
+     
+     if(!Array.isArray(req.files)) return res.status(400).send("Failed to parse files.");
+
      if(req.files.length > 1)
           return res.status(400).send("You can only upload one image at a time.");
      var file = req.files.img;

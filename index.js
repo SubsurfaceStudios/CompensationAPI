@@ -999,5 +999,6 @@ function dispose_room_cache() {
 
 APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
-setInterval(dispose_room_cache, 300000);
+//setInterval(dispose_room_cache, 300000);
+//Cache purge disabled, unnecessary and broken.
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);

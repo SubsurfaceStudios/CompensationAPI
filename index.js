@@ -556,84 +556,8 @@ APP.post("/api/social/removeFriend", async (req, res) => {
 
 //#endregion
 
-//#region Build download
 
-APP.get("/src/:ver/PC", async (req, res) => {
-     const { ver } = req.params;
-     if(!fs.existsSync(`src/${ver}/PC/build.zip`)) return res.status(404).send("Build does not exist!");
-     res.sendFile(`${__dirname}/src/${ver}/PC/build.zip`);
-});
-
-APP.get("/src/:ver/QUEST", async (req, res) => {
-     const { ver } = req.params;
-     if(!fs.existsSync(`src/${ver}/QUEST/build.apk`)) return res.status(404).send("Build does not exist!");
-     res.sendFile(`${__dirname}/src/${ver}/QUEST/build.apk`);
-});
-
-APP.patch("/src/refresh", authenticateDeveloperToken, async (req, res) => {
-     try {
-          var files = fs.readdirSync("src");
-          var versions = [];
-          for (let index = 0; index < files.length; index++) {
-               versions.push(files[index]);
-          }
-          fs.writeFileSync("data/catalog/version-cache.json", JSON.stringify(versions, null, "     "));
-     }
-     catch (exception) {
-          console.log(exception);
-          return res.status(500).send("Failed to refresh version cache. Check serverside.");
-     }
-     return res.status(200).send("Successfully refreshed version cache.");
-});
-
-APP.get("/src/versions", async (req, res) => {
-     res.status(200).send(fs.readFileSync("data/catalog/version-cache.json"));
-});
-
-APP.post("/src/:ver/PC/upload", authenticateDeveloperToken, async (req, res) => {
-     if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
-     let file = req.files.build;
-
-     const {ver} = req.params;
-     
-     if(!fs.existsSync(`src/${ver}`)) fs.mkdirSync(`src/${ver}`);
-     if(!fs.existsSync(`src/${ver}/PC`)) fs.mkdirSync(`src/${ver}/PC`);
-
-     file.mv(`src/${ver}/PC/${file.name}`);
-
-     res.send({
-          status: 200,
-          message: 'File is uploaded',
-          data: {
-              name: file.name,
-              mimetype: file.mimetype,
-              size: file.size
-          }
-     });
-});
-
-APP.post("/src/:ver/QUEST/upload", authenticateDeveloperToken, async (req, res) => {
-     if(!req.files) return res.status(400).send("You did not include a binary file with your request.");
-     let file = req.files.build;
-
-     const {ver} = req.params;
-     
-     if(!fs.existsSync(`src/${ver}`)) fs.mkdirSync(`src/${ver}`);
-     if(!fs.existsSync(`src/${ver}/QUEST`)) fs.mkdirSync(`src/${ver}/QUEST`);
-
-     file.mv(`src/${ver}/QUEST/${file.name}`);
-
-     res.send({
-          status: 200,
-          message: 'File is uploaded',
-          data: {
-              name: file.name,
-              mimetype: file.mimetype,
-              size: file.size
-          }
-     });
-});
-
+//#region analytics
 APP.get("/api/analytics/accountCount", async (req, res) => {
      var files = fs.readdirSync("data/accounts");
      res.status(200).send(`${files.length - 1}`);
@@ -645,18 +569,19 @@ APP.get("/api/analytics/accountCount", async (req, res) => {
 //Modify a user's currency balance.
 APP.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
+     let id_clean = sanitize(id);
      const { amount } = req.body;
 
-     const exists = fs.existsSync(`./data/accounts/${id}.json`);
+     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     let data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     let data = PullPlayerData(id_clean);
 
      if(!(data.private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
 
      data.private.currency += amount;
 
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "     "));
+     PushPlayerData(id_clean, data)
 
      auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
 
@@ -666,18 +591,19 @@ APP.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async 
 //Set a user's currency balance.
 APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
+     let id_clean = sanitize(id);
      const { amount } = req.body;
 
-     const exists = fs.existsSync(`./data/accounts/${id}.json`);
+     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     let data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     let data = PullPlayerData(id_clean);
 
      if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
 
      data.private.currency = amount;
 
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "     "));
+     PushPlayerData(id_clean, data);
 
      auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
 
@@ -687,6 +613,7 @@ APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (re
 //Ban a user's account
 APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
+     let id_clean = sanitize(id);
      const { reason, duration } = req.body;
      const moderator = req.user;
 
@@ -702,7 +629,7 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
 
      await data.auth.bans.push(ban);
 
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "    "));
+     PushPlayerData(id_clean, data);
 
      auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`)
      res.status(200).send();

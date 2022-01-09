@@ -346,11 +346,15 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
      if(!req.files)
           return res.status(400).send("Request does not contain any files.");
      
-     if(!Array.isArray(req.files)) return res.status(400).send("Failed to parse files.");
+     if(!Array.isArray(req.files)) 
+     {   
+          return res.status(400).send("Failed to parse files.");
+     }
+     var filesSafe = Array.from(req.files);
 
-     if(req.files.length > 1)
+     if(filesSafe.length > 1)
           return res.status(400).send("You can only upload one image at a time.");
-     var file = req.files.img;
+     var file = filesSafe.img;
 
      if(file.mimetype !== "image/png")
           return res.status(400).send("Sent file is not an image!");

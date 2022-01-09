@@ -418,7 +418,7 @@ APP.get("/api/social/imgfeed", async (req, res) => {
           res.status(200).json(filesArray);
      } catch (exception) {
           console.error(exception);
-          return res.status(500).send(exception);
+          return res.sendStatus(500);
      }
      
 });

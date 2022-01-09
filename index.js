@@ -413,7 +413,7 @@ APP.get("/api/social/imgfeed", async (req, res) => {
           var filesArray = [];
           let i;
           for(i = offset + 1; i < count; i++)
-               filesArray.push(JSON.parse(fs.readFileSync(`data/images/.${i}`)));
+               filesArray.push(PullPlayerData(i));
           
           res.status(200).json(filesArray);
      } catch (exception) {

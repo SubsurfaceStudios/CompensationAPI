@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const fileUpload = require('express-fileupload');
 const slowDown = require('express-slow-down');
+const sanitize = require('sanitize-filename');
 
 const APP = express();
 APP.enable('trust proxy');
@@ -39,48 +40,46 @@ const notificationTemplates = {
 
 //Server test call
 APP.get("/", async (req, res) => {
-     await res.status(200).send("Pong!");
+     return res.status(200).send("Pong!");
 });
 
 //Check if a token is valid as developer.
 APP.get("/api/dev/check", authenticateDeveloperToken, async (req, res) => {
-     res.status(200).send("This token is verified as Developer.");
+     return res.status(200).send("This token is verified as Developer.");
 });
 
 //Joke
 APP.get("/api/dingus", async(req, res) => {
-     await res.status(200).send("You have ascended");
+     return res.status(200).send("You have ascended");
      //hmm
 });
 
 //Call to get the public account data of a user.
 APP.get("/api/accounts/:id/public", async (req, res) => {
      const { id } = req.params;
-     fs.exists(`./data/accounts/${id}.json`, async (e) => {
-          if (e) {
-               const json = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`))
-               const data = json; 
-               res.status(200).send(data.public);
-          } else {
-               await res.status(404).send({ message: `Account with ID of ${id} not found. Please check your request for typos.` });
-          }
-     })
+     let id_clean = sanitize(id);
+
+     if (fs.existsSync(`./data/accounts/${id_clean}.json`)) {
+          const data = PullPlayerData(id_clean);
+          return res.status(200).send(data.public);
+     } else {
+          return res.status(404).send(`Account with ID of ${id} not found. Please check your request for errors.`);
+     }
 });
 
 //(Authorized) Call to get the private account data of a user.
 APP.get("/api/accounts/:id/private", authenticateToken, async(req, res) => {
      const { id } = req.params;
+     let id_clean = sanitize(id);
+
      if(req.user.id !== id) return res.status(403).send("Token user does not have access to the specified user's private data!");
 
-     fs.exists(`./data/accounts/${id}.json`, async (e) => {
-          if (e) {
-               const json = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`))
-               const data = json; 
-               res.status(200).send(data.private);
-          } else {
-               await res.status(404).send({ message: `Account with ID of ${id} not found. Please check your request for typos.` });
-          }
-     })
+     if (fs.existsSync(`data/accounts/${id_clean}.json`)) {
+          const data = PullPlayerData(id_clean);
+          return res.status(200).send(data.private);
+     } else {
+          return res.status(404).send(`Account with ID of ${id} not found. Please check your request for typos.`);
+     }
 })
 
 //Call to get a token from user account credentials.
@@ -188,9 +187,10 @@ APP.get("/api/global/:key", async (req, res) => {
 //Post a notification to a user.
 APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req, res) => {
     const { id } = req.params;
+    let id_clean = sanitize(id);
     var { title, description } = req.body;
 
-    let data = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+    let data = PullPlayerData(id_clean);
 
     var notif = {
           "type": "API Notification",
@@ -200,16 +200,15 @@ APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req
 
     data.notifications.push(notif);
 
-    const final = JSON.stringify(data, null, "  ");
-    fs.writeFileSync(`./data/accounts/${id}.json`, final);
+    PushPlayerData(id_clean, data);
     auditLog(`Notified user ${id}.`);
-    res.sendStatus(200);
+    return res.sendStatus(200);
 });
 
 APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
      const id = req.user.id;
 
-     const data = await JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+     const data = PullPlayerData(id);
 
      if(data.notifications == null) return res.status(200).send("User has no pending notifications.");
 
@@ -386,14 +385,16 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
 
 APP.get("/img/:id/info", async (req, res) => {
      const {id} = req.params;
-     if(!fs.existsSync(`data/images/.${id}`)) return res.status(404).send("Image with that ID does not exist.");
-     res.status(200).send(fs.readFileSync(`data/images/.${id}`));
+     let id_clean = sanitize(id);
+     if(!fs.existsSync(`data/images/.${id_clean}`)) return res.status(404).send("Image with that ID does not exist.");
+     res.status(200).send(fs.readFileSync(`data/images/.${id_clean}`));
 });
 
 APP.get("/img/:id", async (req, res) => {
      const {id} = req.params;
-     if(!fs.existsSync(`data/images/${id}.png`)) return res.status(404).send("Image with that ID does not exist.");
-     res.sendFile(`${__dirname}/data/images/${id}.png`);
+     let id_clean = sanitize(id);
+     if(!fs.existsSync(`data/images/${id_clean}.png`)) return res.status(404).send("Image with that ID does not exist.");
+     res.sendFile(`${__dirname}/data/images/${id_clean}.png`);
 })
 
 APP.get("/api/social/imgfeed", async (req, res) => {
@@ -840,7 +841,8 @@ function auditLog(message) {
 //#region Helper Functions
 function PullPlayerData(id) {
      try {
-          var data = JSON.parse(fs.readFileSync(`./data/accounts/${id}.json`));
+          let id_clean = sanitize(id);
+          var data = JSON.parse(fs.readFileSync(`./data/accounts/${id_clean}.json`));
           return data;
      } catch (exception) {
           console.error(exception);
@@ -849,7 +851,8 @@ function PullPlayerData(id) {
 }
 function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");
-     fs.writeFileSync(`./data/accounts/${id}.json`, data);
+     let id_clean = sanitize(id);
+     fs.writeFileSync(`./data/accounts/${id_clean}.json`, data);
 }
 
 function NotifyPlayer(id, template, params) {

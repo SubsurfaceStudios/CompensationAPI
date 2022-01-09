@@ -17,6 +17,7 @@
     "express-fileupload": "^1.2.1",
     "express-slow-down": "^1.4.0",
     "jsonwebtoken": "^8.5.1",
-    "nodemon": "^2.0.13"
+    "nodemon": "^2.0.13",
+    "sanitize-filename": "^1.6.3"
   }
 }

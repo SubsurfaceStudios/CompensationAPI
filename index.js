@@ -463,7 +463,7 @@ APP.get("/api/social/takenwith", async (req, res) => {
      return res.status(200).json(playerTaggedPhotos);
 });
 
-APP.post("/api/social/friendRequest", async (req, res) => {
+APP.post("/api/social/friendRequest", authenticateToken, async (req, res) => {
      var {target} = req.body;
 
      var sendingData = PullPlayerData(req.user.id);
@@ -482,7 +482,7 @@ APP.post("/api/social/friendRequest", async (req, res) => {
      res.status(200).send("Successfully sent friend request to player!");
 });
 
-APP.post("/api/social/acceptRequest", async (req, res) => {
+APP.post("/api/social/acceptRequest", authenticateToken, async (req, res) => {
      var {target} = req.body;
 
      var recievingData = PullPlayerData(req.user.id);
@@ -503,7 +503,7 @@ APP.post("/api/social/acceptRequest", async (req, res) => {
      res.status(200).send("Successfully added acquaintance.");
 });
 
-APP.post("/api/social/makeAcquaintance", async (req, res) => {
+APP.post("/api/social/makeAcquaintance", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -516,7 +516,7 @@ APP.post("/api/social/makeAcquaintance", async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/social/makeFriend", async (req, res) => {
+APP.post("/api/social/makeFriend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -529,7 +529,7 @@ APP.post("/api/social/makeFriend", async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/social/makeFavoriteFriend", async (req, res) => {
+APP.post("/api/social/makeFavoriteFriend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -542,7 +542,7 @@ APP.post("/api/social/makeFavoriteFriend", async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/social/removeFriend", async (req, res) => {
+APP.post("/api/social/removeFriend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 

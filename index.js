@@ -62,7 +62,7 @@ APP.get("/api/accounts/:id/public", async (req, res) => {
           const data = PullPlayerData(id_clean);
           return res.status(200).send(data.public);
      } else {
-          return res.status(404).send(`Account with ID of ${id} not found. Please check your request for errors.`);
+          return res.status(404).send(`Account with ID of ${id_clean} not found. Please check your request for errors.`);
      }
 });
 

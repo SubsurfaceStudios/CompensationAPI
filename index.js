@@ -6,19 +6,18 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const fileUpload = require('express-fileupload');
-const slowDown = require('express-slow-down');
+const RateLimit = require('express-rate-limit');
 const sanitize = require('sanitize-filename');
 
 const APP = express();
 APP.enable('trust proxy');
 
-const speedLimiter = slowDown({
-     windowMs: 1000,
-     delayAfter: 1,
-     delayMs: 5000
+var limiter = new RateLimit({
+     windowMs: 1*5*1000,
+     max: 5
 });
 
-APP.use(speedLimiter);
+APP.use(limiter);
 
 APP.use(express.json({
      limit: '50mb'

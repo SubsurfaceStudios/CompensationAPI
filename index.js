@@ -463,7 +463,7 @@ APP.get("/api/social/takenwith", async (req, res) => {
      return res.status(200).json(playerTaggedPhotos);
 });
 
-APP.post("/api/social/friendRequest", authenticateToken, async (req, res) => {
+APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
 
      var sendingData = PullPlayerData(req.user.id);
@@ -482,7 +482,7 @@ APP.post("/api/social/friendRequest", authenticateToken, async (req, res) => {
      res.status(200).send("Successfully sent friend request to player!");
 });
 
-APP.post("/api/social/acceptRequest", authenticateToken, async (req, res) => {
+APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
 
      var recievingData = PullPlayerData(req.user.id);
@@ -503,7 +503,7 @@ APP.post("/api/social/acceptRequest", authenticateToken, async (req, res) => {
      res.status(200).send("Successfully added acquaintance.");
 });
 
-APP.post("/api/social/makeAcquaintance", authenticateToken, async (req, res) => {
+APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -516,7 +516,7 @@ APP.post("/api/social/makeAcquaintance", authenticateToken, async (req, res) => 
      res.sendStatus(200);
 });
 
-APP.post("/api/social/makeFriend", authenticateToken, async (req, res) => {
+APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -529,7 +529,7 @@ APP.post("/api/social/makeFriend", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/social/makeFavoriteFriend", authenticateToken, async (req, res) => {
+APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -542,7 +542,7 @@ APP.post("/api/social/makeFavoriteFriend", authenticateToken, async (req, res) =
      res.sendStatus(200);
 });
 
-APP.post("/api/social/removeFriend", authenticateToken, async (req, res) => {
+APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      var sender = req.user.id;
 
@@ -552,6 +552,30 @@ APP.post("/api/social/removeFriend", authenticateToken, async (req, res) => {
      RemoveFriend(sender, target, true);
      RemoveFavoriteFriend(sender, target, true);
      res.sendStatus(200);
+});
+
+APP.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
+     const data = PullPlayerData(req.user.id);
+     return res.status(200).json(data.private.acquaintances);
+});
+
+APP.get("/api/social/friends", authenticateToken, async (req, res) => {
+     const data = PullPlayerData(req.user.id);
+     return res.status(200).json(data.private.friends);
+});
+
+APP.get("/api/social/favorite-friends", authenticateToken, async (req, res) => {
+     const data = PullPlayerData(req.user.id);
+     return res.status(200).json(data.private.favoriteFriends);
+});
+
+APP.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
+     const data = PullPlayerData(req.user.id);
+
+     const array1 = MergeArraysWithoutDuplication(data.private.acquaintances, data.private.friends);
+     const all = MergeArraysWithoutDuplication(array1, data.private.favoriteFriends);
+
+     return res.status(200).json(all);
 });
 
 //#endregion
@@ -930,6 +954,9 @@ function dispose_room_cache() {
 }
 //#endregion
 
+function MergeArraysWithoutDuplication(array1, array2) {
+     return array1.concat(array2.filter((item) => array1.indexOf(item) < 0));
+}
 APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
 //setInterval(dispose_room_cache, 300000);

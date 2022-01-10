@@ -187,20 +187,10 @@ APP.get("/api/global/:key", async (req, res) => {
 APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req, res) => {
     const { id } = req.params;
     let id_clean = sanitize(id);
-    var { title, description } = req.body;
+    var { template, params } = req.body;
 
-    let data = PullPlayerData(id_clean);
-
-    var notif = {
-          "type": "API Notification",
-          "title": title,
-          "description": description
-    }
-
-    data.notifications.push(notif);
-
-    PushPlayerData(id_clean, data);
-    auditLog(`Notified user ${id}.`);
+    NotifyPlayer(id, template, params);
+    auditLog(`Notified user ${id_clean}.`);
     return res.sendStatus(200);
 });
 
@@ -948,10 +938,6 @@ function ClearPlayerNotification(id, IndexOrData) {
 
      PushPlayerData(id, data);
 }
-
-function dispose_room_cache() {
-     fs.rmSync('data/cache/rooms/*', {recursive: true});
-}
 //#endregion
 
 function MergeArraysWithoutDuplication(array1, array2) {
@@ -959,6 +945,4 @@ function MergeArraysWithoutDuplication(array1, array2) {
 }
 APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
-//setInterval(dispose_room_cache, 300000);
-//Cache purge disabled, unnecessary and broken.
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);

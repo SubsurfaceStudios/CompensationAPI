@@ -183,16 +183,6 @@ APP.get("/api/global/:key", async (req, res) => {
      res.status(200).send(global[key]);
 });
 
-//Post a notification to a user.
-APP.post("/api/notifications/notify/:id", authenticateDeveloperToken, async (req, res) => {
-    const { id } = req.params;
-    let id_clean = sanitize(id);
-    var { template, params } = req.body;
-
-    NotifyPlayer(id, template, params);
-    auditLog(`Notified user ${id_clean}.`);
-    return res.sendStatus(200);
-});
 
 APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
      const id = req.user.id;

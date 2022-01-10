@@ -320,6 +320,7 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
      auditLog(`!MODERATION! User ${req.user.id} filed a report against user ${target} for the reason of ${reason}`);
      
      res.status(200).send("Report successfully applied. Thank you for helping keep Compensation VR safe.");
+     onPlayerReportedCallback(report);
 });
 
 APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req, res) => {
@@ -631,19 +632,7 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
      const { reason, duration } = req.body;
      const moderator = req.user;
 
-     let data = PullPlayerData(id);
-
-     const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
-     
-     const ban = {
-          reason: reason,
-          endTS: endTS,
-          moderator: moderator.id
-     };
-
-     await data.auth.bans.push(ban);
-
-     PushPlayerData(id_clean, data);
+     BanPlayer(id, reason, duration);
 
      auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`)
      res.status(200).send();
@@ -942,6 +931,42 @@ function ClearPlayerNotification(id, IndexOrData) {
 
 function MergeArraysWithoutDuplication(array1, array2) {
      return array1.concat(array2.filter((item) => array1.indexOf(item) < 0));
+}
+
+function onPlayerReportedCallback(reportData) {
+     var reportedData = PullPlayerData(reportData.reportedUser);
+     var reportingData = PullPlayerData(report.reportingUser);
+
+     if(
+          reportingData.private.availableTags.includes("Community Support") ||
+          reportingData.private.availableTags.includes("Community Support Team") ||
+          reportingData.private.availableTags.includes("Developer") ||
+          reportingData.private.availableTags.includes("Moderator") ||
+          reportingData.private.availableTags.includes("Founder")
+     ) {
+          BanPlayer(reportData.reportedUser, reportData.reason, 1, reportData.reportingUser);
+          auditLog(`!! MODERATOR ACTION !!   Moderator ${reportingData.nickname} (@${reportingData.username}) reported user ${reportedData.nickname} (@${reportedData.username}) for the reason of ${reportData.reason}, resulting in them being automatically timed out for 1 hour.`);
+     } else if (reportedData.auth.recievedReports.length >= config.timeout_at_report_count) {
+          BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.timeout_at_report_count} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
+          auditLog(`!! MODERATION ACTION !! User ${reportingData.nickname} (@${reportedData.username}) was timed out for 6 hours for recieving ${config.timeout_at_report_count} reports. Please investigate!`);
+     }
+}
+
+function BanPlayer(id, reason, duration, moderator) {
+     let id_clean = sanitize(id);
+     let data = PullPlayerData(id_clean);
+
+     const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
+     
+     const ban = {
+          reason: reason,
+          endTS: endTS,
+          moderator: moderator.id
+     };
+
+     data.auth.bans.push(ban);
+
+     PushPlayerData(id_clean, data);
 }
 APP.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");

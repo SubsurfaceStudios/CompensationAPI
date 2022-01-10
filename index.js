@@ -12,7 +12,7 @@ const sanitize = require('sanitize-filename');
 const APP = express();
 APP.enable('trust proxy');
 
-var limiter = new RateLimit({
+var limiter = RateLimit({
      windowMs: 1*5*1000,
      max: 5
 });

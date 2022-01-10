@@ -802,7 +802,7 @@ function NotifyPlayer(id, template, params) {
 
      const notification = {
           template: template,
-          params: params
+          parameters: params
      }
      data.notifications.push(notification);
 

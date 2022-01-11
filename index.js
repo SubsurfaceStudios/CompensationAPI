@@ -470,7 +470,6 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      target = toString(target);
 
      var recievingData = PullPlayerData(req.user.id);
-     var sendingData = PullPlayerData(target);
 
      if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
 

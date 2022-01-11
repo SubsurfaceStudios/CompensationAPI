@@ -448,6 +448,7 @@ APP.get("/api/social/takenwith", async (req, res) => {
 
 APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     target = toString(target);
 
      var sendingData = PullPlayerData(req.user.id);
      var recievingData = PullPlayerData(target);

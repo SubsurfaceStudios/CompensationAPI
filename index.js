@@ -762,7 +762,7 @@ function auditLog(message) {
 //#region Helper Functions
 function PullPlayerData(id) {
      try {
-          let id_clean = sanitize(id);
+          let id_clean = parseInt(id);
           var data = JSON.parse(fs.readFileSync(`./data/accounts/${id_clean}.json`));
           return data;
      } catch (exception) {

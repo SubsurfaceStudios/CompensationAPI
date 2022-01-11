@@ -10,11 +10,13 @@ const RateLimit = require('express-rate-limit');
 const sanitize = require('sanitize-filename');
 
 const APP = express();
-APP.enable('trust proxy');
+APP.set('trust proxy', 1);
 
 var limiter = RateLimit({
-     windowMs: 1*5*1000,
-     max: 60
+     windowMs: 1*60*1000,
+     max: 100,
+     standardHeaders: true,
+     legacyHeaders: false
 });
 
 APP.use(limiter);

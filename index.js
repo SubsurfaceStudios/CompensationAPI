@@ -772,7 +772,7 @@ function PullPlayerData(id) {
 }
 function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");
-     let id_clean = sanitize(id);
+     let id_clean = parseInt(id);
      fs.writeFileSync(`./data/accounts/${id_clean}.json`, data);
 }
 

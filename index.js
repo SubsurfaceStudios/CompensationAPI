@@ -473,7 +473,7 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
 
      var notificationsFiltered = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.sendingPlayer == target);
 
-     if(Array.length(notificationsFiltered) < 1) return res.status(400).send("You do not have a pending friend request from this player.");
+     if(notificationsFiltered.length < 1) return res.status(400).send("You do not have a pending friend request from this player.");
      
      var index = recievingData.notifications.findIndex(item => item == notificationsFiltered[0]);
 

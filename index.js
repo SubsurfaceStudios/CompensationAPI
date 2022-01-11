@@ -448,7 +448,7 @@ APP.get("/api/social/takenwith", async (req, res) => {
 
 APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = toString(target);
+     target = target.toString();
 
      var sendingData = PullPlayerData(req.user.id);
      var recievingData = PullPlayerData(target);
@@ -468,7 +468,7 @@ APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = toString(target);
+     target = target.toString();
 
      var recievingData = PullPlayerData(req.user.id);
 
@@ -489,7 +489,7 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = toString(target);
+     target = target.toString();
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -503,7 +503,7 @@ APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) =>
 
 APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = toString(target);
+     target = target.toString();
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -517,7 +517,7 @@ APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = toString(target);
+     target = target.toString();
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -531,7 +531,7 @@ APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res)
 
 APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = toString(target);
+     target = target.toString();
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -646,14 +646,6 @@ APP.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
      fs.writeFileSync("./data/global/global.json", JSON.stringify(global, null, "    "));
      auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
      res.status(200).send();
-});
-
-APP.patch("/api/dev/REGEN_SECRETS", authenticateDeveloperToken, async(req, res) => {
-     const ACCESS_TOKEN_SECRET = crypto.randomBytes(64).toString('hex');
-
-     process.env.ACCESS_TOKEN_SECRET = ACCESS_TOKEN_SECRET;
-
-     auditLog(`!CRITICAL DEVELOPER ACTION! DEVELOPER \"${req.user.username}\" HAS REGENRATED ALL TOKEN SECRETS! ANY CURRENTLY ACTIVE TOKENS ARE NOW INVALID!`);
 });
 
 

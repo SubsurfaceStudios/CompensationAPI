@@ -501,6 +501,7 @@ APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) =>
 
 APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     target = toString(target);
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -514,6 +515,7 @@ APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     target = toString(target);
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -527,6 +529,7 @@ APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res)
 
 APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     target = toString(target);
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");

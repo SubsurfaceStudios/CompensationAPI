@@ -467,6 +467,7 @@ APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     target = toString(target);
 
      var recievingData = PullPlayerData(req.user.id);
      var sendingData = PullPlayerData(target);
@@ -488,6 +489,7 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     target = toString(target);
      var sender = req.user.id;
 
      if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");

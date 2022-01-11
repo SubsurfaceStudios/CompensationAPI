@@ -473,7 +473,7 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
 
      if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
 
-     var notificationsFiltered = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.sendingPlayer == target);
+     var notificationsFiltered = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
 
      if(notificationsFiltered.length < 1) return res.status(400).send("You do not have a pending friend request from this player.");
      

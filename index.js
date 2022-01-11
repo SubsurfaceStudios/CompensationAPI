@@ -767,7 +767,7 @@ function auditLog(message) {
 //#region Helper Functions
 function PullPlayerData(id) {
      try {
-          let id_clean = parseInt(toString(id));
+          let id_clean = sanitize(id.toString());
           var data = JSON.parse(fs.readFileSync(`./data/accounts/${id_clean}.json`));
           return data;
      } catch (exception) {
@@ -777,7 +777,7 @@ function PullPlayerData(id) {
 }
 function PushPlayerData(id, data) {
      data = JSON.stringify(data, null, "     ");
-     let id_clean = parseInt(toString(id));
+     let id_clean = sanitize(id.toString());
      fs.writeFileSync(`./data/accounts/${id_clean}.json`, data);
 }
 

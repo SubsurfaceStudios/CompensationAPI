@@ -777,7 +777,7 @@ function PushPlayerData(id, data) {
 }
 
 function NotifyPlayer(id, template, params) {
-     if(!(notificationTemplates.values.includes(template))) return false;
+     if(!(Object.values(notificationTemplates).includes(template))) return false;
      var data = PullPlayerData(id);
      if(data == null) return false;
 

@@ -789,34 +789,34 @@ function NotifyPlayer(id, template, params) {
 }
 function ArePlayersAnyFriendType(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2) || 
-          data.private.friends.includes(player2) || 
-          data.private.favoriteFriends.includes(player2);
+     return data.private.acquaintances.includes(player2.toString()) || 
+          data.private.friends.includes(player2.toString()) || 
+          data.private.favoriteFriends.includes(player2.toString());
 }
 
 function ArePlayersAcquantances(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2);
+     return data.private.acquaintances.includes(player2.toString());
 }
 
 function ArePlayersFriends(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.friends.includes(player2);
+     return data.private.friends.includes(player2.toString());
 }
 
 function ArePlayersFavoriteFriends(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.favoriteFriends.includes(player2);
+     return data.private.favoriteFriends.includes(player2.toString());
 }
 
 function RemoveAcquaintance(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     var index1 = data1.private.acquaintances.findIndex(item => item == player2);
+     var index1 = data1.private.acquaintances.findIndex(item => item == player2.toString());
      if(index1 > 0) data1.private.acquaintances.splice(index1);
 
-     var index2 = data2.private.acquaintances.findIndex(item => item == player1);
+     var index2 = data2.private.acquaintances.findIndex(item => item == player1.toString());
      if(index2 > 0 && both) data2.private.acquaintances.splice(index2);
 
      PushPlayerData(player1, data1);
@@ -827,10 +827,10 @@ function RemoveFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     var index1 = data1.private.friends.findIndex(item => item == player2);
+     var index1 = data1.private.friends.findIndex(item => item == player2.toString());
      if(index1 > 0) data1.private.friends.splice(index1);
 
-     var index2 = data2.private.friends.findIndex(item => item == player1);
+     var index2 = data2.private.friends.findIndex(item => item == player1.toString());
      if(index2 > 0 && both) data2.private.friends.splice(index2);
 
      PushPlayerData(player1, data1);
@@ -841,10 +841,10 @@ function RemoveFavoriteFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     var index1 = data1.private.favoriteFriends.findIndex(item => item == player2);
+     var index1 = data1.private.favoriteFriends.findIndex(item => item == player2.toString());
      if(index1 > 0) data1.private.favoriteFriends.splice(index1);
 
-     var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
+     var index2 = data2.private.favoriteFriends.findIndex(item => item == player1.toString());
      if(index2 > 0 && both) data2.private.favoriteFriends.splice(index2);
 
      PushPlayerData(player1, data1);
@@ -855,13 +855,13 @@ function AddAcquaintance(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     if(!data1.private.acquaintances.includes(player2)) 
+     if(!data1.private.acquaintances.includes(player2.toString())) 
      {
-          data1.private.acquaintances.push(player2);
+          data1.private.acquaintances.push(player2.toString());
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.acquaintances.includes(player1) && both) {
-          data2.private.acquaintances.push(player1);
+     if(!data2.private.acquaintances.includes(player1.toString()) && both) {
+          data2.private.acquaintances.push(player1.toString());
           PushPlayerData(player2, data2);
      }
 }
@@ -870,13 +870,13 @@ function AddFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     if(!data1.private.friends.includes(player2)) 
+     if(!data1.private.friends.includes(player2.toString())) 
      {
-          data1.private.friends.push(player2);
+          data1.private.friends.push(player2.toString());
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.friends.includes(player1) && both) {
-          data2.private.friends.push(player1);
+     if(!data2.private.friends.includes(player1.toString()) && both) {
+          data2.private.friends.push(player1.toString());
           PushPlayerData(player2, data2);
      }
 }
@@ -885,13 +885,13 @@ function AddFavoriteFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     if(!data1.private.favoriteFriends.includes(player2)) 
+     if(!data1.private.favoriteFriends.includes(player2.toString())) 
      {
-          data1.private.favoriteFriends.push(player2);
+          data1.private.favoriteFriends.push(player2.toString());
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.favoriteFriends.includes(player1) && both) {
-          data2.private.favoriteFriends.push(player1);
+     if(!data2.private.favoriteFriends.includes(player1.toString()) && both) {
+          data2.private.favoriteFriends.push(player1.toString());
           PushPlayerData(player2, data2);
      }
 }

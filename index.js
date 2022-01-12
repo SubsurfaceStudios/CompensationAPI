@@ -191,7 +191,7 @@ APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
 
      const data = PullPlayerData(id);
 
-     if(data.notifications == null) return res.status(200).send("User has no pending notifications.");
+     if(data.notifications == null) return res.status(200).send("[]");
 
      res.status(200).json(data.notifications);
 });
@@ -473,14 +473,16 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      var recievingData = PullPlayerData(req.user.id);
 
      if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
-
-     var notificationsFiltered = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
-
-     if(notificationsFiltered.length < 1) return res.status(400).send("You do not have a pending friend request from this player.");
+     var filteredNotifications = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
      
-     var index = recievingData.notifications.findIndex(item => item == notificationsFiltered[0]);
+     if(filteredNotifications.length < 1) return res.status(400).send("You do not have any friend requests from this player. Ask them to send you one.");
 
-     ClearPlayerNotification(req.user.id, index);
+     for (let index = 0; index < filteredNotifications.length; index++) {
+          let itemIndex = recievingData.notifications.findIndex(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
+          recievingData.notifications.splice(itemIndex);
+     }
+
+     PushPlayerData(req.user.id, recievingData);
 
      AddAcquaintance(req.user.id, target, true);
 
@@ -813,11 +815,11 @@ function RemoveAcquaintance(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     var index1 = data1.private.acquaintances.findIndex(item => item == player2.toString());
-     if(index1 > 0) data1.private.acquaintances.splice(index1);
+     var index1 = data1.private.acquaintances.findIndex(item => item == player2);
+     if(index1 >= 0) data1.private.acquaintances.splice(index1);
 
-     var index2 = data2.private.acquaintances.findIndex(item => item == player1.toString());
-     if(index2 > 0 && both) data2.private.acquaintances.splice(index2);
+     var index2 = data2.private.acquaintances.findIndex(item => item == player1);
+     if(index2 >= 0 && both) data2.private.acquaintances.splice(index2);
 
      PushPlayerData(player1, data1);
      PushPlayerData(player2, data2);
@@ -827,11 +829,11 @@ function RemoveFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     var index1 = data1.private.friends.findIndex(item => item == player2.toString());
-     if(index1 > 0) data1.private.friends.splice(index1);
+     var index1 = data1.private.friends.findIndex(item => item == player2);
+     if(index1 >= 0) data1.private.friends.splice(index1);
 
-     var index2 = data2.private.friends.findIndex(item => item == player1.toString());
-     if(index2 > 0 && both) data2.private.friends.splice(index2);
+     var index2 = data2.private.friends.findIndex(item => item == player1);
+     if(index2 >= 0 && both) data2.private.friends.splice(index2);
 
      PushPlayerData(player1, data1);
      PushPlayerData(player2, data2);
@@ -841,11 +843,11 @@ function RemoveFavoriteFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     var index1 = data1.private.favoriteFriends.findIndex(item => item == player2.toString());
-     if(index1 > 0) data1.private.favoriteFriends.splice(index1);
+     var index1 = data1.private.favoriteFriends.findIndex(item => item == player2);
+     if(index1 >= 0) data1.private.favoriteFriends.splice(index1);
 
-     var index2 = data2.private.favoriteFriends.findIndex(item => item == player1.toString());
-     if(index2 > 0 && both) data2.private.favoriteFriends.splice(index2);
+     var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
+     if(index2 >= 0 && both) data2.private.favoriteFriends.splice(index2);
 
      PushPlayerData(player1, data1);
      PushPlayerData(player2, data2);

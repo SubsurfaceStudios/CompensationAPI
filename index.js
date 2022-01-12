@@ -546,17 +546,35 @@ APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
 
 APP.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
      const data = PullPlayerData(req.user.id);
-     return res.status(200).json(data.private.acquaintances);
+     var dictionary = {};
+     for (let index = 0; index < data.private.acquaintances.length; index++) {
+          const element = data.private.acquaintances[index];
+          let player = PullPlayerData(element);
+          dictionary[element] = player.public;
+     }
+     return res.status(200).json(dictionary);
 });
 
 APP.get("/api/social/friends", authenticateToken, async (req, res) => {
      const data = PullPlayerData(req.user.id);
-     return res.status(200).json(data.private.friends);
+     var dictionary = {};
+     for (let index = 0; index < data.private.friends.length; index++) {
+          const element = data.private.friends[index];
+          let player = PullPlayerData(element);
+          dictionary[element] = player.public;
+     }
+     return res.status(200).json(dictionary);
 });
 
 APP.get("/api/social/favorite-friends", authenticateToken, async (req, res) => {
      const data = PullPlayerData(req.user.id);
-     return res.status(200).json(data.private.favoriteFriends);
+     var dictionary = {};
+     for (let index = 0; index < data.private.favoriteFriends.length; index++) {
+          const element = data.private.favoriteFriends[index];
+          let player = PullPlayerData(element);
+          dictionary[element] = player.public;
+     }
+     return res.status(200).json(dictionary);
 });
 
 APP.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
@@ -565,7 +583,13 @@ APP.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
      const array1 = MergeArraysWithoutDuplication(data.private.acquaintances, data.private.friends);
      const all = MergeArraysWithoutDuplication(array1, data.private.favoriteFriends);
 
-     return res.status(200).json(all);
+     var dictionary = {};
+     for (let index = 0; index < all.length; index++) {
+          const element = all[index];
+          let player = PullPlayerData(element);
+          dictionary[element] = player.public;
+     }
+     return res.status(200).json(dictionary);
 });
 
 //#endregion

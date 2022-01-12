@@ -926,7 +926,7 @@ function MergeArraysWithoutDuplication(array1, array2) {
 
 function onPlayerReportedCallback(reportData) {
      var reportedData = PullPlayerData(reportData.reportedUser);
-     var reportingData = PullPlayerData(report.reportingUser);
+     var reportingData = PullPlayerData(reportData.reportingUser);
 
      if(
           reportingData.private.availableTags.includes("Community Support") ||

@@ -499,7 +499,7 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
 
 APP.get("/api/social/sent-requests", authenticateToken, async (req, res) => {
      var data = PullPlayerData(req.user.id);
-     req.status(200).json(data.private.friendRequestsSent);  
+     res.status(200).json(data.private.friendRequestsSent);  
 });
 
 APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {

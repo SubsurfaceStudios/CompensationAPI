@@ -453,7 +453,8 @@ APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      var sendingData = PullPlayerData(req.user.id);
      var recievingData = PullPlayerData(target);
 
-     if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
+     if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.");
+     if(sendingData.private.friendRequestsSent.includes(target)) return res.status(400).send("You have already sent a friend request to this player, duplicate requests are not permitted.");
 
      NotifyPlayer(target, notificationTemplates.friendRequest, {
           "sendingPlayer": req.user.id,

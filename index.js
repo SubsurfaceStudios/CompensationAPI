@@ -504,6 +504,7 @@ APP.get("/api/social/sent-requests", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
@@ -518,6 +519,7 @@ APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) =>
 
 APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
@@ -532,6 +534,7 @@ APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
 
 APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
@@ -546,6 +549,7 @@ APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res)
 
 APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
+     if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 

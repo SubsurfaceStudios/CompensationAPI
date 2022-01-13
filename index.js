@@ -561,6 +561,38 @@ APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
+APP.post("/api/social/decline-request", authenticateToken, async (req, res) => {
+     var {target} = req.body;
+     if(!target) return res.status(400).send("You did not specify a target!");
+     target = target.toString();
+     const sender = req.user.id;
+
+     if(ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");
+
+     var sendingData = PullPlayerData(target);
+     if(sendingData == null) return res.status(404).send("That user does not exist!");
+
+     var recievingData = PullPlayerData(sender);
+     
+     if(!sendingData.private.friendRequestsSent.includes(sender)) return res.status(400).send("You do not have a pending friend request from this player!");
+
+     while(sendingData.private.friendRequestsSent.includes(sender)) {
+          const index = sendingData.private.friendRequestsSent.findIndex(item => item == sender);
+          sendingData.private.friendRequestsSent.splice(index);
+     }
+     PushPlayerData(target, sendingData);
+
+     var temp = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
+     for (let index = 0; index < temp.length; index++) {
+          let itemIndex = recievingData.notifications.findIndex(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
+          if(itemIndex >= 0) recievingData.notifications.splice(itemIndex);
+          else break;
+     }
+
+     PushPlayerData(sender, recievingData);
+     res.status(200).send("Declined friend request.");
+});
+
 APP.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
      const data = PullPlayerData(req.user.id);
      var dictionary = {};

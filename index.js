@@ -464,6 +464,8 @@ APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      });
 
      res.status(200).send("Successfully sent friend request to player!");
+     sendingData.private.friendRequestsSent.push(target);
+     PushPlayerData(req.user.id, sendingData);
 });
 
 APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
@@ -487,6 +489,17 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      AddAcquaintance(req.user.id, target, true);
 
      res.status(200).send("Successfully added acquaintance.");
+
+     var sendingData = PullPlayerData(target);
+     
+     var index = sendingData.private.friendRequestsSent.findIndex(item => item == req.user.id);
+     if(index >= 0) sendingData.private.friendRequestsSent.splice(index);
+     PushPlayerData(target, sendingData);
+});
+
+APP.get("/api/social/sent-requests", authenticateToken, async (req, res) => {
+     var data = PullPlayerData(req.user.id);
+     req.status(200).json(data.private.friendRequestsSent);  
 });
 
 APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {

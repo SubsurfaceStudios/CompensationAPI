@@ -9,6 +9,7 @@ const RateLimit = require('express-rate-limit');
 const sanitize = require('sanitize-filename');
 
 const helpers = require('./helpers');
+const middleware = require('./middleware');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -50,7 +51,7 @@ app.get("/", async (req, res) => {
 });
 
 //Check if a token is valid as developer.
-app.get("/api/dev/check", authenticateDeveloperToken, async (req, res) => {
+app.get("/api/dev/check", middleware.authenticateDeveloperToken, async (req, res) => {
      return res.status(200).send("This token is verified as Developer.");
 });
 
@@ -74,7 +75,7 @@ app.get("/api/accounts/:id/public", async (req, res) => {
 });
 
 //(Authorized) Call to get the private account data of a user.
-app.get("/api/accounts/:id/private", authenticateToken, async(req, res) => {
+app.get("/api/accounts/:id/private", middleware.authenticateToken, async(req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
 
@@ -165,7 +166,7 @@ app.post("/api/auth/create", async (req, res) => {
      res.sendStatus(200);
 });
 
-app.post("/api/auth/check", authenticateToken, async (req, res) => {
+app.post("/api/auth/check", middleware.authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 
@@ -191,7 +192,7 @@ app.get("/api/global/:key", async (req, res) => {
 });
 
 
-app.get("/api/notifications/get/", authenticateToken, async (req, res) => {
+app.get("/api/notifications/get/", middleware.authenticateToken, async (req, res) => {
      const id = req.user.id;
 
      const data = helpers.PullPlayerData(id);
@@ -201,7 +202,7 @@ app.get("/api/notifications/get/", authenticateToken, async (req, res) => {
      res.status(200).json(data.notifications);
 });
 
-app.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
+app.post("/api/accounts/nickname", middleware.authenticateToken, async (req, res) => {
      const { nickname } = req.body;
      var data = await helpers.PullPlayerData(req.user.id);
 
@@ -217,7 +218,7 @@ app.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 
-app.post("/api/accounts/bio", authenticateToken, async (req, res) => {
+app.post("/api/accounts/bio", middleware.authenticateToken, async (req, res) => {
      var { bio } = req.body;
 
      var data = await helpers.PullPlayerData(req.user.id);
@@ -237,7 +238,7 @@ app.post("/api/accounts/bio", authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 
-app.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
+app.post("/api/accounts/pronouns", middleware.authenticateToken, async (req, res) => {
      const {pronouns} = req.body;
 
      var data = await helpers.PullPlayerData(req.user.id);
@@ -247,7 +248,7 @@ app.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
      helpers.PushPlayerData(req.user.id, data);
 });
 
-app.post("/api/accounts/tag", authenticateToken, async (req, res) => {
+app.post("/api/accounts/tag", middleware.authenticateToken, async (req, res) => {
      const {tag} = req.body;
      
      var data = await helpers.PullPlayerData(req.user.id);
@@ -261,7 +262,7 @@ app.post("/api/accounts/tag", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
-app.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
+app.post("/api/accounts/outfit", middleware.authenticateToken, async (req, res) => {
      var {type, id} = req.body;
 
      id = parseInt(id);
@@ -288,7 +289,7 @@ app.get("/api/catalog", async (req, res) => {
      }
 });
 
-app.post("/api/accounts/report", authenticateToken, async (req, res) => {
+app.post("/api/accounts/report", middleware.authenticateToken, async (req, res) => {
      if(!(Object.keys(req.body).includes("target") && Object.keys(req.body).includes("reason"))) return res.status(400).send("Insufficient data sent!");
      const { target, reason } = req.body;
 
@@ -320,7 +321,7 @@ app.post("/api/accounts/report", authenticateToken, async (req, res) => {
      onPlayerReportedCallback(report);
 });
 
-app.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req, res) => {
+app.post("/img/upload/:others/:roomId/:roomName", middleware.authenticateToken, async (req, res) => {
      var timestamp = Date.now();
      var dir = fs.readdirSync("./data/images/");
      
@@ -451,14 +452,14 @@ app.get("/api/social/takenwith", async (req, res) => {
      return res.status(200).json(playerTaggedPhotos);
 });
 
-app.post("/api/social/friend-request", authenticateToken, async (req, res) => {
+app.post("/api/social/friend-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      target = target.toString();
 
      var sendingData = helpers.PullPlayerData(req.user.id);
      var recievingData = helpers.PullPlayerData(target);
 
-     if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.");
+     if(helpers.ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.");
      if(sendingData.private.friendRequestsSent.includes(target)) return res.status(400).send("You have already sent a friend request to this player, duplicate requests are not permitted.");
 
      helpers.NotifyPlayer(target, notificationTemplates.friendRequest, {
@@ -474,13 +475,13 @@ app.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      helpers.PushPlayerData(req.user.id, sendingData);
 });
 
-app.post("/api/social/accept-request", authenticateToken, async (req, res) => {
+app.post("/api/social/accept-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      target = target.toString();
 
      var recievingData = helpers.PullPlayerData(req.user.id);
 
-     if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
+     if(helpers.ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
      var filteredNotifications = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
      
      if(filteredNotifications.length < 1) return res.status(400).send("You do not have any friend requests from this player. Ask them to send you one.");
@@ -492,7 +493,7 @@ app.post("/api/social/accept-request", authenticateToken, async (req, res) => {
 
      helpers.PushPlayerData(req.user.id, recievingData);
 
-     AddAcquaintance(req.user.id, target, true);
+     helpers.AddAcquaintance(req.user.id, target, true);
 
      res.status(200).send("Successfully added acquaintance.");
 
@@ -503,77 +504,77 @@ app.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      helpers.PushPlayerData(target, sendingData);
 });
 
-app.get("/api/social/sent-requests", authenticateToken, async (req, res) => {
+app.get("/api/social/sent-requests", middleware.authenticateToken, async (req, res) => {
      var data = helpers.PullPlayerData(req.user.id);
      res.status(200).json(data.private.friendRequestsSent);  
 });
 
-app.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
+app.post("/api/social/make-acquaintance", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
-     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+     if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveFriend(sender, target, false);
-     RemoveFavoriteFriend(sender, target, false);
+     helpers.RemoveFriend(sender, target, false);
+     helpers.RemoveFavoriteFriend(sender, target, false);
 
-     AddAcquaintance(sender, target, false);
+     helpers.AddAcquaintance(sender, target, false);
      res.sendStatus(200);
 });
 
-app.post("/api/social/make-friend", authenticateToken, async (req, res) => {
+app.post("/api/social/make-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
-     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+     if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveAcquaintance(sender, target, false);
-     RemoveFavoriteFriend(sender, target, false);
+     helpers.RemoveAcquaintance(sender, target, false);
+     helpers.RemoveFavoriteFriend(sender, target, false);
 
-     AddFriend(sender, target, false);
+     helpers.AddFriend(sender, target, false);
      res.sendStatus(200);
 });
 
-app.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
+app.post("/api/social/make-favorite-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
-     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+     if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveAcquaintance(sender, target, false);
-     RemoveFriend(sender, target, false);
+     helpers.RemoveAcquaintance(sender, target, false);
+     helpers.RemoveFriend(sender, target, false);
 
-     AddFavoriteFriend(sender, target, false);
+     helpers.AddFavoriteFriend(sender, target, false);
      res.sendStatus(200);
 });
 
-app.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
+app.post("/api/social/remove-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      var sender = req.user.id;
 
-     if(!ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
+     if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
 
-     RemoveAcquaintance(sender, target, true);
-     RemoveFriend(sender, target, true);
-     RemoveFavoriteFriend(sender, target, true);
+     helpers.RemoveAcquaintance(sender, target, true);
+     helpers.RemoveFriend(sender, target, true);
+     helpers.RemoveFavoriteFriend(sender, target, true);
      res.sendStatus(200);
 });
 
-app.post("/api/social/decline-request", authenticateToken, async (req, res) => {
+app.post("/api/social/decline-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
      const sender = req.user.id;
 
-     if(ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");
+     if(helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");
 
      var sendingData = helpers.PullPlayerData(target);
      if(sendingData == null) return res.status(404).send("That user does not exist!");
@@ -599,7 +600,7 @@ app.post("/api/social/decline-request", authenticateToken, async (req, res) => {
      res.status(200).send("Declined friend request.");
 });
 
-app.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
+app.get("/api/social/acquaintances", middleware.authenticateToken, async (req, res) => {
      const data = helpers.PullPlayerData(req.user.id);
      var dictionary = {};
      for (let index = 0; index < data.private.acquaintances.length; index++) {
@@ -610,7 +611,7 @@ app.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
      return res.status(200).json(dictionary);
 });
 
-app.get("/api/social/friends", authenticateToken, async (req, res) => {
+app.get("/api/social/friends", middleware.authenticateToken, async (req, res) => {
      const data = helpers.PullPlayerData(req.user.id);
      var dictionary = {};
      for (let index = 0; index < data.private.friends.length; index++) {
@@ -621,7 +622,7 @@ app.get("/api/social/friends", authenticateToken, async (req, res) => {
      return res.status(200).json(dictionary);
 });
 
-app.get("/api/social/favorite-friends", authenticateToken, async (req, res) => {
+app.get("/api/social/favorite-friends", middleware.authenticateToken, async (req, res) => {
      const data = helpers.PullPlayerData(req.user.id);
      var dictionary = {};
      for (let index = 0; index < data.private.favoriteFriends.length; index++) {
@@ -632,7 +633,7 @@ app.get("/api/social/favorite-friends", authenticateToken, async (req, res) => {
      return res.status(200).json(dictionary);
 });
 
-app.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
+app.get("/api/social/all-friend-types", middleware.authenticateToken, async (req, res) => {
      const data = helpers.PullPlayerData(req.user.id);
 
      const array1 = MergeArraysWithoutDuplication(data.private.acquaintances, data.private.friends);
@@ -660,7 +661,7 @@ app.get("/api/analytics/accountCount", async (req, res) => {
 //#region Developer-only API calls
 
 //Modify a user's currency balance.
-app.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/accounts/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;
@@ -682,7 +683,7 @@ app.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async 
 });
 
 //Set a user's currency balance.
-app.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/accounts/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;
@@ -704,7 +705,7 @@ app.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (re
 });
 
 //Ban a user's account
-app.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/accounts/:id/ban", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { reason, duration } = req.body;
@@ -716,7 +717,7 @@ app.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
      res.status(200).send();
 });
 
-app.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, res) => {
      const { key } = req.params;
      const { value } = req.body;
 
@@ -757,71 +758,7 @@ function getAccountCount() {
      return files.length - 1;
 }
 
-function authenticateToken(req, res, next) {
-     const authHeader = req.headers['authorization'];
-     const token = authHeader && authHeader.split(" ")[1];
 
-     if(token == null) return res.sendStatus(401);
-
-     //then we need to authenticate that token in this middleware and return a user
-     try
-     {
-          const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-          req.user = tokenData;
-
-          const data = helpers.PullPlayerData(tokenData.id);
-
-          for (let index = 0; index < data.auth.bans.length; index++) {
-               const element = data.auth.bans[index];
-               
-               if(element.endTS > Date.now()) return res.status(403).send({
-                    message: "USER IS BANNED", 
-                    endTimeStamp: element.endTS, 
-                    reason: element.reason
-               });
-          }
-          next();
-     }
-     catch
-     {
-          return res.status(403).send("Invalid or expired authorization token.")
-     }
-}
-
-function authenticateDeveloperToken(req, res, next) {
-     const authHeader = req.headers['authorization'];
-     const token = authHeader && authHeader.split(" ")[1];
-
-     if(token == null) return res.sendStatus(401);
-
-     //then we need to authenticate that token in this middleware and return a user
-     try
-     {
-          const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-          req.user = tokenData;
-
-          const data = helpers.PullPlayerData(tokenData.id);
-
-          for (let index = 0; index < data.auth.bans.length; index++) {
-               const element = auth.bans[index];
-               
-               if(element.endTS > Date.now()) return res.status(403).send({
-                    message: "USER IS BANNED", 
-                    endTimeStamp: element.endTS, 
-                    reason: element.reason
-               });
-               console.log(element);
-          }
-
-          if(!tokenData.developer) return res.status(403).send("Provided token is not owned by a developer!");
-
-          next();
-     }
-     catch
-     {
-          return res.status(403).send("Invalid or expired authorization token.")
-     }
-}
 
 function auditLog(message) {
      const file = fs.readFileSync("./data/audit.json");
@@ -839,138 +776,6 @@ function auditLog(message) {
 
 //#region Helper Functions
 
-
-
-
-function ArePlayersAnyFriendType(player1, player2) {
-     var data = helpers.PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2.toString()) || 
-          data.private.friends.includes(player2.toString()) || 
-          data.private.favoriteFriends.includes(player2.toString());
-}
-
-function ArePlayersAcquantances(player1, player2) {
-     var data = helpers.PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2.toString());
-}
-
-function ArePlayersFriends(player1, player2) {
-     var data = helpers.PullPlayerData(player1);
-     return data.private.friends.includes(player2.toString());
-}
-
-function ArePlayersFavoriteFriends(player1, player2) {
-     var data = helpers.PullPlayerData(player1);
-     return data.private.favoriteFriends.includes(player2.toString());
-}
-
-function RemoveAcquaintance(player1, player2, both) {
-     var data1 = helpers.PullPlayerData(player1);
-     var data2 = helpers.PullPlayerData(player2);
-
-     var index1 = data1.private.acquaintances.findIndex(item => item == player2);
-     if(index1 >= 0) data1.private.acquaintances.splice(index1);
-
-     var index2 = data2.private.acquaintances.findIndex(item => item == player1);
-     if(index2 >= 0 && both) data2.private.acquaintances.splice(index2);
-
-     helpers.PushPlayerData(player1, data1);
-     helpers.PushPlayerData(player2, data2);
-}
-
-function RemoveFriend(player1, player2, both) {
-     var data1 = helpers.PullPlayerData(player1);
-     var data2 = helpers.PullPlayerData(player2);
-
-     var index1 = data1.private.friends.findIndex(item => item == player2);
-     if(index1 >= 0) data1.private.friends.splice(index1);
-
-     var index2 = data2.private.friends.findIndex(item => item == player1);
-     if(index2 >= 0 && both) data2.private.friends.splice(index2);
-
-     helpers.PushPlayerData(player1, data1);
-     helpers.PushPlayerData(player2, data2);
-}
-
-function RemoveFavoriteFriend(player1, player2, both) {
-     var data1 = helpers.PullPlayerData(player1);
-     var data2 = helpers.PullPlayerData(player2);
-
-     var index1 = data1.private.favoriteFriends.findIndex(item => item == player2);
-     if(index1 >= 0) data1.private.favoriteFriends.splice(index1);
-
-     var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
-     if(index2 >= 0 && both) data2.private.favoriteFriends.splice(index2);
-
-     helpers.PushPlayerData(player1, data1);
-     helpers.PushPlayerData(player2, data2);
-}
-
-function AddAcquaintance(player1, player2, both) {
-     var data1 = helpers.PullPlayerData(player1);
-     var data2 = helpers.PullPlayerData(player2);
-
-     if(!data1.private.acquaintances.includes(player2.toString())) 
-     {
-          data1.private.acquaintances.push(player2.toString());
-          helpers.PushPlayerData(player1, data1);
-     }
-     if(!data2.private.acquaintances.includes(player1.toString()) && both) {
-          data2.private.acquaintances.push(player1.toString());
-          helpers.PushPlayerData(player2, data2);
-     }
-}
-
-function AddFriend(player1, player2, both) {
-     var data1 = helpers.PullPlayerData(player1);
-     var data2 = helpers.PullPlayerData(player2);
-
-     if(!data1.private.friends.includes(player2.toString())) 
-     {
-          data1.private.friends.push(player2.toString());
-          helpers.PushPlayerData(player1, data1);
-     }
-     if(!data2.private.friends.includes(player1.toString()) && both) {
-          data2.private.friends.push(player1.toString());
-          helpers.PushPlayerData(player2, data2);
-     }
-}
-
-function AddFavoriteFriend(player1, player2, both) {
-     var data1 = helpers.PullPlayerData(player1);
-     var data2 = helpers.PullPlayerData(player2);
-
-     if(!data1.private.favoriteFriends.includes(player2.toString())) 
-     {
-          data1.private.favoriteFriends.push(player2.toString());
-          helpers.PushPlayerData(player1, data1);
-     }
-     if(!data2.private.favoriteFriends.includes(player1.toString()) && both) {
-          data2.private.favoriteFriends.push(player1.toString());
-          helpers.PushPlayerData(player2, data2);
-     }
-}
-
-function ClearPlayerNotification(id, IndexOrData) {
-     var data = helpers.PullPlayerData(id);
-
-
-     var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
-
-     if(mode == "id") {
-          data.notifications = data.notifications.splice(IndexOrData);
-     } else {
-          if(data.notifications.includes(IndexOrData)) {
-               while (data.notifications.includes(IndexOrData)) {
-                    var index = data.notifications.findIndex(item => item == IndexOrData);
-                    if(index > 0) data.notifications = data.notifications.splice(index);
-                    else break;
-               }
-          }
-     }
-
-     helpers.PushPlayerData(id, data);
-}
 //#endregion
 
 function MergeArraysWithoutDuplication(array1, array2) {

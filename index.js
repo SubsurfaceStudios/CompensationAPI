@@ -1,5 +1,4 @@
 require('dotenv').config();
-
 const express = require('express');
 const bcrypt = require('bcrypt');
 const fs = require('fs');
@@ -9,8 +8,10 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const sanitize = require('sanitize-filename');
 
-const APP = express();
-APP.set('trust proxy', 1);
+const helpers = require('./helpers');
+
+const app = express();
+app.set('trust proxy', 1);
 
 var limiter = RateLimit({
      windowMs: 1*60*1000,
@@ -19,12 +20,12 @@ var limiter = RateLimit({
      legacyHeaders: false
 });
 
-APP.use(limiter);
+app.use(limiter);
 
-APP.use(express.json({
+app.use(express.json({
      limit: '50mb'
 }));
-APP.use(fileUpload({
+app.use(fileUpload({
      createParentPath: true,
      limit: '50mb'
 }));
@@ -37,31 +38,35 @@ const notificationTemplates = {
      messageRecieved: "messageRecieved"
 }
 
+//#region routers
+app.use("/api/accounts", require("./routers/accounts"));
+//#endregion
+
 //#region endpoints
 
 //Server test call
-APP.get("/", async (req, res) => {
+app.get("/", async (req, res) => {
      return res.status(200).send("Pong!");
 });
 
 //Check if a token is valid as developer.
-APP.get("/api/dev/check", authenticateDeveloperToken, async (req, res) => {
+app.get("/api/dev/check", authenticateDeveloperToken, async (req, res) => {
      return res.status(200).send("This token is verified as Developer.");
 });
 
 //Joke
-APP.get("/api/dingus", async(req, res) => {
+app.get("/api/dingus", async(req, res) => {
      return res.status(200).send("You have ascended");
      //hmm
 });
 
 //Call to get the public account data of a user.
-APP.get("/api/accounts/:id/public", async (req, res) => {
+app.get("/api/accounts/:id/public", async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
 
      if (fs.existsSync(`./data/accounts/${id_clean}.json`)) {
-          const data = PullPlayerData(id_clean);
+          const data = helpers.PullPlayerData(id_clean);
           return res.status(200).send(data.public);
      } else {
           return res.status(404).send(`Account with ID of ${id_clean} not found. Please check your request for errors.`);
@@ -69,14 +74,14 @@ APP.get("/api/accounts/:id/public", async (req, res) => {
 });
 
 //(Authorized) Call to get the private account data of a user.
-APP.get("/api/accounts/:id/private", authenticateToken, async(req, res) => {
+app.get("/api/accounts/:id/private", authenticateToken, async(req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
 
      if(req.user.id !== id) return res.status(403).send("Token user does not have access to the specified user's private data!");
 
      if (fs.existsSync(`data/accounts/${id_clean}.json`)) {
-          const data = PullPlayerData(id_clean);
+          const data = helpers.PullPlayerData(id_clean);
           return res.status(200).send(data.private);
      } else {
           return res.status(404).send(`Account with ID of ${id} not found. Please check your request for typos.`);
@@ -84,7 +89,7 @@ APP.get("/api/accounts/:id/private", authenticateToken, async(req, res) => {
 })
 
 //Call to get a token from user account credentials.
-APP.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", (req, res) => {
      //so first things first we need to check the username and password
      //and if those are correct we generate a token
 
@@ -93,7 +98,7 @@ APP.post("/api/auth/login", (req, res) => {
      if(userID == null) return res.status(404).send("User not found!");
 
      //now we read the correct user file for the authorization data
-     const data = PullPlayerData(userID);
+     const data = helpers.PullPlayerData(userID);
 
 
      const { HASHED_PASSWORD, salt } = data.auth;
@@ -123,7 +128,7 @@ APP.post("/api/auth/login", (req, res) => {
 });
 
 //Call to create an account from a set of credentials.
-APP.post("/api/auth/create", async (req, res) => {
+app.post("/api/auth/create", async (req, res) => {
      var { username, nickname, password } = req.body;
      const id = getAccountCount();
 
@@ -134,7 +139,7 @@ APP.post("/api/auth/create", async (req, res) => {
 
      if(check != null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
 
-     const data = PullPlayerData("ACCT_TEMPLATE");
+     const data = helpers.PullPlayerData("ACCT_TEMPLATE");
 
      data.public.nickname = nickname;
      data.public.username = username;
@@ -160,12 +165,12 @@ APP.post("/api/auth/create", async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/auth/check", authenticateToken, async (req, res) => {
+app.post("/api/auth/check", authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 
 //Call to get the first account with the specified username in the database, and return its ID.
-APP.get("/api/accounts/:username/ID", async(req, res) => {
+app.get("/api/accounts/:username/ID", async(req, res) => {
      const { username } = req.params;
      const id = getUserID(username)
 
@@ -175,7 +180,7 @@ APP.get("/api/accounts/:username/ID", async(req, res) => {
 });
 
 //Get the global data associated with a KVP.
-APP.get("/api/global/:key", async (req, res) => {
+app.get("/api/global/:key", async (req, res) => {
      const { key } = req.params;
 
      const global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
@@ -186,19 +191,19 @@ APP.get("/api/global/:key", async (req, res) => {
 });
 
 
-APP.get("/api/notifications/get/", authenticateToken, async (req, res) => {
+app.get("/api/notifications/get/", authenticateToken, async (req, res) => {
      const id = req.user.id;
 
-     const data = PullPlayerData(id);
+     const data = helpers.PullPlayerData(id);
 
      if(data.notifications == null) return res.status(200).send("[]");
 
      res.status(200).json(data.notifications);
 });
 
-APP.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
+app.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
      const { nickname } = req.body;
-     var data = await PullPlayerData(req.user.id);
+     var data = await helpers.PullPlayerData(req.user.id);
 
      const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
 
@@ -208,14 +213,14 @@ APP.post("/api/accounts/nickname", authenticateToken, async (req, res) => {
      });
      data.public.nickname = nickname;
 
-     PushPlayerData(req.user.id, data);
+     helpers.PushPlayerData(req.user.id, data);
      return res.sendStatus(200);
 });
 
-APP.post("/api/accounts/bio", authenticateToken, async (req, res) => {
+app.post("/api/accounts/bio", authenticateToken, async (req, res) => {
      var { bio } = req.body;
 
-     var data = await PullPlayerData(req.user.id);
+     var data = await helpers.PullPlayerData(req.user.id);
 
      //check bio
      const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
@@ -227,41 +232,41 @@ APP.post("/api/accounts/bio", authenticateToken, async (req, res) => {
      if(bio.length > 3000) return res.status(400).send("Bio is too long!");
 
      data.public.bio = bio;
-     PushPlayerData(req.user.id, data);
+     helpers.PushPlayerData(req.user.id, data);
 
      return res.sendStatus(200);
 });
 
-APP.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
+app.post("/api/accounts/pronouns", authenticateToken, async (req, res) => {
      const {pronouns} = req.body;
 
-     var data = await PullPlayerData(req.user.id);
+     var data = await helpers.PullPlayerData(req.user.id);
      const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
 
      data.public.pronouns = array[pronouns];
-     PushPlayerData(req.user.id, data);
+     helpers.PushPlayerData(req.user.id, data);
 });
 
-APP.post("/api/accounts/tag", authenticateToken, async (req, res) => {
+app.post("/api/accounts/tag", authenticateToken, async (req, res) => {
      const {tag} = req.body;
      
-     var data = await PullPlayerData(req.user.id);
+     var data = await helpers.PullPlayerData(req.user.id);
      
      if(!data.private.availableTags.includes(tag)) return res.status(400).send("You do not have access to this tag!");
 
      data.public.tag = tag;
 
-     PushPlayerData(req.user.id, data);
+     helpers.PushPlayerData(req.user.id, data);
 
      res.sendStatus(200);
 });
 
-APP.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
+app.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
      var {type, id} = req.body;
 
      id = parseInt(id);
 
-     var data = await PullPlayerData(req.user.id);
+     var data = await helpers.PullPlayerData(req.user.id);
 
      if(!(type in data.private.inventory.clothes)) return res.status(400).send("Invalid clothing type.");
 
@@ -269,12 +274,12 @@ APP.post("/api/accounts/outfit", authenticateToken, async (req, res) => {
 
      data.public.outfit[type] = id;
 
-     PushPlayerData(req.user.id, data);
+     helpers.PushPlayerData(req.user.id, data);
 
      res.sendStatus(200);
 });
 
-APP.get("/api/catalog", async (req, res) => {
+app.get("/api/catalog", async (req, res) => {
      try {
           const data = await fs.readFileSync("./data/catalog/catalog.json");
           return res.status(200).send(data);
@@ -283,7 +288,7 @@ APP.get("/api/catalog", async (req, res) => {
      }
 });
 
-APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
+app.post("/api/accounts/report", authenticateToken, async (req, res) => {
      if(!(Object.keys(req.body).includes("target") && Object.keys(req.body).includes("reason"))) return res.status(400).send("Insufficient data sent!");
      const { target, reason } = req.body;
 
@@ -294,20 +299,20 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
           reason: reason
      }
 
-     var reportingData = PullPlayerData(req.user.id);
+     var reportingData = helpers.PullPlayerData(req.user.id);
 
      if(reportingData.auth.reportedUsers.includes(target)) return res.status(400).send("You have already reported this user!");
      if(req.user.id == target) return res.status(403).send("You cannot report yourself.");
 
-     var data = PullPlayerData(target);
+     var data = helpers.PullPlayerData(target);
 
      data.auth.recievedReports.push(report);
 
-     PushPlayerData(target, data);
+     helpers.PushPlayerData(target, data);
 
      reportingData.auth.reportedUsers.push(target);
 
-     PushPlayerData(req.user.id, reportingData);
+     helpers.PushPlayerData(req.user.id, reportingData);
 
      auditLog(`!MODERATION! User ${req.user.id} filed a report against user ${target} for the reason of ${reason}`);
      
@@ -315,7 +320,7 @@ APP.post("/api/accounts/report", authenticateToken, async (req, res) => {
      onPlayerReportedCallback(report);
 });
 
-APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req, res) => {
+app.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req, res) => {
      var timestamp = Date.now();
      var dir = fs.readdirSync("./data/images/");
      
@@ -342,7 +347,7 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
           
      const filename = `${Math.floor(dir.length / 2) + 1}`;
 
-     const authordata = PullPlayerData(req.user.id);
+     const authordata = helpers.PullPlayerData(req.user.id);
 
      var dotfiledata = {
           AuthorId: req.user.id,
@@ -365,21 +370,21 @@ APP.post("/img/upload/:others/:roomId/:roomName", authenticateToken, async (req,
      res.sendStatus(500);
 });
 
-APP.get("/img/:id/info", async (req, res) => {
+app.get("/img/:id/info", async (req, res) => {
      const {id} = req.params;
      let id_clean = sanitize(id);
      if(!fs.existsSync(`data/images/.${id_clean}`)) return res.status(404).send("Image with that ID does not exist.");
      res.status(200).send(fs.readFileSync(`data/images/.${id_clean}`));
 });
 
-APP.get("/img/:id", async (req, res) => {
+app.get("/img/:id", async (req, res) => {
      const {id} = req.params;
      let id_clean = sanitize(id);
      if(!fs.existsSync(`data/images/${id_clean}.png`)) return res.status(404).send("Image with that ID does not exist.");
      res.sendFile(`${__dirname}/data/images/${id_clean}.png`);
 })
 
-APP.get("/api/social/imgfeed", async (req, res) => {
+app.get("/api/social/imgfeed", async (req, res) => {
      try {
           var {count, offset, order} = req.body;
           if(typeof(count) == 'undefined' || typeof(offset) == 'undefined' || typeof(order) == 'undefined') return res.status(400).send("Insufficient data in request JSON body. Required parameters are 'count', 'offset', and 'order'.");
@@ -396,7 +401,7 @@ APP.get("/api/social/imgfeed", async (req, res) => {
           var filesArray = [];
           let i;
           for(i = offset + 1; i < count; i++)
-               filesArray.push(PullPlayerData(i));
+               filesArray.push(helpers.PullPlayerData(i));
           
           res.status(200).json(filesArray);
      } catch (exception) {
@@ -406,14 +411,14 @@ APP.get("/api/social/imgfeed", async (req, res) => {
      
 });
 
-APP.get("/api/social/takenby", async (req, res) => {
+app.get("/api/social/takenby", async (req, res) => {
      var {user} = req.body;
      if(typeof(user) == 'undefined') return res.status(400).send("Request body does not contain the required parameter of 'user'");
      var dir = fs.readdirSync("data/images");
 
      if(dir.length < 1) return res.status(500).send("No images available on the API.");
      
-     const playerdata = PullPlayerData(user);
+     const playerdata = helpers.PullPlayerData(user);
      if(playerdata == null) return res.status(404).send("User does not exist!");
 
      dir = dir.filter((item => item.substring(0, 1) == '.'));
@@ -426,14 +431,14 @@ APP.get("/api/social/takenby", async (req, res) => {
      return res.status(200).json(playerTakenPhotos);
 });
 
-APP.get("/api/social/takenwith", async (req, res) => {
+app.get("/api/social/takenwith", async (req, res) => {
      var {user} = req.body;
      if(typeof(user) == 'undefined') return res.status(400).send("Request body does not contain the required parameter of 'user'");
      var dir = fs.readdirSync("data/images");
 
      if(dir.length < 1) return res.status(500).send("No images available on the API.");
      
-     const playerdata = PullPlayerData(user);
+     const playerdata = helpers.PullPlayerData(user);
      if(playerdata == null) return res.status(404).send("User does not exist!");
 
      dir = dir.filter((item => item.substring(0, 1) == '.'));
@@ -446,17 +451,17 @@ APP.get("/api/social/takenwith", async (req, res) => {
      return res.status(200).json(playerTaggedPhotos);
 });
 
-APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
+app.post("/api/social/friend-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
      target = target.toString();
 
-     var sendingData = PullPlayerData(req.user.id);
-     var recievingData = PullPlayerData(target);
+     var sendingData = helpers.PullPlayerData(req.user.id);
+     var recievingData = helpers.PullPlayerData(target);
 
      if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.");
      if(sendingData.private.friendRequestsSent.includes(target)) return res.status(400).send("You have already sent a friend request to this player, duplicate requests are not permitted.");
 
-     NotifyPlayer(target, notificationTemplates.friendRequest, {
+     helpers.NotifyPlayer(target, notificationTemplates.friendRequest, {
           "sendingPlayer": req.user.id,
           "headerText": `Friend Request`,
           "bodyText": `Hey there ${recievingData.public.nickname}! ${sendingData.public.nickname} has sent you a friend request! Press the "Profile" button to see their profile. Press "Accept" to become friends with them, or press "Ignore" to decline the request!`,
@@ -466,14 +471,14 @@ APP.post("/api/social/friend-request", authenticateToken, async (req, res) => {
 
      res.status(200).send("Successfully sent friend request to player!");
      sendingData.private.friendRequestsSent.push(target);
-     PushPlayerData(req.user.id, sendingData);
+     helpers.PushPlayerData(req.user.id, sendingData);
 });
 
-APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
+app.post("/api/social/accept-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
      target = target.toString();
 
-     var recievingData = PullPlayerData(req.user.id);
+     var recievingData = helpers.PullPlayerData(req.user.id);
 
      if(ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
      var filteredNotifications = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
@@ -485,25 +490,25 @@ APP.post("/api/social/accept-request", authenticateToken, async (req, res) => {
           recievingData.notifications.splice(itemIndex);
      }
 
-     PushPlayerData(req.user.id, recievingData);
+     helpers.PushPlayerData(req.user.id, recievingData);
 
      AddAcquaintance(req.user.id, target, true);
 
      res.status(200).send("Successfully added acquaintance.");
 
-     var sendingData = PullPlayerData(target);
+     var sendingData = helpers.PullPlayerData(target);
      
      var index = sendingData.private.friendRequestsSent.findIndex(item => item == req.user.id);
      if(index >= 0) sendingData.private.friendRequestsSent.splice(index);
-     PushPlayerData(target, sendingData);
+     helpers.PushPlayerData(target, sendingData);
 });
 
-APP.get("/api/social/sent-requests", authenticateToken, async (req, res) => {
-     var data = PullPlayerData(req.user.id);
+app.get("/api/social/sent-requests", authenticateToken, async (req, res) => {
+     var data = helpers.PullPlayerData(req.user.id);
      res.status(200).json(data.private.friendRequestsSent);  
 });
 
-APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
+app.post("/api/social/make-acquaintance", authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
@@ -518,7 +523,7 @@ APP.post("/api/social/make-acquaintance", authenticateToken, async (req, res) =>
      res.sendStatus(200);
 });
 
-APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
+app.post("/api/social/make-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
@@ -533,7 +538,7 @@ APP.post("/api/social/make-friend", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
+app.post("/api/social/make-favorite-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
@@ -548,7 +553,7 @@ APP.post("/api/social/make-favorite-friend", authenticateToken, async (req, res)
      res.sendStatus(200);
 });
 
-APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
+app.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
@@ -562,7 +567,7 @@ APP.post("/api/social/remove-friend", authenticateToken, async (req, res) => {
      res.sendStatus(200);
 });
 
-APP.post("/api/social/decline-request", authenticateToken, async (req, res) => {
+app.post("/api/social/decline-request", authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
      target = target.toString();
@@ -570,10 +575,10 @@ APP.post("/api/social/decline-request", authenticateToken, async (req, res) => {
 
      if(ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");
 
-     var sendingData = PullPlayerData(target);
+     var sendingData = helpers.PullPlayerData(target);
      if(sendingData == null) return res.status(404).send("That user does not exist!");
 
-     var recievingData = PullPlayerData(sender);
+     var recievingData = helpers.PullPlayerData(sender);
      
      if(!sendingData.private.friendRequestsSent.includes(sender)) return res.status(400).send("You do not have a pending friend request from this player!");
 
@@ -581,7 +586,7 @@ APP.post("/api/social/decline-request", authenticateToken, async (req, res) => {
           const index = sendingData.private.friendRequestsSent.findIndex(item => item == sender);
           sendingData.private.friendRequestsSent.splice(index);
      }
-     PushPlayerData(target, sendingData);
+     helpers.PushPlayerData(target, sendingData);
 
      var temp = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
      for (let index = 0; index < temp.length; index++) {
@@ -590,45 +595,45 @@ APP.post("/api/social/decline-request", authenticateToken, async (req, res) => {
           else break;
      }
 
-     PushPlayerData(sender, recievingData);
+     helpers.PushPlayerData(sender, recievingData);
      res.status(200).send("Declined friend request.");
 });
 
-APP.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
-     const data = PullPlayerData(req.user.id);
+app.get("/api/social/acquaintances", authenticateToken, async (req, res) => {
+     const data = helpers.PullPlayerData(req.user.id);
      var dictionary = {};
      for (let index = 0; index < data.private.acquaintances.length; index++) {
           const element = data.private.acquaintances[index];
-          let player = PullPlayerData(element);
+          let player = helpers.PullPlayerData(element);
           dictionary[element] = player.public;
      }
      return res.status(200).json(dictionary);
 });
 
-APP.get("/api/social/friends", authenticateToken, async (req, res) => {
-     const data = PullPlayerData(req.user.id);
+app.get("/api/social/friends", authenticateToken, async (req, res) => {
+     const data = helpers.PullPlayerData(req.user.id);
      var dictionary = {};
      for (let index = 0; index < data.private.friends.length; index++) {
           const element = data.private.friends[index];
-          let player = PullPlayerData(element);
+          let player = helpers.PullPlayerData(element);
           dictionary[element] = player.public;
      }
      return res.status(200).json(dictionary);
 });
 
-APP.get("/api/social/favorite-friends", authenticateToken, async (req, res) => {
-     const data = PullPlayerData(req.user.id);
+app.get("/api/social/favorite-friends", authenticateToken, async (req, res) => {
+     const data = helpers.PullPlayerData(req.user.id);
      var dictionary = {};
      for (let index = 0; index < data.private.favoriteFriends.length; index++) {
           const element = data.private.favoriteFriends[index];
-          let player = PullPlayerData(element);
+          let player = helpers.PullPlayerData(element);
           dictionary[element] = player.public;
      }
      return res.status(200).json(dictionary);
 });
 
-APP.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
-     const data = PullPlayerData(req.user.id);
+app.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
+     const data = helpers.PullPlayerData(req.user.id);
 
      const array1 = MergeArraysWithoutDuplication(data.private.acquaintances, data.private.friends);
      const all = MergeArraysWithoutDuplication(array1, data.private.favoriteFriends);
@@ -636,7 +641,7 @@ APP.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
      var dictionary = {};
      for (let index = 0; index < all.length; index++) {
           const element = all[index];
-          let player = PullPlayerData(element);
+          let player = helpers.PullPlayerData(element);
           dictionary[element] = player.public;
      }
      return res.status(200).json(dictionary);
@@ -646,7 +651,7 @@ APP.get("/api/social/all-friend-types", authenticateToken, async (req, res) => {
 
 
 //#region analytics
-APP.get("/api/analytics/accountCount", async (req, res) => {
+app.get("/api/analytics/accountCount", async (req, res) => {
      var files = fs.readdirSync("data/accounts");
      res.status(200).send(`${files.length - 1}`);
 });
@@ -655,7 +660,7 @@ APP.get("/api/analytics/accountCount", async (req, res) => {
 //#region Developer-only API calls
 
 //Modify a user's currency balance.
-APP.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;
@@ -663,13 +668,13 @@ APP.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async 
      const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     let data = PullPlayerData(id_clean);
+     let data = helpers.PullPlayerData(id_clean);
 
      if(!(data.private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
 
      data.private.currency += amount;
 
-     PushPlayerData(id_clean, data)
+     helpers.PushPlayerData(id_clean, data)
 
      auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
 
@@ -677,7 +682,7 @@ APP.post("/api/accounts/:id/currency/modify", authenticateDeveloperToken, async 
 });
 
 //Set a user's currency balance.
-APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;
@@ -685,13 +690,13 @@ APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (re
      const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     let data = PullPlayerData(id_clean);
+     let data = helpers.PullPlayerData(id_clean);
 
      if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
 
      data.private.currency = amount;
 
-     PushPlayerData(id_clean, data);
+     helpers.PushPlayerData(id_clean, data);
 
      auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
 
@@ -699,7 +704,7 @@ APP.post("/api/accounts/:id/currency/set", authenticateDeveloperToken, async (re
 });
 
 //Ban a user's account
-APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { reason, duration } = req.body;
@@ -711,7 +716,7 @@ APP.post("/api/accounts/:id/ban", authenticateDeveloperToken, async (req, res) =
      res.status(200).send();
 });
 
-APP.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
+app.post("/api/global/:key", authenticateDeveloperToken, async (req, res) => {
      const { key } = req.params;
      const { value } = req.body;
 
@@ -764,7 +769,7 @@ function authenticateToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = PullPlayerData(tokenData.id);
+          const data = helpers.PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
                const element = data.auth.bans[index];
@@ -795,7 +800,7 @@ function authenticateDeveloperToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = PullPlayerData(tokenData.id);
+          const data = helpers.PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
                const element = auth.bans[index];
@@ -833,61 +838,35 @@ function auditLog(message) {
 //#endregion
 
 //#region Helper Functions
-function PullPlayerData(id) {
-     try {
-          let id_clean = sanitize(id.toString());
-          var data = JSON.parse(fs.readFileSync(`./data/accounts/${id_clean}.json`));
-          return data;
-     } catch (exception) {
-          console.error(exception);
-          return null;
-     }
-}
-function PushPlayerData(id, data) {
-     data = JSON.stringify(data, null, "     ");
-     let id_clean = sanitize(id.toString());
-     fs.writeFileSync(`./data/accounts/${id_clean}.json`, data);
-}
 
-function NotifyPlayer(id, template, params) {
-     if(!(Object.values(notificationTemplates).includes(template))) return false;
-     var data = PullPlayerData(id);
-     if(data == null) return false;
 
-     const notification = {
-          template: template,
-          parameters: params
-     }
-     data.notifications.push(notification);
 
-     PushPlayerData(id, data);
-     return true;
-}
+
 function ArePlayersAnyFriendType(player1, player2) {
-     var data = PullPlayerData(player1);
+     var data = helpers.PullPlayerData(player1);
      return data.private.acquaintances.includes(player2.toString()) || 
           data.private.friends.includes(player2.toString()) || 
           data.private.favoriteFriends.includes(player2.toString());
 }
 
 function ArePlayersAcquantances(player1, player2) {
-     var data = PullPlayerData(player1);
+     var data = helpers.PullPlayerData(player1);
      return data.private.acquaintances.includes(player2.toString());
 }
 
 function ArePlayersFriends(player1, player2) {
-     var data = PullPlayerData(player1);
+     var data = helpers.PullPlayerData(player1);
      return data.private.friends.includes(player2.toString());
 }
 
 function ArePlayersFavoriteFriends(player1, player2) {
-     var data = PullPlayerData(player1);
+     var data = helpers.PullPlayerData(player1);
      return data.private.favoriteFriends.includes(player2.toString());
 }
 
 function RemoveAcquaintance(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+     var data1 = helpers.PullPlayerData(player1);
+     var data2 = helpers.PullPlayerData(player2);
 
      var index1 = data1.private.acquaintances.findIndex(item => item == player2);
      if(index1 >= 0) data1.private.acquaintances.splice(index1);
@@ -895,13 +874,13 @@ function RemoveAcquaintance(player1, player2, both) {
      var index2 = data2.private.acquaintances.findIndex(item => item == player1);
      if(index2 >= 0 && both) data2.private.acquaintances.splice(index2);
 
-     PushPlayerData(player1, data1);
-     PushPlayerData(player2, data2);
+     helpers.PushPlayerData(player1, data1);
+     helpers.PushPlayerData(player2, data2);
 }
 
 function RemoveFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+     var data1 = helpers.PullPlayerData(player1);
+     var data2 = helpers.PullPlayerData(player2);
 
      var index1 = data1.private.friends.findIndex(item => item == player2);
      if(index1 >= 0) data1.private.friends.splice(index1);
@@ -909,13 +888,13 @@ function RemoveFriend(player1, player2, both) {
      var index2 = data2.private.friends.findIndex(item => item == player1);
      if(index2 >= 0 && both) data2.private.friends.splice(index2);
 
-     PushPlayerData(player1, data1);
-     PushPlayerData(player2, data2);
+     helpers.PushPlayerData(player1, data1);
+     helpers.PushPlayerData(player2, data2);
 }
 
 function RemoveFavoriteFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+     var data1 = helpers.PullPlayerData(player1);
+     var data2 = helpers.PullPlayerData(player2);
 
      var index1 = data1.private.favoriteFriends.findIndex(item => item == player2);
      if(index1 >= 0) data1.private.favoriteFriends.splice(index1);
@@ -923,57 +902,57 @@ function RemoveFavoriteFriend(player1, player2, both) {
      var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
      if(index2 >= 0 && both) data2.private.favoriteFriends.splice(index2);
 
-     PushPlayerData(player1, data1);
-     PushPlayerData(player2, data2);
+     helpers.PushPlayerData(player1, data1);
+     helpers.PushPlayerData(player2, data2);
 }
 
 function AddAcquaintance(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+     var data1 = helpers.PullPlayerData(player1);
+     var data2 = helpers.PullPlayerData(player2);
 
      if(!data1.private.acquaintances.includes(player2.toString())) 
      {
           data1.private.acquaintances.push(player2.toString());
-          PushPlayerData(player1, data1);
+          helpers.PushPlayerData(player1, data1);
      }
      if(!data2.private.acquaintances.includes(player1.toString()) && both) {
           data2.private.acquaintances.push(player1.toString());
-          PushPlayerData(player2, data2);
+          helpers.PushPlayerData(player2, data2);
      }
 }
 
 function AddFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+     var data1 = helpers.PullPlayerData(player1);
+     var data2 = helpers.PullPlayerData(player2);
 
      if(!data1.private.friends.includes(player2.toString())) 
      {
           data1.private.friends.push(player2.toString());
-          PushPlayerData(player1, data1);
+          helpers.PushPlayerData(player1, data1);
      }
      if(!data2.private.friends.includes(player1.toString()) && both) {
           data2.private.friends.push(player1.toString());
-          PushPlayerData(player2, data2);
+          helpers.PushPlayerData(player2, data2);
      }
 }
 
 function AddFavoriteFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+     var data1 = helpers.PullPlayerData(player1);
+     var data2 = helpers.PullPlayerData(player2);
 
      if(!data1.private.favoriteFriends.includes(player2.toString())) 
      {
           data1.private.favoriteFriends.push(player2.toString());
-          PushPlayerData(player1, data1);
+          helpers.PushPlayerData(player1, data1);
      }
      if(!data2.private.favoriteFriends.includes(player1.toString()) && both) {
           data2.private.favoriteFriends.push(player1.toString());
-          PushPlayerData(player2, data2);
+          helpers.PushPlayerData(player2, data2);
      }
 }
 
 function ClearPlayerNotification(id, IndexOrData) {
-     var data = PullPlayerData(id);
+     var data = helpers.PullPlayerData(id);
 
 
      var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
@@ -990,7 +969,7 @@ function ClearPlayerNotification(id, IndexOrData) {
           }
      }
 
-     PushPlayerData(id, data);
+     helpers.PushPlayerData(id, data);
 }
 //#endregion
 
@@ -999,8 +978,8 @@ function MergeArraysWithoutDuplication(array1, array2) {
 }
 
 function onPlayerReportedCallback(reportData) {
-     var reportedData = PullPlayerData(reportData.reportedUser);
-     var reportingData = PullPlayerData(reportData.reportingUser);
+     var reportedData = helpers.PullPlayerData(reportData.reportedUser);
+     var reportingData = helpers.PullPlayerData(reportData.reportingUser);
 
      if(
           reportingData.private.availableTags.includes("Community Support") ||
@@ -1019,7 +998,7 @@ function onPlayerReportedCallback(reportData) {
 
 function BanPlayer(id, reason, duration, moderator) {
      let id_clean = sanitize(id);
-     let data = PullPlayerData(id_clean);
+     let data = helpers.PullPlayerData(id_clean);
 
      const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
      
@@ -1031,8 +1010,8 @@ function BanPlayer(id, reason, duration, moderator) {
 
      data.auth.bans.push(ban);
 
-     PushPlayerData(id_clean, data);
+     helpers.PushPlayerData(id_clean, data);
 }
-APP.listen(config.PORT, '0.0.0.0');
+app.listen(config.PORT, '0.0.0.0');
 auditLog("Server Init");
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);

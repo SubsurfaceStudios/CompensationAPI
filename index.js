@@ -47,6 +47,10 @@ app.use("/api/accounts", require("./routers/accounts"));
 app.use("/api/auth", require('./routers/auth'));
 // /dev/*
 app.use("/dev", require('./routers/dev'));
+// /api/global/*
+app.use("/api/global", require('./routers/global'));
+// /api/notifications/*
+app.use("/api/notifications", require('./routers/notifications'));
 
 //#endregion
 
@@ -65,15 +69,7 @@ app.get("/api/dingus", async(req, res) => {
 
 
 
-app.get("/api/notifications/get/", middleware.authenticateToken, async (req, res) => {
-     const id = req.user.id;
 
-     const data = helpers.PullPlayerData(id);
-
-     if(data.notifications == null) return res.status(200).send("[]");
-
-     res.status(200).json(data.notifications);
-});
 
 app.post("/img/upload/:others/:roomId/:roomName", middleware.authenticateToken, async (req, res) => {
      var timestamp = Date.now();

@@ -5,7 +5,7 @@ const BadWordList = JSON.parse(require('../data/external/badwords-master/array.j
 const sanitize = require('sanitize-filename');
 
 //Call to get a token from user account credentials.
-router.post("/api/auth/login", (req, res) => {
+router.post("/login", (req, res) => {
      //so first things first we need to check the username and password
      //and if those are correct we generate a token
 
@@ -44,7 +44,7 @@ router.post("/api/auth/login", (req, res) => {
 });
 
 //Call to create an account from a set of credentials.
-router.post("/api/auth/create", async (req, res) => {
+router.post("/create", async (req, res) => {
      var { username, nickname, password } = req.body;
      const id = getAccountCount();
 
@@ -79,7 +79,7 @@ router.post("/api/auth/create", async (req, res) => {
      res.sendStatus(200);
 });
 
-app.post("/api/auth/check", middleware.authenticateToken, async (req, res) => {
+app.post("/check", middleware.authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 

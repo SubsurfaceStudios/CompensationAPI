@@ -5,7 +5,7 @@ const BadWordList = JSON.parse(require('../data/external/badwords-master/array.j
 const sanitize = require('sanitize-filename');
 
 //Check if a token is valid as developer.
-app.get("/dev/check", middleware.authenticateDeveloperToken, async (req, res) => {
+app.get("/check", middleware.authenticateDeveloperToken, async (req, res) => {
      return res.status(200).send("This token is verified as Developer.");
 });
 

@@ -34,16 +34,16 @@ app.get("/:id/private", middleware.authenticateToken, async(req, res) => {
 });
 
 //Call to get the first account with the specified username in the database, and return its ID.
-router.get("/api/accounts/:username/ID", async(req, res) => {
+router.get("/:username/ID", async(req, res) => {
      const { username } = req.params;
-     const id = getUserID(username)
+     const id = helpers.getUserID(username)
 
      if(id == null) return res.status(404).send("User not present in database.");
 
      return res.status(200).send({ id: id, message: `User ${username} found in database with ID ${id}`});
 });
 
-router.post("/api/accounts/nickname", middleware.authenticateToken, async (req, res) => {
+router.post("/nickname", middleware.authenticateToken, async (req, res) => {
      const { nickname } = req.body;
      var data = await helpers.PullPlayerData(req.user.id);
 
@@ -57,7 +57,7 @@ router.post("/api/accounts/nickname", middleware.authenticateToken, async (req, 
      return res.sendStatus(200);
 });
 
-router.post("/api/accounts/bio", middleware.authenticateToken, async (req, res) => {
+router.post("/bio", middleware.authenticateToken, async (req, res) => {
      var { bio } = req.body;
 
      var data = await helpers.PullPlayerData(req.user.id);
@@ -74,7 +74,7 @@ router.post("/api/accounts/bio", middleware.authenticateToken, async (req, res) 
      return res.sendStatus(200);
 });
 
-router.post("/api/accounts/tag", middleware.authenticateToken, async (req, res) => {
+router.post("/tag", middleware.authenticateToken, async (req, res) => {
      const {tag} = req.body;
      
      var data = await helpers.PullPlayerData(req.user.id);
@@ -88,7 +88,7 @@ router.post("/api/accounts/tag", middleware.authenticateToken, async (req, res) 
      res.sendStatus(200);
 });
 
-router.post("/api/accounts/pronouns", middleware.authenticateToken, async (req, res) => {
+router.post("/pronouns", middleware.authenticateToken, async (req, res) => {
      const {pronouns} = req.body;
 
      var data = await helpers.PullPlayerData(req.user.id);
@@ -98,7 +98,7 @@ router.post("/api/accounts/pronouns", middleware.authenticateToken, async (req, 
      helpers.PushPlayerData(req.user.id, data);
 });
 
-router.post("/api/accounts/report", middleware.authenticateToken, async (req, res) => {
+router.post("/report", middleware.authenticateToken, async (req, res) => {
      if(!(Object.keys(req.body).includes("target") && Object.keys(req.body).includes("reason"))) return res.status(400).send("Insufficient data sent!");
      const { target, reason } = req.body;
 
@@ -131,7 +131,7 @@ router.post("/api/accounts/report", middleware.authenticateToken, async (req, re
 });
 
 //Ban a user's account
-router.post("/api/accounts/:id/ban", middleware.authenticateDeveloperToken, async (req, res) => {
+router.post("/:id/ban", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      const { reason, duration } = req.body;
      const moderator = req.user;
@@ -143,7 +143,7 @@ router.post("/api/accounts/:id/ban", middleware.authenticateDeveloperToken, asyn
 });
 
 //Set a user's currency balance.
-router.post("/api/accounts/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
+router.post("/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;
@@ -165,7 +165,7 @@ router.post("/api/accounts/:id/currency/set", middleware.authenticateDeveloperTo
 });
 
 //Modify a user's currency balance.
-app.post("/api/accounts/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
+app.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;

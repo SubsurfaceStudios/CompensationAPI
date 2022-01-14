@@ -50,14 +50,12 @@ app.use("/dev", require('./routers/dev'));
 
 //#endregion
 
-//#region endpoints
+//#region Miscellaneous Endpoints
 
 //Server test call
 app.get("/", async (req, res) => {
      return res.status(200).send("Pong!");
 });
-
-
 
 //Joke
 app.get("/api/dingus", async(req, res) => {
@@ -65,16 +63,7 @@ app.get("/api/dingus", async(req, res) => {
      //hmm
 });
 
-//Get the global data associated with a KVP.
-app.get("/api/global/:key", async (req, res) => {
-     const { key } = req.params;
 
-     const global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
-
-     if(!(key in global)) return res.status(404).send("ID not in global title data.");
-
-     res.status(200).send(global[key]);
-});
 
 app.get("/api/notifications/get/", middleware.authenticateToken, async (req, res) => {
      const id = req.user.id;
@@ -424,18 +413,7 @@ app.get("/api/analytics/accountCount", async (req, res) => {
 //#endregion
 
 
-app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, res) => {
-     const { key } = req.params;
-     const { value } = req.body;
 
-     var global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
-
-     global[key] = value;
-
-     fs.writeFileSync("./data/global/global.json", JSON.stringify(global, null, "    "));
-     helpers.auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
-     res.status(200).send();
-});
 
 app.listen(config.PORT, '0.0.0.0');
 helpers.auditLog("Server Init");

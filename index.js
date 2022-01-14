@@ -51,7 +51,7 @@ app.get("/", async (req, res) => {
 });
 
 //Check if a token is valid as developer.
-app.get("/api/dev/check", middleware.authenticateDeveloperToken, async (req, res) => {
+app.get("/dev/check", middleware.authenticateDeveloperToken, async (req, res) => {
      return res.status(200).send("This token is verified as Developer.");
 });
 
@@ -61,33 +61,9 @@ app.get("/api/dingus", async(req, res) => {
      //hmm
 });
 
-//Call to get the public account data of a user.
-app.get("/api/accounts/:id/public", async (req, res) => {
-     const { id } = req.params;
-     let id_clean = sanitize(id);
 
-     if (fs.existsSync(`./data/accounts/${id_clean}.json`)) {
-          const data = helpers.PullPlayerData(id_clean);
-          return res.status(200).send(data.public);
-     } else {
-          return res.status(404).send(`Account with ID of ${id_clean} not found. Please check your request for errors.`);
-     }
-});
 
-//(Authorized) Call to get the private account data of a user.
-app.get("/api/accounts/:id/private", middleware.authenticateToken, async(req, res) => {
-     const { id } = req.params;
-     let id_clean = sanitize(id);
 
-     if(req.user.id !== id) return res.status(403).send("Token user does not have access to the specified user's private data!");
-
-     if (fs.existsSync(`data/accounts/${id_clean}.json`)) {
-          const data = helpers.PullPlayerData(id_clean);
-          return res.status(200).send(data.private);
-     } else {
-          return res.status(404).send(`Account with ID of ${id} not found. Please check your request for typos.`);
-     }
-})
 
 //Call to get a token from user account credentials.
 app.post("/api/auth/login", (req, res) => {
@@ -95,7 +71,7 @@ app.post("/api/auth/login", (req, res) => {
      //and if those are correct we generate a token
 
      const { username, password } = req.body;
-     const userID = getUserID(username);
+     const userID = helpers.getUserID(username);
      if(userID == null) return res.status(404).send("User not found!");
 
      //now we read the correct user file for the authorization data
@@ -136,7 +112,7 @@ app.post("/api/auth/create", async (req, res) => {
      if(username == null || password == null) return res.status(400).send("Username or password empty or null.")
      if(nickname == null) nickname = username;
 
-     const check = getUserID(username);
+     const check = helpers.getUserID(username);
 
      if(check != null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
 
@@ -170,15 +146,7 @@ app.post("/api/auth/check", middleware.authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 
-//Call to get the first account with the specified username in the database, and return its ID.
-app.get("/api/accounts/:username/ID", async(req, res) => {
-     const { username } = req.params;
-     const id = getUserID(username)
 
-     if(id == null) return res.status(404).send("User not present in database.");
-
-     return res.status(200).send({ id: id, message: `User ${username} found in database with ID ${id}`});
-});
 
 //Get the global data associated with a KVP.
 app.get("/api/global/:key", async (req, res) => {
@@ -202,124 +170,19 @@ app.get("/api/notifications/get/", middleware.authenticateToken, async (req, res
      res.status(200).json(data.notifications);
 });
 
-app.post("/api/accounts/nickname", middleware.authenticateToken, async (req, res) => {
-     const { nickname } = req.body;
-     var data = await helpers.PullPlayerData(req.user.id);
 
-     const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
 
-     //Filter nickname
-     BadWordList.forEach(element => {
-          if(nickname.toLowerCase().contains(element)) return res.status(403).send("Your nickname contains profanity or inappropriate language. You must change it before you can continue.");
-     });
-     data.public.nickname = nickname;
 
-     helpers.PushPlayerData(req.user.id, data);
-     return res.sendStatus(200);
-});
 
-app.post("/api/accounts/bio", middleware.authenticateToken, async (req, res) => {
-     var { bio } = req.body;
 
-     var data = await helpers.PullPlayerData(req.user.id);
 
-     //check bio
-     const BadWordList = await JSON.parse(fs.readFileSync("./data/external/badwords-master/array.json"));
 
-     for (let index = 0; index < BadWordList.length; index++) {
-          if(bio.toLowerCase().includes(BadWordList[index])) return res.status(403).send("Your bio contains profanity or inappropriate language. You must change it before you can continue.");
-     }
 
-     if(bio.length > 3000) return res.status(400).send("Bio is too long!");
 
-     data.public.bio = bio;
-     helpers.PushPlayerData(req.user.id, data);
 
-     return res.sendStatus(200);
-});
 
-app.post("/api/accounts/pronouns", middleware.authenticateToken, async (req, res) => {
-     const {pronouns} = req.body;
 
-     var data = await helpers.PullPlayerData(req.user.id);
-     const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
 
-     data.public.pronouns = array[pronouns];
-     helpers.PushPlayerData(req.user.id, data);
-});
-
-app.post("/api/accounts/tag", middleware.authenticateToken, async (req, res) => {
-     const {tag} = req.body;
-     
-     var data = await helpers.PullPlayerData(req.user.id);
-     
-     if(!data.private.availableTags.includes(tag)) return res.status(400).send("You do not have access to this tag!");
-
-     data.public.tag = tag;
-
-     helpers.PushPlayerData(req.user.id, data);
-
-     res.sendStatus(200);
-});
-
-app.post("/api/accounts/outfit", middleware.authenticateToken, async (req, res) => {
-     var {type, id} = req.body;
-
-     id = parseInt(id);
-
-     var data = await helpers.PullPlayerData(req.user.id);
-
-     if(!(type in data.private.inventory.clothes)) return res.status(400).send("Invalid clothing type.");
-
-     if(!data.private.inventory.clothes[type].includes(id)) return res.status(400).send("You do not own this item.");
-
-     data.public.outfit[type] = id;
-
-     helpers.PushPlayerData(req.user.id, data);
-
-     res.sendStatus(200);
-});
-
-app.get("/api/catalog", async (req, res) => {
-     try {
-          const data = await fs.readFileSync("./data/catalog/catalog.json");
-          return res.status(200).send(data);
-     } catch {
-          return res.sendStatus(500);
-     }
-});
-
-app.post("/api/accounts/report", middleware.authenticateToken, async (req, res) => {
-     if(!(Object.keys(req.body).includes("target") && Object.keys(req.body).includes("reason"))) return res.status(400).send("Insufficient data sent!");
-     const { target, reason } = req.body;
-
-     var report = {
-          timestamp: Date.now(),
-          reportingUser: req.user.id,
-          reportedUser: target,
-          reason: reason
-     }
-
-     var reportingData = helpers.PullPlayerData(req.user.id);
-
-     if(reportingData.auth.reportedUsers.includes(target)) return res.status(400).send("You have already reported this user!");
-     if(req.user.id == target) return res.status(403).send("You cannot report yourself.");
-
-     var data = helpers.PullPlayerData(target);
-
-     data.auth.recievedReports.push(report);
-
-     helpers.PushPlayerData(target, data);
-
-     reportingData.auth.reportedUsers.push(target);
-
-     helpers.PushPlayerData(req.user.id, reportingData);
-
-     auditLog(`!MODERATION! User ${req.user.id} filed a report against user ${target} for the reason of ${reason}`);
-     
-     res.status(200).send("Report successfully applied. Thank you for helping keep Compensation VR safe.");
-     onPlayerReportedCallback(report);
-});
 
 app.post("/img/upload/:others/:roomId/:roomName", middleware.authenticateToken, async (req, res) => {
      var timestamp = Date.now();
@@ -636,8 +499,8 @@ app.get("/api/social/favorite-friends", middleware.authenticateToken, async (req
 app.get("/api/social/all-friend-types", middleware.authenticateToken, async (req, res) => {
      const data = helpers.PullPlayerData(req.user.id);
 
-     const array1 = MergeArraysWithoutDuplication(data.private.acquaintances, data.private.friends);
-     const all = MergeArraysWithoutDuplication(array1, data.private.favoriteFriends);
+     const array1 = helpers.MergeArraysWithoutDuplication(data.private.acquaintances, data.private.friends);
+     const all = helpers.MergeArraysWithoutDuplication(array1, data.private.favoriteFriends);
 
      var dictionary = {};
      for (let index = 0; index < all.length; index++) {
@@ -677,7 +540,7 @@ app.post("/api/accounts/:id/currency/modify", middleware.authenticateDeveloperTo
 
      helpers.PushPlayerData(id_clean, data)
 
-     auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
+     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
 
      res.status(200).send("Action successful.");
 });
@@ -699,23 +562,12 @@ app.post("/api/accounts/:id/currency/set", middleware.authenticateDeveloperToken
 
      helpers.PushPlayerData(id_clean, data);
 
-     auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
+     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
 
      res.status(200).send("Action successful.");
 });
 
-//Ban a user's account
-app.post("/api/accounts/:id/ban", middleware.authenticateDeveloperToken, async (req, res) => {
-     const { id } = req.params;
-     let id_clean = sanitize(id);
-     const { reason, duration } = req.body;
-     const moderator = req.user;
 
-     BanPlayer(id, reason, duration);
-
-     auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`)
-     res.status(200).send();
-});
 
 app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, res) => {
      const { key } = req.params;
@@ -726,7 +578,7 @@ app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, 
      global[key] = value;
 
      fs.writeFileSync("./data/global/global.json", JSON.stringify(global, null, "    "));
-     auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
+     helpers.auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
      res.status(200).send();
 });
 
@@ -735,88 +587,16 @@ app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, 
 
 //#region Functions
 
-function getUserID(username) {
-     const files = fs.readdirSync('./data/accounts/');
-
-     var id = null;
-     for (let index = 0; index < files.length; index++) {
-          const element = files[index];
-          
-          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`))
-
-          const username2 = data.auth.username.toLowerCase();
-          if(username2 == username.toLowerCase()) {
-               id = element.split(".")[0];
-               break; 
-          }
-     }
-     return id;
-}
-
-function getAccountCount() {
-     const files = fs.readdirSync('./data/accounts/');
-     return files.length - 1;
-}
 
 
 
-function auditLog(message) {
-     const file = fs.readFileSync("./data/audit.json");
-     let data = JSON.parse(file);
-
-     const ts = Date.now();
-
-     const log = `${ts} - ${message}`;
-
-     data.push(log);
-     const final = JSON.stringify(data, null, "   ");
-     fs.writeFileSync("./data/audit.json", final);
-}
 //#endregion
 
 //#region Helper Functions
 
 //#endregion
 
-function MergeArraysWithoutDuplication(array1, array2) {
-     return array1.concat(array2.filter((item) => array1.indexOf(item) < 0));
-}
 
-function onPlayerReportedCallback(reportData) {
-     var reportedData = helpers.PullPlayerData(reportData.reportedUser);
-     var reportingData = helpers.PullPlayerData(reportData.reportingUser);
-
-     if(
-          reportingData.private.availableTags.includes("Community Support") ||
-          reportingData.private.availableTags.includes("Community Support Team") ||
-          reportingData.private.availableTags.includes("Developer") ||
-          reportingData.private.availableTags.includes("Moderator") ||
-          reportingData.private.availableTags.includes("Founder")
-     ) {
-          BanPlayer(reportData.reportedUser, reportData.reason, 1, reportData.reportingUser);
-          auditLog(`!! MODERATOR ACTION !!   Moderator ${reportingData.nickname} (@${reportingData.username}) reported user ${reportedData.nickname} (@${reportedData.username}) for the reason of ${reportData.reason}, resulting in them being automatically timed out for 1 hour.`);
-     } else if (reportedData.auth.recievedReports.length >= config.timeout_at_report_count) {
-          BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.timeout_at_report_count} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
-          auditLog(`!! MODERATION ACTION !! User ${reportingData.nickname} (@${reportedData.username}) was timed out for 6 hours for recieving ${config.timeout_at_report_count} reports. Please investigate!`);
-     }
-}
-
-function BanPlayer(id, reason, duration, moderator) {
-     let id_clean = sanitize(id);
-     let data = helpers.PullPlayerData(id_clean);
-
-     const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
-     
-     const ban = {
-          reason: reason,
-          endTS: endTS,
-          moderator: moderator.id
-     };
-
-     data.auth.bans.push(ban);
-
-     helpers.PushPlayerData(id_clean, data);
-}
 app.listen(config.PORT, '0.0.0.0');
-auditLog("Server Init");
+helpers.auditLog("Server Init");
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);

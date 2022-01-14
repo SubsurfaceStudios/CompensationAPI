@@ -141,4 +141,48 @@ router.post("/api/accounts/:id/ban", middleware.authenticateDeveloperToken, asyn
      res.status(200).send();
 });
 
+//Set a user's currency balance.
+router.post("/api/accounts/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
+     const { id } = req.params;
+     let id_clean = sanitize(id);
+     const { amount } = req.body;
+
+     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
+     if(!exists) return res.status(404).send("User not found!");
+
+     let data = helpers.PullPlayerData(id_clean);
+
+     if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
+
+     data.private.currency = amount;
+
+     helpers.PushPlayerData(id_clean, data);
+
+     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
+
+     res.status(200).send("Action successful.");
+});
+
+//Modify a user's currency balance.
+app.post("/api/accounts/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
+     const { id } = req.params;
+     let id_clean = sanitize(id);
+     const { amount } = req.body;
+
+     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
+     if(!exists) return res.status(404).send("User not found!");
+
+     let data = helpers.PullPlayerData(id_clean);
+
+     if(!(data.private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
+
+     data.private.currency += amount;
+
+     helpers.PushPlayerData(id_clean, data)
+
+     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
+
+     res.status(200).send("Action successful.");
+});
+
 module.exports = router;

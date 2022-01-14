@@ -61,10 +61,6 @@ app.get("/api/dingus", async(req, res) => {
      //hmm
 });
 
-
-
-
-
 //Call to get a token from user account credentials.
 app.post("/api/auth/login", (req, res) => {
      //so first things first we need to check the username and password
@@ -134,8 +130,6 @@ app.post("/api/auth/create", async (req, res) => {
      data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
      data.auth.salt = salt;
 
-     const user = {username: username, id: id};
-
      const final = data;
 
      fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
@@ -159,7 +153,6 @@ app.get("/api/global/:key", async (req, res) => {
      res.status(200).send(global[key]);
 });
 
-
 app.get("/api/notifications/get/", middleware.authenticateToken, async (req, res) => {
      const id = req.user.id;
 
@@ -169,20 +162,6 @@ app.get("/api/notifications/get/", middleware.authenticateToken, async (req, res
 
      res.status(200).json(data.notifications);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 app.post("/img/upload/:others/:roomId/:roomName", middleware.authenticateToken, async (req, res) => {
      var timestamp = Date.now();
@@ -521,53 +500,6 @@ app.get("/api/analytics/accountCount", async (req, res) => {
 });
 //#endregion
 
-//#region Developer-only API calls
-
-//Modify a user's currency balance.
-app.post("/api/accounts/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
-     const { id } = req.params;
-     let id_clean = sanitize(id);
-     const { amount } = req.body;
-
-     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
-     if(!exists) return res.status(404).send("User not found!");
-
-     let data = helpers.PullPlayerData(id_clean);
-
-     if(!(data.private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
-
-     data.private.currency += amount;
-
-     helpers.PushPlayerData(id_clean, data)
-
-     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
-
-     res.status(200).send("Action successful.");
-});
-
-//Set a user's currency balance.
-app.post("/api/accounts/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
-     const { id } = req.params;
-     let id_clean = sanitize(id);
-     const { amount } = req.body;
-
-     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
-     if(!exists) return res.status(404).send("User not found!");
-
-     let data = helpers.PullPlayerData(id_clean);
-
-     if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
-
-     data.private.currency = amount;
-
-     helpers.PushPlayerData(id_clean, data);
-
-     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
-
-     res.status(200).send("Action successful.");
-});
-
-
 
 app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, res) => {
      const { key } = req.params;
@@ -581,21 +513,6 @@ app.post("/api/global/:key", middleware.authenticateDeveloperToken, async (req, 
      helpers.auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
      res.status(200).send();
 });
-
-
-//#endregion
-
-//#region Functions
-
-
-
-
-//#endregion
-
-//#region Helper Functions
-
-//#endregion
-
 
 app.listen(config.PORT, '0.0.0.0');
 helpers.auditLog("Server Init");

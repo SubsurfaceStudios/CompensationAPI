@@ -4,6 +4,12 @@ const middleware = require('../middleware');
 const BadWordList = JSON.parse(require('../data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 
+const notificationTemplates = {
+     invite: "invite",
+     friendRequest: "friendRequest",
+     messageRecieved: "messageRecieved"
+}
+
 router.get("/imgfeed", async (req, res) => {
      try {
           var {count, offset, order} = req.body;

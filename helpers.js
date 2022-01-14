@@ -6,6 +6,12 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sanitize = require('sanitize-filename');
 
+const notificationTemplates = {
+     invite: "invite",
+     friendRequest: "friendRequest",
+     messageRecieved: "messageRecieved"
+}
+
 module.exports = {
      PullPlayerData: PullPlayerData,
      PushPlayerData: PushPlayerData,

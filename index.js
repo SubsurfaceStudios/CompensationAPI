@@ -1,15 +1,8 @@
 require('dotenv').config();
 const express = require('express');
-const bcrypt = require('bcrypt');
-const fs = require('fs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
-const sanitize = require('sanitize-filename');
-
 const helpers = require('./helpers');
-const middleware = require('./middleware');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -32,12 +25,6 @@ app.use(fileUpload({
 }));
 
 const config = require('./config.json');
-
-const notificationTemplates = {
-     invite: "invite",
-     friendRequest: "friendRequest",
-     messageRecieved: "messageRecieved"
-}
 
 //#region routers
 

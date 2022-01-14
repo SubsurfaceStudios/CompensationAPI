@@ -2,7 +2,7 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('../data/external/badwords-master/array.json'));
+const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 
 //Call to get a token from user account credentials.
@@ -80,7 +80,7 @@ router.post("/create", async (req, res) => {
      res.sendStatus(200);
 });
 
-app.post("/check", middleware.authenticateToken, async (req, res) => {
+router.post("/check", middleware.authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 

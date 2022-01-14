@@ -2,12 +2,12 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('../data/external/badwords-master/array.json'));
+const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 
 
 
-app.get("/get/", middleware.authenticateToken, async (req, res) => {
+router.get("/get/", middleware.authenticateToken, async (req, res) => {
      const id = req.user.id;
 
      const data = helpers.PullPlayerData(id);

@@ -2,7 +2,7 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('../data/external/badwords-master/array.json'));
+const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 
 
@@ -20,7 +20,7 @@ router.get("/:id/public", async (req, res) => {
 });
 
 //(Authorized) Call to get the private account data of a user.
-app.get("/:id/private", middleware.authenticateToken, async(req, res) => {
+router.get("/:id/private", middleware.authenticateToken, async(req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
 
@@ -166,7 +166,7 @@ router.post("/:id/currency/set", middleware.authenticateDeveloperToken, async (r
 });
 
 //Modify a user's currency balance.
-app.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
+router.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      const { amount } = req.body;

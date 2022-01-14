@@ -45,6 +45,8 @@ const notificationTemplates = {
 app.use("/api/accounts", require("./routers/accounts"));
 // /api/auth/*
 app.use("/api/auth", require('./routers/auth'));
+// /dev/*
+app.use("/dev", require('./routers/dev'));
 
 //#endregion
 
@@ -55,10 +57,7 @@ app.get("/", async (req, res) => {
      return res.status(200).send("Pong!");
 });
 
-//Check if a token is valid as developer.
-app.get("/dev/check", middleware.authenticateDeveloperToken, async (req, res) => {
-     return res.status(200).send("This token is verified as Developer.");
-});
+
 
 //Joke
 app.get("/api/dingus", async(req, res) => {

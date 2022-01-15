@@ -14,7 +14,7 @@ router.route("/:key")
      
           if(!(key in global)) return res.status(404).send("ID not in global title data.");
      
-          res.status(200).send(global[key]);
+          res.status(200).send(global[key].toString());
      })
      .post(middleware.authenticateDeveloperToken, async (req, res) => {
           const { key } = req.params;

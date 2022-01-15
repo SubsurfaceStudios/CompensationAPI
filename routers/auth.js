@@ -60,12 +60,13 @@ router.post("/create", async (req, res) => {
 
      const data = helpers.PullPlayerData("ACCT_TEMPLATE");
 
+     BadWordList.forEach(element => {
+          if(username.toLowerCase().includes(element)) return res.status(400).send("Your username contains profanity or foul language. Change it to continue.");
+          if(nickname.toLowerCase().includes(element)) return res.status(400).send("Your nickname contains profanity or foul language. Change it to continue.");
+     });
+
      data.public.nickname = nickname;
      data.public.username = username;
-
-     data.private.inventory.clothes.shirts = [0, 1];
-     data.private.inventory.clothes.hairStyles = [0, 1];
-     data.private.inventory.clothes.hairColors = [0, 1, 2];
 
      data.auth.username = username;
 

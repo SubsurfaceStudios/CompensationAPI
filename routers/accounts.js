@@ -11,7 +11,7 @@ router.get("/:id/public", async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      
-     let data = PullPlayerData(id_clean);
+     let data = helpers.PullPlayerData(id_clean);
      if (data != null) {
           return res.status(200).send(data.public);
      } else {

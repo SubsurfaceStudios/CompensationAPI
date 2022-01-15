@@ -91,12 +91,14 @@ router.post("/tag", middleware.authenticateToken, async (req, res) => {
 
 router.post("/pronouns", middleware.authenticateToken, async (req, res) => {
      const {pronouns} = req.body;
+     if(!pronouns) return res.status(400).send("You did not specify a pronoun to use.");
 
      var data = await helpers.PullPlayerData(req.user.id);
      const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
 
      data.public.pronouns = array[pronouns];
      helpers.PushPlayerData(req.user.id, data);
+     return res.status(200).send();
 });
 
 router.post("/report", middleware.authenticateToken, async (req, res) => {

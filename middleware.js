@@ -1,4 +1,7 @@
 const helpers = require('./helpers');
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 module.exports = {
      authenticateToken: authenticateToken,

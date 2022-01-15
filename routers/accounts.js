@@ -11,8 +11,8 @@ router.get("/:id/public", async (req, res) => {
      const { id } = req.params;
      let id_clean = sanitize(id);
      
-     if (fs.existsSync(`./data/accounts/${id_clean}.json`)) {
-          const data = helpers.PullPlayerData(id_clean);
+     let data = PullPlayerData(id_clean);
+     if (data != null) {
           return res.status(200).send(data.public);
      } else {
           return res.status(404).send(`Account with ID of ${id_clean} not found. Please check your request for errors.`);

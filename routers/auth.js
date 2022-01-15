@@ -49,7 +49,7 @@ router.post("/login", (req, res) => {
 //Call to create an account from a set of credentials.
 router.post("/create", async (req, res) => {
      var { username, nickname, password } = req.body;
-     const id = getAccountCount();
+     const id = helpers.getAccountCount();
 
      if(username == null || password == null) return res.status(400).send("Username or password empty or null.")
      if(nickname == null) nickname = username;

@@ -6,7 +6,6 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const middleware = require('../middleware');
 
 const expressWs = require('ws')(router);
 

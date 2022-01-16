@@ -19,6 +19,8 @@ var OPEN_TETHER_DIRECTORY = {
 /// KICKED
 /// BANNED
 /// NOTIFICATION RECIEVED
+/// UNAUTHORIZED
+/// DUPLICATE LOGIN
 
 /* 
           if(Object.keys(OPEN_TETHER_DIRECTORY).includes(req.user.id)) {
@@ -86,6 +88,10 @@ router.ws('/connect-tether', async (ws, req) => {
                OPEN_TETHER_DIRECTORY[tokenData.id] = ws;
                ignore_connection_closed = false;
                user = tokenData;
+
+               var playerData = helpers.PullPlayerData(user.id);
+               playerData.presence.status = "online";
+               helpers.PushPlayerData(user.id, playerData);
           }
      });
 });

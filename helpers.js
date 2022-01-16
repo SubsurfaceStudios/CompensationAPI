@@ -273,6 +273,7 @@ function BanPlayer(id, reason, duration, moderator) {
      };
 
      data.auth.bans.push(ban);
+     ws.sendStringToClient(id, 'BANNED');
 
      PushPlayerData(id_clean, data);
 }

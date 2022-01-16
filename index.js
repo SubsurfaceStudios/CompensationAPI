@@ -35,13 +35,13 @@ app.use("/api/accounts", require("./routers/accounts"));
 // /api/auth/*
 app.use("/api/auth", require('./routers/auth'));
 // /dev/*
-app.use("/dev", require('./routers/dev'));
+app.use("/api/dev", require('./routers/dev'));
 // /api/global/*
 app.use("/api/global", require('./routers/global'));
 // /api/notifications/*
 app.use("/api/notifications", require('./routers/notifications'));
 // /img/*
-app.use("/img", require('./routers/img'));
+app.use("/api/img", require('./routers/img'));
 // /api/analytics/*
 app.use("/api/analytics", require('./routers/analytics'));
 // /api/social/*
@@ -52,7 +52,7 @@ app.use("/api/social", require('./routers/social'));
 //#region Miscellaneous Endpoints
 
 //Server test call
-app.get("/", async (req, res) => {
+app.get("/api/", async (req, res) => {
      return res.status(200).send("Pong!");
 });
 
@@ -73,7 +73,7 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connnected_clients = {};
 
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ server: server },()=>{    
+const wss = new WebSocket.Server({ server: server, path: '/ws' },()=>{    
      console.log('server started')
 });
 wss.on('connection', function connection(ws) {

@@ -6,7 +6,8 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PullPlayerData, PushPlayerData } = require('../helpers');
+const { ignore } = require('nodemon/lib/rules');
+require('dotenv').config();
 
 const expressWs = require('express-ws')(router);
 
@@ -19,9 +20,7 @@ var OPEN_TETHER_DIRECTORY = {
 /// BANNED
 /// NOTIFICATION RECIEVED
 
-router.ws('/connect-tether', middleware.authenticateToken, async (ws, req) => {
-     var ignore_connection_closed = false;
-     ws.on('open', async () => {
+/* 
           if(Object.keys(OPEN_TETHER_DIRECTORY).includes(req.user.id)) {
                // This player is already tethered, deny the request
                ignore_connection_closed = true;
@@ -34,13 +33,59 @@ router.ws('/connect-tether', middleware.authenticateToken, async (ws, req) => {
                data.presence.status = "online";
                helpers.PushPlayerData(req.user.id, data);
           }
+ */
+router.ws('/connect-tether', async (ws, req) => {
+     var ignore_connection_closed = false;
+     var user;
+     ws.on('open', async () => {
+          ignore_connection_closed = true;
      });
      ws.on('close', async () => {
           if(!ignore_connection_closed) {
-               delete OPEN_TETHER_DIRECTORY[req.user.id];
-               var data = helpers.PullPlayerData(req.user.id);
+               delete OPEN_TETHER_DIRECTORY[user.id];
+               var data = helpers.PullPlayerData(user.id);
                data.presence.status = 'offline';
-               helpers.PushPlayerData(req.user.id, data);
+               helpers.PushPlayerData(user.id, data);
+          }
+     });
+     ws.on('message', async (data, isBinary) => {
+          data = data.toString();
+
+          if(data.slice(0, 7) == "Bearer ") {
+               var token = data.slice(7);
+
+               try {
+                    const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+                    const data = helpers.PullPlayerData(tokenData.id);
+     
+                    for (let index = 0; index < data.auth.bans.length; index++) {
+                         const element = data.auth.bans[index];
+                         
+                         if(element.endTS > Date.now()) {
+                              //user is banned
+                              ws.send("BANNED");
+                              ignore_connection_closed = true;
+                              ws.terminate();
+                         }
+                    }
+               } catch {
+                    ws.send("UNAUTHORIZED");
+                    ignore_connection_closed = true;
+                    ws.terminate();
+                    return;
+               }
+               
+               if(Object.keys(OPEN_TETHER_DIRECTORY).includes(tokenData.id)) {
+                    ws.send("DUPLICATE LOGIN");
+                    ignore_connection_closed = true;
+                    ws.terminate();
+                    return;
+               }
+
+               OPEN_TETHER_DIRECTORY[tokenData.id] = ws;
+               ignore_connection_closed = false;
+               user = tokenData;
           }
      });
 });

@@ -5,7 +5,6 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sanitize = require('sanitize-filename');
-const ws = require('./routers/ws');
 
 const notificationTemplates = {
      invite: "invite",
@@ -65,7 +64,7 @@ function NotifyPlayer(id, template, params) {
      data.notifications.push(notification);
 
      PushPlayerData(id, data);
-     ws.sendStringToClient('NOTIFICATION RECIEVED');
+     require('./index').sendStringToClient("NOTIFICATION RECIEVED");
      return true;
 }
 
@@ -273,7 +272,6 @@ function BanPlayer(id, reason, duration, moderator) {
      };
 
      data.auth.bans.push(ban);
-     ws.sendStringToClient(id, 'BANNED');
 
      PushPlayerData(id_clean, data);
 }

@@ -82,7 +82,7 @@ wss.on('connection', function connection(ws) {
 
      ws.on('message', async (data) => {
           data = data.toString('utf-8');
-          if(data.slice(0, 7) == "Bearer "){
+          if(data.slice(0, 7) == "Bearer " && tokenData == null){
                var token = data.slice(7);
                try {
                     tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -106,6 +106,8 @@ wss.on('connection', function connection(ws) {
                     ws.send("UNAUTHORIZED");
                     ws.terminate();
                }
+
+               ws.send("AUTHORIZED");
           }
      });
 

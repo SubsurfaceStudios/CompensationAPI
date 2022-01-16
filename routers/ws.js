@@ -7,7 +7,7 @@ const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const expressWs = require('ws')(router);
+const expressWs = require('express-ws')(router);
 
 var OPEN_TETHER_DIRECTORY = {
 

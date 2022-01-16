@@ -5,6 +5,7 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sanitize = require('sanitize-filename');
+const ws = require('./routers/ws');
 
 const notificationTemplates = {
      invite: "invite",
@@ -64,6 +65,7 @@ function NotifyPlayer(id, template, params) {
      data.notifications.push(notification);
 
      PushPlayerData(id, data);
+     ws.sendStringToClient('NOTIFICATION RECIEVED');
      return true;
 }
 

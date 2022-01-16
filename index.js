@@ -44,6 +44,9 @@ app.use("/img", require('./routers/img'));
 app.use("/api/analytics", require('./routers/analytics'));
 // /api/social/*
 app.use("/api/social", require('./routers/social'));
+// /api/ws/*
+const ws = require('./routers/ws');
+app.use("/api/ws", ws.router);
 
 //#endregion
 

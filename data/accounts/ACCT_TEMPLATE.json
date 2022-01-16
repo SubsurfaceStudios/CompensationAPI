@@ -78,5 +78,9 @@
           ]
      },
      "notifications": [
-     ]   
+     ],
+     "presence": {
+          "status": "offline",
+          "appearTo": "all"
+     }
 }

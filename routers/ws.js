@@ -6,6 +6,7 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { PullPlayerData, PushPlayerData } = require('../helpers');
 
 const expressWs = require('express-ws')(router);
 
@@ -27,10 +28,20 @@ router.ws('/connect-tether', middleware.authenticateToken, async (ws, req) => {
                ws.terminate();
           } 
           else // Record this client to the directory so we can talk to this websocket from anywhere in the script.
+          {
                OPEN_TETHER_DIRECTORY[req.user.id] = ws;
+               var data = PullPlayerData(req.user.id);
+               data.presence.status = "online";
+               PushPlayerData(req.user.id, data);
+          }
      });
      ws.on('close', async () => {
-          if(!ignore_connection_closed) delete OPEN_TETHER_DIRECTORY[req.user.id];
+          if(!ignore_connection_closed) {
+               delete OPEN_TETHER_DIRECTORY[req.user.id];
+               var data = PullPlayerData(req.user.id);
+               data.presence.status = 'offline';
+               PushPlayerData(req.user.id, data);
+          }
      });
 });
 

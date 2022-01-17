@@ -113,18 +113,18 @@ wss.on('connection', async (ws, request) => {
                }
 
                ws_connnected_clients[tokenData.id] = ws;
-               var presenceData = PullPlayerData(tokenData.id);
+               var presenceData = helpers.PullPlayerData(tokenData.id);
                presenceData.presence.status = "online";
-               PushPlayerData(tokenData.id, presenceData);
+               helpers.PushPlayerData(tokenData.id, presenceData);
                ws.send("AUTHORIZED");
           }
      });
 
      ws.on('close', async (data) => {
           if(!ignore_connection_closed && tokenData != null) {
-               var data = PullPlayerData(tokenData.id);
+               var data = helpers.PullPlayerData(tokenData.id);
                data.presence.status = "offline";
-               PushPlayerData(tokenData.id);
+               helpers.PushPlayerData(tokenData.id);
                delete ws_connnected_clients[tokenData.id];
           }
      });

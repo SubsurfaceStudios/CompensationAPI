@@ -167,7 +167,7 @@ var interface = require('readline').createInterface(stdin, stderr);
 
 function prompt () {
      interface.question("", (input) => {
-          eval(input);
+          console.log(eval(input))
           prompt();
      });
 }

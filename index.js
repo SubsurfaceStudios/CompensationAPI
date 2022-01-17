@@ -73,7 +73,7 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connnected_clients = {};
 
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ server: server, path: '/ws' },()=>{    
+const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
      console.log('server started')
 });
 wss.on('connection', function connection(ws) {

@@ -6,7 +6,7 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 
 
-router.get("/accountCount", async (req, res) => {
+router.get("/account-count", async (req, res) => {
      var files = fs.readdirSync("/data/accounts");
      res.status(200).send(`${files.length - 1}`);
 });

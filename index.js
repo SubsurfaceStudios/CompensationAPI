@@ -73,6 +73,7 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connnected_clients = {};
 
 const WebSocket = require('ws');
+const { stdin, stderr } = require('process');
 const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
      console.log('server started')
 });
@@ -161,3 +162,14 @@ process.on('SIGINT', function () {
 
      setTimeout(() => process.exit(), 250);
 });
+
+var interface = require('readline').createInterface(stdin, stderr);
+
+function prompt () {
+     interface.question("", (input) => {
+          eval(input);
+          prompt();
+     });
+}
+
+prompt();

@@ -150,9 +150,9 @@ process.on('beforeExit', function () {
      helpers.auditLog("Server exit.");
 });
 
-process.on('uncaughtException', function () {
-     helpers.auditLog("Uncaught exception in server. Exiting process in 2 seconds. (2000ms)");
-
+process.on('uncaughtException', function (exception) {
+     helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\`\nExiting process in 2 seconds. (2000ms)`);
+     console.error(exception);
      setTimeout(() => process.exit(), 2000);
 });
 

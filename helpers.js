@@ -5,6 +5,7 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sanitize = require('sanitize-filename');
+const request = require('request');
 
 const notificationTemplates = {
      invite: "invite",
@@ -234,6 +235,10 @@ function auditLog(message) {
      data.push(log);
      const final = JSON.stringify(data, null, "   ");
      fs.writeFileSync("./data/audit.json", final);
+
+     if(!process.env.AUDIT_SERVER_ID || process.env.AUDIT_WEBHOOK_URI) return;
+     const globalAuditMessage = `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
+     request.post(process.env.AUDIT_WEBHOOK_URI, {json: {"content": globalAuditMessage}});
 }
 
 function MergeArraysWithoutDuplication(array1, array2) {

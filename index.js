@@ -108,6 +108,7 @@ wss.on('connection', function connection(ws) {
                }
 
                ws.send("AUTHORIZED");
+               console.log(ws_connnected_clients);
           }
      });
 

@@ -80,7 +80,7 @@ router.get("/takenwith", async (req, res) => {
 
 router.post("/friend-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = target.toString();
+     target = target;
 
      var sendingData = helpers.PullPlayerData(req.user.id);
      var recievingData = helpers.PullPlayerData(target);
@@ -103,7 +103,7 @@ router.post("/friend-request", middleware.authenticateToken, async (req, res) =>
 
 router.post("/accept-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = target.toString();
+     target = target;
 
      var recievingData = helpers.PullPlayerData(req.user.id);
 
@@ -138,7 +138,7 @@ router.get("/sent-requests", middleware.authenticateToken, async (req, res) => {
 router.post("/make-acquaintance", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target.toString();
+     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -153,7 +153,7 @@ router.post("/make-acquaintance", middleware.authenticateToken, async (req, res)
 router.post("/make-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target.toString();
+     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -168,7 +168,7 @@ router.post("/make-friend", middleware.authenticateToken, async (req, res) => {
 router.post("/make-favorite-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target.toString();
+     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -183,7 +183,7 @@ router.post("/make-favorite-friend", middleware.authenticateToken, async (req, r
 router.post("/remove-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target.toString();
+     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -197,7 +197,7 @@ router.post("/remove-friend", middleware.authenticateToken, async (req, res) => 
 router.post("/decline-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target.toString();
+     target = target;
      const sender = req.user.id;
 
      if(helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");

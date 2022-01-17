@@ -4,6 +4,8 @@ const middleware = require('../middleware');
 const fs = require('fs');
 const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
+const { authenticateDeveloperToken } = require('../middleware');
+const { PullPlayerData, PushPlayerData } = require('../helpers');
 
 
 //Call to get the public account data of a user.
@@ -42,6 +44,27 @@ router.get("/:username/ID", async(req, res) => {
      if(id == null) return res.status(404).send("User not present in database.");
 
      return res.status(200).send({ id: id, message: `User ${username} found in database with ID ${id}`});
+});
+
+router.get("/:id/edit", authenticateDeveloperToken, async (req, res) => {
+     var {id} = req.params;
+     id = sanitize(id);
+
+     var data = PullPlayerData(id);
+     if(data == null) return res.status(404).send("Account not found.");
+     else return res.status(200).json(data);
+});
+
+router.post("/:id/edit", authenticateDeveloperToken, async (req, res) => {
+     var {id} = req.params;
+     id = sanitize(id);
+
+     try {
+          PushPlayerData(id, req.body);
+          res.status(200).send();
+     } catch {
+          res.status(500).send();
+     }
 });
 
 router.post("/nickname", middleware.authenticateToken, async (req, res) => {

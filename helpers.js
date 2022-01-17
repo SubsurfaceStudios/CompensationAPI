@@ -70,24 +70,24 @@ function NotifyPlayer(id, template, params) {
 
 function ArePlayersAnyFriendType(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2.toString()) || 
-          data.private.friends.includes(player2.toString()) || 
-          data.private.favoriteFriends.includes(player2.toString());
+     return data.private.acquaintances.includes(player2) || 
+          data.private.friends.includes(player2) || 
+          data.private.favoriteFriends.includes(player2);
 }
 
 function ArePlayersAcquantances(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2.toString());
+     return data.private.acquaintances.includes(player2);
 }
 
 function ArePlayersFriends(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.friends.includes(player2.toString());
+     return data.private.friends.includes(player2);
 }
 
 function ArePlayersFavoriteFriends(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.favoriteFriends.includes(player2.toString());
+     return data.private.favoriteFriends.includes(player2);
 }
 
 function RemoveAcquaintance(player1, player2, both) {
@@ -136,13 +136,13 @@ function AddAcquaintance(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     if(!data1.private.acquaintances.includes(player2.toString())) 
+     if(!data1.private.acquaintances.includes(player2)) 
      {
-          data1.private.acquaintances.push(player2.toString());
+          data1.private.acquaintances.push(player2);
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.acquaintances.includes(player1.toString()) && both) {
-          data2.private.acquaintances.push(player1.toString());
+     if(!data2.private.acquaintances.includes(player1) && both) {
+          data2.private.acquaintances.push(player1);
           PushPlayerData(player2, data2);
      }
 }
@@ -151,13 +151,13 @@ function AddFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     if(!data1.private.friends.includes(player2.toString())) 
+     if(!data1.private.friends.includes(player2)) 
      {
-          data1.private.friends.push(player2.toString());
+          data1.private.friends.push(player2);
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.friends.includes(player1.toString()) && both) {
-          data2.private.friends.push(player1.toString());
+     if(!data2.private.friends.includes(player1) && both) {
+          data2.private.friends.push(player1);
           PushPlayerData(player2, data2);
      }
 }
@@ -166,13 +166,13 @@ function AddFavoriteFriend(player1, player2, both) {
      var data1 = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
 
-     if(!data1.private.favoriteFriends.includes(player2.toString())) 
+     if(!data1.private.favoriteFriends.includes(player2)) 
      {
-          data1.private.favoriteFriends.push(player2.toString());
+          data1.private.favoriteFriends.push(player2);
           PushPlayerData(player1, data1);
      }
-     if(!data2.private.favoriteFriends.includes(player1.toString()) && both) {
-          data2.private.favoriteFriends.push(player1.toString());
+     if(!data2.private.favoriteFriends.includes(player1) && both) {
+          data2.private.favoriteFriends.push(player1);
           PushPlayerData(player2, data2);
      }
 }

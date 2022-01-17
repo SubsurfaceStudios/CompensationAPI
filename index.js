@@ -124,7 +124,7 @@ wss.on('connection', async (ws, request) => {
           if(!ignore_connection_closed && tokenData != null) {
                var data = helpers.PullPlayerData(tokenData.id);
                data.presence.status = "offline";
-               helpers.PushPlayerData(tokenData.id);
+               helpers.PushPlayerData(tokenData.id, data);
                delete ws_connnected_clients[tokenData.id];
           }
      });

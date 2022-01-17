@@ -73,10 +73,11 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connnected_clients = {};
 
 const WebSocket = require('ws');
+const { PullPlayerData, PushPlayerData } = require('./helpers');
 const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
      console.log('server started')
 });
-wss.on('connection', function connection(ws) {
+wss.on('connection', async (ws, request) => {
      var ignore_connection_closed = false;
      var tokenData;
 
@@ -97,34 +98,45 @@ wss.on('connection', function connection(ws) {
                               ws.send("BANNED");
                               ignore_connection_closed = true;
                               ws.terminate();
+                              return;
                          }
                     }
-
-                    ws_connnected_clients[tokenData.id] = ws;
                } catch (ex) {
-                    console.log(ex);
                     ws.send("UNAUTHORIZED");
                     ws.terminate();
+                    return;
                }
 
+               if(Object.keys(ws_connnected_clients).includes(tokenData.id)) {
+                    ws.send("DUPLICATE CONNECTION");
+                    ws.terminate();
+                    return;
+               }
+
+               ws_connnected_clients[tokenData.id] = ws;
+               var presenceData = PullPlayerData(tokenData.id);
+               presenceData.presence.status = "online";
+               PushPlayerData(tokenData.id, presenceData);
                ws.send("AUTHORIZED");
-               console.log(ws_connnected_clients);
           }
      });
 
      ws.on('close', async (data) => {
           if(!ignore_connection_closed && tokenData != null) {
+               var data = PullPlayerData(tokenData.id);
+               data.presence.status = "offline";
+               PushPlayerData(tokenData.id);
                delete ws_connnected_clients[tokenData.id];
           }
-          console.log("disconnected");
      });
+
+     ws.send()
      
      console.log("connected");
 })
 wss.on('listening',()=>{
      console.log("WS system online.");
 });
-
 
 function sendStringToClient(id, data) {
      if(!Object.keys(ws_connnected_clients).includes(id)) return;

@@ -64,7 +64,7 @@ function NotifyPlayer(id, template, params) {
      data.notifications.push(notification);
 
      PushPlayerData(id, data);
-     require('./index').sendStringToClient("NOTIFICATION RECIEVED");
+     require('./index').sendStringToClient(id, "NOTIFICATION RECIEVED");
      return true;
 }
 
@@ -241,8 +241,8 @@ function MergeArraysWithoutDuplication(array1, array2) {
 }
 
 function onPlayerReportedCallback(reportData) {
-     var reportedData = helpers.PullPlayerData(reportData.reportedUser);
-     var reportingData = helpers.PullPlayerData(reportData.reportingUser);
+     var reportedData = PullPlayerData(reportData.reportedUser);
+     var reportingData = PullPlayerData(reportData.reportingUser);
 
      if(
           reportingData.private.availableTags.includes("Community Support") ||
@@ -260,7 +260,7 @@ function onPlayerReportedCallback(reportData) {
 }
 
 function BanPlayer(id, reason, duration, moderator) {
-     let id_clean = sanitize(id);
+     let id_clean = sanitize(id.toString());
      let data = PullPlayerData(id_clean);
 
      const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
@@ -272,6 +272,6 @@ function BanPlayer(id, reason, duration, moderator) {
      };
 
      data.auth.bans.push(ban);
-
+     require('./index').sendStringToClient(id_clean, "BANNED");
      PushPlayerData(id_clean, data);
 }

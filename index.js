@@ -73,7 +73,6 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connnected_clients = {};
 
 const WebSocket = require('ws');
-const { PullPlayerData, PushPlayerData } = require('./helpers');
 const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
      console.log('server started')
 });
@@ -146,3 +145,19 @@ function sendStringToClient(id, data) {
 module.exports = {
      sendStringToClient: sendStringToClient
 };
+
+process.on('beforeExit', function () {
+     helpers.auditLog("Server exit.");
+});
+
+process.on('uncaughtException', function () {
+     helpers.auditLog("Uncaught exception in server. Exiting process in 2 seconds. (2000ms)");
+
+     setTimeout(() => process.exit(), 2000);
+});
+
+process.on('SIGINT', function () {
+     helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)")
+
+     setTimeout(() => process.exit(), 250);
+});

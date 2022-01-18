@@ -6,6 +6,7 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { authenticateToken } = require('../middleware');
 
 router.route("/item/:id/info")
 	.get(async (req, res) => {
@@ -181,6 +182,10 @@ router.get("/item/all", async (req, res) => {
 router.get("/inventory", async (req, res) => {
 	var data = PullPlayerData(req.user.id);
 	return res.status(200).json(data.econ.inventory);
+});
+
+router.get("/currency/balance", authenticateToken, async (req, res) => {
+	return res.status(200).send(GetPlayerCurrency(req.user.id));
 });
 
 //#region functions 

@@ -21,9 +21,42 @@
           "pronouns": "Ask Me"
      },
      "private": {
+          "currency": 0,
           "availableTags": [
                ""
           ],
+          "inventory": {
+               "clothes": {
+                    "hat": [
+                    ],
+                    "hairStyles": [
+                         0
+                    ],
+                    "hairColors": [
+                         0
+                    ],
+                    "glasses": [
+                    ],
+                    "shirts": [
+                         0
+                    ],
+                    "pants": [
+                    ],
+                    "chest": [
+                    ],
+                    "skinTones": [
+                         0,
+                         1,
+                         2,
+                         3,
+                         4,
+                         5
+                    ]
+               },
+               "consumables": {
+               }
+               
+          },
           "acquaintances": [
           ],
           "friends": [

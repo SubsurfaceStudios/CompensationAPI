@@ -161,9 +161,8 @@ process.on('beforeExit', function () {
 });
 
 process.on('uncaughtException', function (exception) {
-     helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\`\nExiting process in 2 seconds. (2000ms)`);
+     helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``);
      console.error(exception);
-     setTimeout(() => process.exit(), 2000);
 });
 
 process.on('SIGINT', function () {

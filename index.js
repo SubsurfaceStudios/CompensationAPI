@@ -46,6 +46,9 @@ app.use("/img", require('./routers/img'));
 app.use("/api/analytics", require('./routers/analytics'));
 // /api/social/*
 app.use("/api/social", require('./routers/social'));
+// /api/econ/*
+const econ = require('./routers/econ');
+app.use("/api/econ", econ.router);
 
 //#endregion
 
@@ -162,14 +165,3 @@ process.on('SIGINT', function () {
 
      setTimeout(() => process.exit(), 250);
 });
-
-var interface = require('readline').createInterface(stdin, stderr);
-
-function prompt () {
-     interface.question("", (input) => {
-          console.log(eval(input))
-          prompt();
-     });
-}
-
-prompt();

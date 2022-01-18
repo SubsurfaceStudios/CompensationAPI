@@ -3,3 +3,11 @@ node_modules
 config.json
 src
 data/audit.json
+data/accounts
+data/cache
+data/catalog
+data/config
+data/global
+data/images
+data/rooms
+data/videos

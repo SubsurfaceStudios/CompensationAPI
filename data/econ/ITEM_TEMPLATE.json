@@ -1,0 +1,18 @@
+{
+    "id": "0",
+    "name": "NULLED ITEM",
+    "tags": [],
+    "clothing-item-uuid": "item.player.shirt.null",
+    "rarity": "0",
+    "is-purchasable": false,
+    "is-transferrable": false,
+    "is-refundable": false,
+    "is-resellable": false,
+    "is-giftable": false,
+    "equippable": false,
+    "equip-slot": "player.equip-slot.shirt",
+    "buy-price": 0,
+    "refund-price": 0,
+    "resell-price": 0,
+    "gift-price": 0
+}

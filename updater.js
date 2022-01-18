@@ -1,9 +1,5 @@
 const fs = require('node:fs');
-const { type } = require('node:os');
 const { stdin, stdout } = require('node:process');
-const internal = require('node:stream');
-const { isObject } = require('node:util');
-const { isKeyObject } = require('node:util/types');
 const readline = require('readline');
 
 const rl = readline.createInterface({
@@ -14,29 +10,31 @@ const rl = readline.createInterface({
 var template;
 var depth = 0;
 
-rl.question("Please enter the directory you want to read account data from.\n", async (response) => {
+rl.question("Please enter the directory you want to read data from.\n", async (response) => {
      var files = fs.readdirSync(response);
      
-     files = files.filter(item => item != 'ACCT_TEMPLATE.json');
+     rl.question("Please enter the name of the template file. Name is in the read directory.", async (response_2) => {
+          files = files.filter(item => item != 'ACCT_TEMPLATE.json');
 
-     template = fs.readFileSync(`${response}/ACCT_TEMPLATE.json`);
-
-     template = JSON.parse(template);
-
-     for (let index = 0; index < files.length; index++) {
-          const element = files[index];
-          
-          var file = fs.readFileSync(`${response}/${element}`);
-          file = JSON.parse(file);
-
-          file = recursiveCheck(file, template);
-
-          file = JSON.stringify(file, null, 4);
-
-          fs.writeFileSync(`${response}/${element}`, file);
-     }
-
-     process.exit(0);
+          template = fs.readFileSync(`${response}/${response_2}`);
+     
+          template = JSON.parse(template);
+     
+          for (let index = 0; index < files.length; index++) {
+               const element = files[index];
+               
+               var file = fs.readFileSync(`${response}/${element}`);
+               file = JSON.parse(file);
+     
+               file = recursiveCheck(file, template);
+     
+               file = JSON.stringify(file, null, 4);
+     
+               fs.writeFileSync(`${response}/${element}`, file);
+          }
+     
+          process.exit(0);
+     });
 });
 
 function recursiveCheck(object, _template) {

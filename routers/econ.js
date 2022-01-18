@@ -178,6 +178,11 @@ router.get("/item/all", async (req, res) => {
 	res.status(200).json(list);
 });
 
+router.get("/inventory", async (req, res) => {
+	var data = PullPlayerData(req.user.id);
+	return res.status(200).json(data.econ.inventory);
+});
+
 //#region functions 
 
 function PullItem(id) {

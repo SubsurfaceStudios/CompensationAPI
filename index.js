@@ -76,7 +76,6 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connnected_clients = {};
 
 const WebSocket = require('ws');
-const { stdin, stderr } = require('process');
 const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
      console.log('server started')
 });
@@ -119,8 +118,15 @@ wss.on('connection', async (ws, request) => {
                ws_connnected_clients[tokenData.id] = ws;
                var presenceData = helpers.PullPlayerData(tokenData.id);
                presenceData.presence.status = "online";
+               if(presenceData.econ.previous_daily_redeemed < (Date.now() - 86400000)) {
+                    // Daily login rewards.
+                    presenceData.econ.currency += 100;
+                    presenceData.econ.previous_daily_redeemed = Date.now();
+               }
                helpers.PushPlayerData(tokenData.id, presenceData);
                ws.send("AUTHORIZED");
+
+               
           }
      });
 

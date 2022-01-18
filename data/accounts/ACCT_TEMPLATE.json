@@ -54,6 +54,7 @@
           "currency": 0,
           "inventory": {
                
-          }
+          },
+          "previous_daily_redeemed": 0
      }
 }

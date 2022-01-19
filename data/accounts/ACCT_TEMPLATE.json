@@ -7,52 +7,15 @@
           ],
           "moderatedRooms": [
           ],
-          "outfit": {
-               "player.equip_slot.shirt": "0",
-               "player.equip_slot.pants": "1",
-               "player.equip_slot.hair_style": "2",
-               "player.materials.hair_color": "0"
-          },
+          "outfit": {},
           "bio": "",
           "pronouns": "Ask Me"
      },
      "private": {
-          "currency": 0,
           "availableTags": [
                ""
           ],
-          "inventory": {
-               "clothes": {
-                    "hat": [
-                    ],
-                    "hairStyles": [
-                         0
-                    ],
-                    "hairColors": [
-                         0
-                    ],
-                    "glasses": [
-                    ],
-                    "shirts": [
-                         0
-                    ],
-                    "pants": [
-                    ],
-                    "chest": [
-                    ],
-                    "skinTones": [
-                         0,
-                         1,
-                         2,
-                         3,
-                         4,
-                         5
-                    ]
-               },
-               "consumables": {
-               }
-               
-          },
+          "inventory": {},
           "acquaintances": [
           ],
           "friends": [

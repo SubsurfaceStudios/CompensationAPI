@@ -258,6 +258,12 @@ function onPlayerReportedCallback(reportData) {
      ) {
           BanPlayer(reportData.reportedUser, reportData.reason, 1, reportData.reportingUser);
           auditLog(`!! MODERATOR ACTION !!   Moderator ${reportingData.nickname} (@${reportingData.username}) reported user ${reportedData.nickname} (@${reportedData.username}) for the reason of ${reportData.reason}, resulting in them being automatically timed out for 1 hour.`);
+          
+          var index = reportingData.auth.reportedUsers.findIndex(item => item == reportData.reportedUser);
+          if(index >= 0) {
+               reportingData.auth.reportedUsers.splice(index);
+               PushPlayerData(reportData.reportingUser, reportingData);
+          }
      } else if (reportedData.auth.recievedReports.length >= config.timeout_at_report_count) {
           BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.timeout_at_report_count} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
           auditLog(`!! MODERATION ACTION !! User ${reportingData.nickname} (@${reportedData.username}) was timed out for 6 hours for recieving ${config.timeout_at_report_count} reports. Please investigate!`);

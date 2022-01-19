@@ -16,7 +16,7 @@ router.post("/play-sound", middleware.authenticateDeveloperToken, async (req, re
 
      var count = helpers.getAccountCount();
      for (let index = 0; index < count; index++) {
-          require('./index').sendStringToClient(index, `PLAY_SOUND ${url}`);
+          require('../index').sendStringToClient(index, `PLAY_SOUND ${url}`);
      }
 
      res.sendStatus(200);
@@ -25,7 +25,7 @@ router.post("/play-sound", middleware.authenticateDeveloperToken, async (req, re
 router.post("/stop-sounds", middleware.authenticateDeveloperToken, async (req, res) => {
      var count = helpers.getAccountCount();
      for (let i = 0; i < count; i++) {
-          require('./index').sendStringToClient(index, "STOP_SOUND")
+          require('../index').sendStringToClient(index, "STOP_SOUND")
      }
 
      res.sendStatus(200);

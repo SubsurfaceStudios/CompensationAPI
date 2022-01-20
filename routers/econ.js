@@ -51,7 +51,7 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
 
 	try {
 		GrantPlayerItem(item_id);
-		ModifyPlayerCurrency(0 - item.buy_price);
+		ModifyPlayerCurrency(req.user.id, 0 - item.buy_price);
 		return res.status(200).send("Successfully purchased item! Enjoy!");
 	} catch (ex) {
 		res.status(500).send("Failed to purchase item due to an internal server error. Please contact Rose932#1454 on Discord for more information.");

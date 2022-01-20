@@ -50,7 +50,7 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
 	if(player_balance < item.buy_price) return res.status(400).send("You cannot afford that item!");
 
 	try {
-		GrantPlayerItem(item_id);
+		GrantPlayerItem(req.user.id, item_id);
 		ModifyPlayerCurrency(req.user.id, 0 - item.buy_price);
 		return res.status(200).send("Successfully purchased item! Enjoy!");
 	} catch (ex) {

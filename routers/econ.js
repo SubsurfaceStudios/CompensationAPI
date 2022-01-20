@@ -176,7 +176,7 @@ router.get("/item/all", async (req, res) => {
 	res.status(200).json(list);
 });
 
-router.get("/inventory", async (req, res) => {
+router.get("/inventory", middleware.authenticateToken, async (req, res) => {
 	var data = helpers.PullPlayerData(req.user.id);
 	return res.status(200).json(data.econ.inventory);
 });

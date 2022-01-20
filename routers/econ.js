@@ -182,7 +182,7 @@ router.get("/inventory", async (req, res) => {
 });
 
 router.get("/currency/balance", middleware.authenticateToken, async (req, res) => {
-	return res.status(200).send(GetPlayerCurrency(req.user.id));
+	return res.status(200).send(GetPlayerCurrency(req.user.id).toString());
 });
 
 router.post("/item/:item_id/equip", middleware.authenticateToken, async (req, res) => {

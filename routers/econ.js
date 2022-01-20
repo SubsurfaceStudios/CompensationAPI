@@ -170,7 +170,7 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 
 router.get("/item/all", async (req, res) => {
 	var files = fs.readdirSync('data/econ');
-	files = files.filter(item => item == "ITEM_TEMPLATE.json");
+	files = files.filter(item => item != "ITEM_TEMPLATE.json");
 	var list = {};
 	files.forEach((item) => {
 		item = item.split(".")[0];

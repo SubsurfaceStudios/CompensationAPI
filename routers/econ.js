@@ -173,6 +173,7 @@ router.get("/item/all", async (req, res) => {
 	files = files.filter(item => item == "ITEM_TEMPLATE.json");
 	var list = {};
 	files.forEach((item) => {
+		item = item.split(".")[0];
 		data = PullItem(item);
 		list[item] = data;
 	});

@@ -34,6 +34,7 @@ router.route("/item/:id/info")
 	.put(middleware.authenticateDeveloperToken, async (req, res) => {
 		id = fs.readdirSync('data/econ').length - 1;
 		PushItem(id, req.body);
+		res.status(200).send();
 	});
 
 router.post("/item/buy", middleware.authenticateToken, async (req, res) => {

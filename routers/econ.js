@@ -2,11 +2,7 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { authenticateToken } = require('../middleware');
 
 router.route("/item/:id/info")
 	.get(async (req, res) => {
@@ -185,8 +181,31 @@ router.get("/inventory", async (req, res) => {
 	return res.status(200).json(data.econ.inventory);
 });
 
-router.get("/currency/balance", authenticateToken, async (req, res) => {
+router.get("/currency/balance", middleware.authenticateToken, async (req, res) => {
 	return res.status(200).send(GetPlayerCurrency(req.user.id));
+});
+
+router.post("/item/:item_id/equip", middleware.authenticateToken, async (req, res) => {
+	var {item_id} = req.params;
+	
+	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item ID!");
+	
+	var itemData = PullItem(item_id);
+	if(itemData == null) return res.status(404).send("That item does not exist!");
+	if(!itemData.equippable) return res.status(400).send("That item is not equippable!");
+
+	var count = GetPlayerItemCount(item_id);
+	if(count < 1) return res.status(400).send("You do not own that item!");
+
+	try {
+		var playerData = helpers.PullPlayerData(req.user.id);
+		playerData.public.outfit[itemData.use_slot] = item_id;
+		helpers.PushPlayerData(req.user.id, playerData);
+
+		return res.sendStatus(200);
+	} catch {
+		return res.sendStatus(500);
+	}
 });
 
 //#region functions 

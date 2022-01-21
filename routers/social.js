@@ -5,7 +5,7 @@ const fs = require('fs');
 const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 //minor change for commit test
-//another minor comment for commit testing
+// whoopty do another fake commit
 const notificationTemplates = {
      invite: "invite",
      friendRequest: "friendRequest",

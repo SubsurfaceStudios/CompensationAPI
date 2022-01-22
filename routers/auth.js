@@ -81,6 +81,8 @@ router.post("/create", async (req, res) => {
 
      fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
      res.sendStatus(200);
+
+     const econ = require('./econ');
 });
 
 router.post("/check", middleware.authenticateToken, async (req, res) => {

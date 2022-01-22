@@ -275,8 +275,10 @@ function SubtractPlayerItem(id, item_id) {
 
 	if(PullItem(item_id) == null) return null;
 
-	if(typeof data.econ.inventory[item_id] == 'undefined') data.econ.inventory[item_id] = 0;
-	else data.econ.inventory[item_id] = data.econ.inventory[item_id] > 0 ? data.econ.inventory[item_id] - 1 : 0;
+	if(typeof data.econ.inventory[item_id] != 'number') data.econ.inventory[item_id] = 0;
+
+	if(data.econ.inventory[item_id] >= 1) data.econ.inventory[item_id]--;
+	else delete data.econ.inventory[item_id];
 
 	helpers.PushPlayerData(id, data);
 }

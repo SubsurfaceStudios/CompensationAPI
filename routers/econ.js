@@ -186,11 +186,12 @@ router.get("/currency/balance", middleware.authenticateToken, async (req, res) =
 	return res.status(200).send(GetPlayerCurrency(req.user.id).toString());
 });
 
-router.post("/item/:item_id/equip", middleware.authenticateToken, async (req, res) => {
-	var {item_id} = req.params;
+router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
+	var {item_id} = req.body;
 	
 	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item ID!");
-	
+	item_id = sanitize(item_id);
+
 	var itemData = PullItem(item_id);
 	if(itemData == null) return res.status(404).send("That item does not exist!");
 	if(!itemData.equippable) return res.status(400).send("That item is not equippable!");

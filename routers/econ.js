@@ -82,6 +82,7 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
 	try {
 		GrantPlayerItem(target, item_id);
 		ModifyPlayerCurrency(req.user.id, 0 - item.gift_price);
+		return res.status(200).send("Gift successfully sent! Thanks for playing Compensation VR!");
 	} catch (ex) {
 		res.status(500).send("Internal server error, failed to send gift. Contact Rose932#1454 on Discord for more information.");
 		console.error(ex);
@@ -274,8 +275,10 @@ function SubtractPlayerItem(id, item_id) {
 
 	if(PullItem(item_id) == null) return null;
 
-	if(typeof data.econ.inventory[item_id] == 'undefined') data.econ.inventory[item_id] = 0;
-	else data.econ.inventory[item_id] = data.econ.inventory[item_id] > 0 ? data.econ.inventory[item_id] - 1 : 0;
+	if(typeof data.econ.inventory[item_id] != 'number') data.econ.inventory[item_id] = 0;
+
+	if(data.econ.inventory[item_id] >= 1) data.econ.inventory[item_id]--;
+	else delete data.econ.inventory[item_id];
 
 	helpers.PushPlayerData(id, data);
 }

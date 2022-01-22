@@ -99,7 +99,7 @@ router.post("/item/refund", middleware.authenticateToken, async (req, res) => {
 	if(item == null) return res.status(404).send("That item does not exist!");
 	if(!item.is_refundable) return res.status(400).send("You cannot refund that item!");
 
-	var count = GetPlayerItemCount(item_id);
+	var count = GetPlayerItemCount(req.user.id, item_id);
 	if(count < 1) return res.status(400).send("You do not own that item. >:(");
 
 	try {

@@ -82,6 +82,7 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
 	try {
 		GrantPlayerItem(target, item_id);
 		ModifyPlayerCurrency(req.user.id, 0 - item.gift_price);
+		return res.status(200).send("Gift successfully sent! Thanks for playing Compensation VR!");
 	} catch (ex) {
 		res.status(500).send("Internal server error, failed to send gift. Contact Rose932#1454 on Discord for more information.");
 		console.error(ex);

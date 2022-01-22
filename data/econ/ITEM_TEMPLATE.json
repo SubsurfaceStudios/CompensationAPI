@@ -12,5 +12,6 @@
     "use_slot": "player.equip_slot.shirt",
     "buy_price": 0,
     "refund_price": 0,
-    "gift_price": 0
+    "gift_price": 0,
+    "listed_in_store": true
 }

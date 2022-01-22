@@ -196,7 +196,7 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
 	if(itemData == null) return res.status(404).send("That item does not exist!");
 	if(!itemData.equippable) return res.status(400).send("That item is not equippable!");
 
-	var count = GetPlayerItemCount(item_id);
+	var count = GetPlayerItemCount(req.user.id, item_id);
 	if(count < 1) return res.status(400).send("You do not own that item!");
 
 	try {

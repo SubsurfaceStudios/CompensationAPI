@@ -3,7 +3,7 @@ on: [push]
 jobs:
   disord_test_message:
     runs-on: ubuntu-latest
-    name: discord commits
+    name: Discord Commits
     steps:
     - name: Discord Commits
       uses: Sniddl/discord-commits@v1.3

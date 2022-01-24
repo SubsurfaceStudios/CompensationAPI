@@ -7,7 +7,12 @@
           ],
           "moderatedRooms": [
           ],
-          "outfit": {},
+          "outfit": {
+               "player.hair_style": "27",
+               "player.equip_slot.undershirt": "0",
+               "player.skin_color": "17",
+               "player.hair_color": "20"
+          },
           "bio": "",
           "pronouns": "Ask Me"
      },
@@ -45,6 +50,7 @@
      "econ": {
           "currency": 0,
           "inventory": {
+               "0": 1,
                "14": 1,
                "15": 1,
                "16": 1,

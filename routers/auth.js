@@ -77,12 +77,8 @@ router.post("/create", async (req, res) => {
      data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
      data.auth.salt = salt;
 
-     const final = data;
-
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(final, null, "    "));
+     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "    "));
      res.sendStatus(200);
-
-     const econ = require('./econ');
 });
 
 router.post("/check", middleware.authenticateToken, async (req, res) => {

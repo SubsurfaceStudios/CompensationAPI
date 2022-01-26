@@ -261,7 +261,6 @@ router.get("/search", async (req, res) => {
      fuseResult.map((item) => {
           finalResults.push(item.item.auth.id);
      });
-
      return res.status(200).json(finalResults);
 });
 

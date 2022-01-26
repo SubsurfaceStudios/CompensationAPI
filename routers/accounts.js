@@ -6,7 +6,10 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData } = require('../helpers');
+const express = require('express');
+const Fuse = require('fuse.js');
 
+router.use(express.urlencoded({extended: false}));
 
 //Call to get the public account data of a user.
 router.get("/:id/public", async (req, res) => {
@@ -210,6 +213,54 @@ router.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async
      helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
 
      res.status(200).send("Action successful.");
+});
+
+router.get("/search", async (req, res) => {
+     var {type, query, case_sensitive} = req.query;
+     if(typeof query != 'string') return res.status(400).send("No query specified!");
+     if(typeof type != 'string') type = 'username';
+     if(typeof case_sensitive != 'string') case_sensitive = false;
+     else case_sensitive = case_sensitive == 'true' ? true : false;
+
+     var players = [];
+     var files = fs.readdirSync('./data/accounts');
+
+     // Get all players
+     for (let index = 0; index < files.length; index++) {
+          const element = files[index];
+          if(element == 'ACCT_TEMPLATE.json') continue;
+
+          var json = JSON.parse(fs.readFileSync(`./data/accounts/${element}`));
+          json.auth.id = element.split('.')[0];
+          players.push(json);
+     }
+
+     switch (type) {
+          case "username":
+               type = "public.username";
+               break;
+          case "nickname":
+               type = "public.nickname";
+               break;
+          case "bio":
+               type = "public.bio";
+               break;
+          default:
+               type = "public.username";
+               break;
+     }
+
+     const fuse = new Fuse(players, {
+          includeScore: false,
+          keys: [type]
+     });
+
+     const fuseResult = fuse.search(query);
+     
+     var finalResults = [];
+     fuseResult.map((item) => {
+          finalResults.push(item.item.auth.id);
+     });
 });
 
 module.exports = router;

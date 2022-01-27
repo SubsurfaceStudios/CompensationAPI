@@ -104,14 +104,15 @@ router.post("/friend-request", middleware.authenticateToken, async (req, res) =>
 
 router.post("/accept-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = target;
+     if(typeof target !== 'string') return res.status(400).send("No target specified.");
+     target = sanitize(target);
 
      var recievingData = helpers.PullPlayerData(req.user.id);
+     var sendingData = helpers.PullPlayerData(target);
 
      if(helpers.ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
-     var filteredNotifications = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
-     
-     if(filteredNotifications.length < 1) return res.status(400).send("You do not have any friend requests from this player. Ask them to send you one.");
+
+     if(!sendingData.private.friendRequestsSent.includes(req.user.id)) return res.status(400).send("This player has not sent you a friend request. API magic won't help you here buddy.")
 
      for (let index = 0; index < filteredNotifications.length; index++) {
           let itemIndex = recievingData.notifications.findIndex(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);

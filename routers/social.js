@@ -114,6 +114,8 @@ router.post("/accept-request", middleware.authenticateToken, async (req, res) =>
 
      if(!sendingData.private.friendRequestsSent.includes(req.user.id)) return res.status(400).send("This player has not sent you a friend request. API magic won't help you here buddy.")
 
+     var filteredNotifications = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
+
      for (let index = 0; index < filteredNotifications.length; index++) {
           let itemIndex = recievingData.notifications.findIndex(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
           recievingData.notifications.splice(itemIndex);

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
@@ -6,6 +7,34 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = require('twilio')(accountSid, authToken);
+
+router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
+     try {
+          const data = helpers.PullPlayerData(req.user.id);
+          if(data.auth.mfa_enabled) return res.status(400).send("Two factor authentication is already enabled on this account!");
+
+          client.verify.services(process.env.TWILIO_SERVICE_SID)
+                    .entities(`COMPENSATION-VR-ACCOUNT-ID-${req.user.id}`)
+                    .newFactors
+                    .create({
+                         friendlyName: `${data.public.username}`,
+                         factorType: 'totp'
+                    })
+                    .then(new_factor => {
+                         res.status(200).send(new_factor.binding);
+                         data.auth.mfa_enabled = true;
+                         helpers.PushPlayerData(req.user.id, data);
+                    });
+     }
+     catch (ex) {
+          res.status(500).send("Failed to enable MFA.");
+          throw ex;
+     }
+});
 
 //Call to get a token from user account credentials.
 router.post("/login", (req, res) => {
@@ -43,7 +72,12 @@ router.post("/login", (req, res) => {
      const user = {username: username, id: userID, developer: developer};
 
      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
-     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+
+     if(!data.auth.mfa_enabled) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+
+     // client.verify.services(process.env.TWILIO_SERVICE_SID)
+     //           .entities(`COMPENSATION-VR-ACCOUNT-ID-${userID}`)
+     //           .factors
 });
 
 //Call to create an account from a set of credentials.

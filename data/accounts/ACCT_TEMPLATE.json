@@ -39,7 +39,9 @@
           "reportedUsers": [
           ],
           "recievedReports": [
-          ]
+          ],
+          "mfa_enabled": false,
+          "mfa_factor_sid": "undefined"
      },
      "notifications": [
      ],

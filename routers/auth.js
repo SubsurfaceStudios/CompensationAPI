@@ -76,7 +76,7 @@ router.post("/login", (req, res) => {
 
      const { username, password, two_factor_code} = req.body;
      const userID = helpers.getUserID(username);
-     if(userID == null) return res.status(404).send("User not found!");
+     if(userID == null) return res.status(404).send({message: "User not found!", failureCode: "5"});
 
      //now we read the correct user file for the authorization data
      const data = helpers.PullPlayerData(userID);
@@ -86,7 +86,7 @@ router.post("/login", (req, res) => {
 
      const externalHashed = bcrypt.hashSync(password, salt);
 
-     if(externalHashed !== HASHED_PASSWORD) return res.status(403).send("Incorrect password!");
+     if(externalHashed !== HASHED_PASSWORD) return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
 
      for (let index = 0; index < data.auth.bans.length; index++) {
           const element = data.auth.bans[index];
@@ -94,7 +94,8 @@ router.post("/login", (req, res) => {
           if(element.endTS > Date.now()) return res.status(403).send({
                message: "USER IS BANNED", 
                endTimeStamp: element.endTS, 
-               reason: element.reason
+               reason: element.reason,
+               failureCode: "7"
           });
      }
      

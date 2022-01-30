@@ -113,18 +113,18 @@ router.post("/login", (req, res) => {
           else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
      }
 
-     if(typeof two_factor_code !== 'string') return res.status(400).send("You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.");
+     if(typeof two_factor_code !== 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
      Verify2faCode(userID, two_factor_code, status => {
           switch(status) {
                case 'approved':
                     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
                case 'denied':
-                    return res.status(401).send("2FA Denied.");
+                    return res.status(401).send({message: "2FA Denied.", failureCode: "2"});
                case 'expired':
-                    return res.status(401).send("2FA Code Outdated");
+                    return res.status(401).send({message: "2FA Code Outdated", failureCode: "3"});
                case 'pending':
-                    return res.status(400).send("2FA Denied.");
+                    return res.status(400).send({message: "2FA Denied.", failureCode: "4"});
           }
      });
 });

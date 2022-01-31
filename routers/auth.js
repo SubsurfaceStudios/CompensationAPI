@@ -65,7 +65,7 @@ router.post('/remove-2fa', middleware.authenticateToken, async (req, res) => {
      data.auth.mfa_enabled = false;
      data.auth.mfa_factor_sid = "undefined";
 
-     helpers.PushPlayerData(req.user.id);
+     helpers.PushPlayerData(req.user.id, data);
      res.sendStatus(200);
 });
 

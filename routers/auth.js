@@ -169,6 +169,11 @@ router.post("/check", middleware.authenticateToken, async (req, res) => {
      return res.sendStatus(200);
 });
 
+router.get("/mfa-enabled", middleware.authenticateToken, async (req, res) => {
+     const data = helpers.PullPlayerData(req.user.id);
+     return res.status(200).send(`${data.auth.mfa_enabled}`);
+});
+
 function Verify2faUser(user_id, code, callback) {
      user_id = sanitize(user_id);
      var data = helpers.PullPlayerData(user_id);

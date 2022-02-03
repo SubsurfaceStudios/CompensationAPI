@@ -130,6 +130,24 @@ router.post("/login", (req, res) => {
      });
 });
 
+router.post("/refresh", middleware.authenticateToken, async (req, res) => {
+     const data = helpers.PullPlayerData(req.user.id);
+
+     for (let index = 0; index < data.auth.bans.length; index++) {
+          const element = data.auth.bans[index];
+          
+          if(element.endTS > Date.now()) return res.status(403).send({
+               message: "USER IS BANNED", 
+               endTimeStamp: element.endTS, 
+               reason: element.reason,
+               failureCode: "7"
+          });
+     }
+
+     const accessToken = jwt.sign(req.user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
+     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+});
+
 //Call to create an account from a set of credentials.
 router.post("/create", async (req, res) => {
      var { username, nickname, password } = req.body;

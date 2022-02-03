@@ -152,21 +152,40 @@ function sendStringToClient(id, data) {
      ws_connnected_clients[id].send(data);
 }
 
-module.exports = {
-     sendStringToClient: sendStringToClient
-};
+const { MongoClient } = require('mongodb');
 
-process.on('beforeExit', function () {
-     helpers.auditLog("Server exit.");
+const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const client = new MongoClient(uri, {
+     useNewUrlParser: true,
+     useUnifiedTopology: true
 });
 
-process.on('uncaughtException', function (exception) {
-     helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``);
-     console.error(exception);
-});
+client.connect((error, result) => {
+     if(error) {
+          console.error(`Failed to connect to MongoDB - fatal\n` + error);
+          helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error);
+          process.exit(1);
+     }
 
-process.on('SIGINT', function () {
-     helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)")
+     console.log("MongoDB Connection Established.");
 
-     setTimeout(() => process.exit(), 250);
+     module.exports = {
+          sendStringToClient: sendStringToClient,
+          mongoClient: client
+     };
+     
+     process.on('beforeExit', function () {
+          helpers.auditLog("Server exit.");
+     });
+     
+     process.on('uncaughtException', function (exception) {
+          helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``);
+          console.error(exception);
+     });
+     
+     process.on('SIGINT', function () {
+          helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)")
+     
+          setTimeout(() => process.exit(), 250);
+     });
 });

@@ -4,6 +4,7 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const jwt = require('jsonwebtoken');
+const firebaseAuth = require('firebase/auth');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -160,7 +161,7 @@ const client = new MongoClient(uri, {
      useUnifiedTopology: true
 });
 
-client.connect((error, result) => {
+client.connect(async (error, result) => {
      if(error) {
           console.error(`Failed to connect to MongoDB - fatal\n` + error);
           helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error);
@@ -168,6 +169,19 @@ client.connect((error, result) => {
      }
 
      console.log("MongoDB Connection Established.");
+
+     require('firebase/app').initializeApp(require('./env').firebaseConfig);
+
+     const auth = firebaseAuth.getAuth();
+
+     const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
+
+     if(typeof firebaseAuthUser.user.uid == 'undefined') {
+          auditLog('Failed to connect to Firebase - fatal');
+          console.error('Failed to connect to Firebase - fatal');
+     }
+
+     console.log('Firebase Connection Established.');
 
      module.exports = {
           sendStringToClient: sendStringToClient,

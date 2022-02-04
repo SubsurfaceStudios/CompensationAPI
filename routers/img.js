@@ -95,7 +95,7 @@ router.post("/upload", middleware.authenticateToken, async (req, res) => {
 
           // Upload image to firebase.
           const storage = firebaseStorage.getStorage();
-          const ref = firebaseStorage.ref(storage, `/images/${MetaData._id}.jpg`);
+          const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
           firebaseStorage.uploadBytes(ref, buff);
 
 

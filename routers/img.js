@@ -4,69 +4,161 @@ const middleware = require('../middleware');
 const fs = require('fs');
 const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
+const express = require('express');
+const mongodb = require('mongodb');
+const firebaseStorage = require('firebase/storage');
+const path = require('node:path');
 
-router.post("/upload/:others/:roomId/:roomName", middleware.authenticateToken, async (req, res) => {
-     var timestamp = Date.now();
-     var dir = fs.readdirSync("./data/images/");
-     
-     var {others, roomName, roomId} = req.params;
+const index = require('../index');
 
-     if(!others) others = "[]";
-     others = JSON.parse(others);
+router.use(express.text({limit: '150mb'}));
 
-     if(!req.files)
-          return res.status(400).send("Request does not contain any files.");
-     
-     if(!Array.isArray(req.files)) 
-     {   
-          return res.status(400).send("Failed to parse files.");
+router.use(express.urlencoded({extended: false}));
+
+const imageMetadataTemplate = {
+     _id: 'undefined',
+     internalPathRef: '/images/undefined.jpg',
+     takenBy: {
+          id: '0',
+          nickname: 'DEVTEST',
+          username: 'devtest'
+     },
+     takenInRoomId: '0',
+     others: [ '0' ],
+     room: {
+          id: '0',
+          creator: '0',
+          name: 'Apartment'
+     },
+     infoPath: '/img/0/info',
+     filePath: '/img/0',
+     takenOn: {
+          unixTimestamp: 0000000000,
+          humanReadable: 'Thu, 01 Jan 1970'
+     },
+     social: {
+          comments: [],
+          votes: 0,
+          tags: [
+               'photo'
+          ]
      }
-     var filesSafe = Array.from(req.files);
+}
 
-     if(filesSafe.length > 1)
-          return res.status(400).send("You can only upload one image at a time.");
-     var file = filesSafe.img;
+router.post("/upload", middleware.authenticateToken, async (req, res) => {
+     try { 
+          var {others, roomId, tags} = req.query;
+          if(req.headers['content-type'] !== 'text/plain' || typeof req.body !== 'string') return res.status(400).send("You did not send encoded photo data.");
+          if(typeof roomId !== 'string') return res.status(400).send("Room ID not specified.");
+          if(typeof others !== 'string') others = '[]';
+          if(typeof tags !== 'string') tags = '[ "photo" ]';
 
-     if(file.mimetype !== "image/png")
-          return res.status(400).send("Sent file is not an image!");
+          var timestamp = Date.now();
+          var TakenByData = helpers.PullPlayerData(req.user.id);
+
+          const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+          var collection = db.collection("configuration");
+
+          var doc = await collection.findOne({_id: 'ImageCount'});
+
+          var MetaData = imageMetadataTemplate;
+          MetaData._id = doc.count + 1;
+
+          MetaData.takenBy.id = req.user.id;
+          MetaData.takenBy.nickname = TakenByData.public.nickname;
+          MetaData.takenBy.username = TakenByData.public.username;
+
+          MetaData.takenOn.unixTimestamp = timestamp;
+          MetaData.takenOn.humanReadable = new Date(timestamp).toUTCString();
+
+          // TODO room implementation with photos
+
+          MetaData.others = JSON.parse(others);
+          MetaData.internalPathRef = `/images/${MetaData._id}.jpg`;
+          MetaData.infoPath = `/img/${MetaData._id}/info`;
+          MetaData.filePath = `/img/${MetaData._id}`;
+
+          MetaData.social.tags = JSON.parse(tags);
+
+          // Push metadata to MongoDB
           
-     const filename = `${Math.floor(dir.length / 2) + 1}`;
+          collection.updateOne({_id: 'ImageCount'}, {$set: {count: MetaData._id}});
 
-     const authordata = helpers.PullPlayerData(req.user.id);
+          // Switch to the Images collection.
+          collection = db.collection("images");
 
-     var dotfiledata = {
-          AuthorId: req.user.id,
-          UploadTime: timestamp,
-          TaggedPlayers: others,
-          AuthorUsername: authordata.public.username,
-          AuthorNickname: authordata.public.nickname,
-          RoomName: roomName,
-          RoomId: roomId,
-          PhotoId: `${filename}`,
-          UploadTimePrettyPrint: Date.now().toLocaleString(),
-          privacy: 'public'
-     };
+          collection.insertOne(MetaData);
 
-     if(!fs.existsSync(`data/images/${filename}.png`)) {
-          file.mv(`data/images/${filename}.png`);
-          fs.writeFileSync(`data/images/.${filename}`, JSON.stringify(dotfiledata));
-          return res.status(200).send();
+          // Parse image
+          const buff = Buffer.from(req.body, 'base64');
+
+
+          // Upload image to firebase.
+          const storage = firebaseStorage.getStorage();
+          const ref = firebaseStorage.ref(storage, `/images/${MetaData._id}.jpg`);
+          firebaseStorage.uploadBytes(ref, buff);
+
+
+          // Finalize request
+          res.status(200).send("Successfully uploaded image.");
+     } catch (ex) {
+          // Error handling
+          console.error(ex);
+          res.status(500).send("Failed to upload image.");
      }
-     res.sendStatus(500);
 });
 
 router.get("/:id/info", async (req, res) => {
-     const {id} = req.params;
-     let id_clean = sanitize(id);
-     if(!fs.existsSync(`data/images/.${id_clean}`)) return res.status(404).send("Image with that ID does not exist.");
-     res.status(200).send(fs.readFileSync(`data/images/.${id_clean}`));
+     var {id} = req.params;
+     if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
+     id = sanitize(id);
+
+     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     var collection = db.collection("images");
+
+     try {
+          var doc = await collection.findOne({_id: id});
+          return res.status(200).json(doc);
+     } catch (ex) {
+          console.error(ex);
+          return res.status(500).send("Failed to retrieve image data.");
+     }
 });
 
 router.get("/:id", async (req, res) => {
-     const {id} = req.params;
-     let id_clean = sanitize(id);
-     if(!fs.existsSync(`data/images/${id_clean}.png`)) return res.status(404).send("Image with that ID does not exist.");
-     res.sendFile(`${__dirname}/data/images/${id_clean}.png`);
+     var {id} = req.params;
+     var {base64} = req.query;
+     if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
+     id = sanitize(id);
+     id = parseInt(id);
+
+     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     var collection = db.collection("images");
+
+     try {
+          var ImageMetaData = await collection.findOne({_id: id});
+          
+          const storage = firebaseStorage.getStorage();
+          const ref = firebaseStorage.ref(storage, ImageMetaData.internalPathRef);
+
+          if (typeof base64 === 'undefined') {
+               var ImageBuffer = await firebaseStorage.getBytes(ref);
+               fs.writeFileSync(`data/cache/${id}.jpg`, Buffer.from(ImageBuffer));
+               res.status(200).sendFile(path.resolve(`data/cache/${id}.jpg`));
+
+               // Clear the file from cache later
+               setTimeout(() => fs.rmSync(`data/cache/${id}.jpg`), 1000);
+          } else {
+               var ImageBuffer = await firebaseStorage.getBytes(ref);
+               var ImageBase64String = Buffer.from(ImageBuffer).toString('base64');
+               res.status(200).contentType('text/plain').send(ImageBase64String);
+          }
+
+          
+     } catch (ex) {
+          console.error(ex);
+          return res.status(500).send("Failed to retrieve image.");
+     }
 });
 
 module.exports = router;

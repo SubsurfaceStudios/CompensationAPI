@@ -45,6 +45,7 @@ const imageMetadataTemplate = {
      }
 }
 
+
 router.post("/upload", middleware.authenticateDeveloperToken, async (req, res) => {
      try { 
           var {others, roomId, tags} = req.query;

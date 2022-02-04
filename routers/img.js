@@ -45,7 +45,7 @@ const imageMetadataTemplate = {
      }
 }
 
-router.post("/upload", middleware.authenticateToken, async (req, res) => {
+router.post("/upload", middleware.authenticateDeveloperToken, async (req, res) => {
      try { 
           var {others, roomId, tags} = req.query;
           if(req.headers['content-type'] !== 'text/plain' || typeof req.body !== 'string') return res.status(400).send("You did not send encoded photo data.");

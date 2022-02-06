@@ -74,7 +74,8 @@ router.post("/login", (req, res) => {
      //so first things first we need to check the username and password
      //and if those are correct we generate a token
 
-     const { username, password, two_factor_code} = req.body;
+     const { username, password, two_factor_code, hwid} = req.body;
+
      const userID = helpers.getUserID(username);
      if(userID == null) return res.status(404).send({message: "User not found!", failureCode: "5"});
 
@@ -114,11 +115,33 @@ router.post("/login", (req, res) => {
           else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
      }
 
-     if(typeof two_factor_code !== 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
+     if(typeof two_factor_code !== 'string') {
+          if(typeof hwid !== 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
+
+          if(data.auth.multi_factor_authenticated_logins.length < 1) return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
+
+          const MatchingLogins = data.auth.multi_factor_authenticated_logins.filter(item => {
+               // Return   IP match (include proxies)        HWID match    Less than 30 days since MFA login
+               return item.ips == req.ips && item.hwid === hwid && Date.now() < item.timestamp + 2592000000;
+          });
+
+
+          if(MatchingLogins.length > 0) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+
+          return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
+     }
 
      Verify2faCode(userID, two_factor_code, status => {
           switch(status) {
                case 'approved':
+                    if(typeof hwid !== 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+                    const login = {
+                         ips: req.ips,
+                         hwid: hwid,
+                         timestamp: Date.now()
+                    }
+                    data.auth.multi_factor_authenticated_logins.push(login);
+                    helpers.PushPlayerData(req.user.id, data);
                     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
                case 'denied':
                     return res.status(401).send({message: "2FA Denied.", failureCode: "2"});

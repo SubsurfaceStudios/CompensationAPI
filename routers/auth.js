@@ -141,7 +141,7 @@ router.post("/login", (req, res) => {
                          timestamp: Date.now()
                     }
                     data.auth.multi_factor_authenticated_logins.push(login);
-                    helpers.PushPlayerData(req.user.id, data);
+                    helpers.PushPlayerData(userID, data);
                     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
                case 'denied':
                     return res.status(401).send({message: "2FA Denied.", failureCode: "2"});

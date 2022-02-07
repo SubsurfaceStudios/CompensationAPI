@@ -50,6 +50,10 @@ app.use("/api/social", require('./routers/social'));
 // /api/econ/*
 const econ = require('./routers/econ');
 app.use("/api/econ", econ.router);
+// /api/matchmaking/*
+app.use("/api/matchmaking", require('./routers/matchmaking'));
+// /api/rooms/*
+app.use("/api/rooms", require('./routers/rooms'));
 
 //#endregion
 

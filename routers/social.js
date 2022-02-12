@@ -110,18 +110,18 @@ router.post("/accept-request", middleware.authenticateToken, async (req, res) =>
      var recievingData = helpers.PullPlayerData(req.user.id);
      var sendingData = helpers.PullPlayerData(target);
 
-     if(helpers.ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.")
-
-     if(!sendingData.private.friendRequestsSent.includes(req.user.id)) return res.status(400).send("This player has not sent you a friend request. API magic won't help you here buddy.")
-
      var filteredNotifications = recievingData.notifications.filter(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
 
      for (let index = 0; index < filteredNotifications.length; index++) {
           let itemIndex = recievingData.notifications.findIndex(item => item.template == notificationTemplates.friendRequest && item.parameters.sendingPlayer == target);
           recievingData.notifications.splice(itemIndex);
      }
+     
+     if(filteredNotifications.length > 0) helpers.PushPlayerData(req.user.id, recievingData);
 
-     helpers.PushPlayerData(req.user.id, recievingData);
+     if(helpers.ArePlayersAnyFriendType(req.user.id, target)) return res.status(400).send("You are already friends with this player.");
+
+     if(!sendingData.private.friendRequestsSent.includes(req.user.id)) return res.status(400).send("This player has not sent you a friend request. API magic won't help you here buddy.");
 
      helpers.AddAcquaintance(req.user.id, target, true);
 

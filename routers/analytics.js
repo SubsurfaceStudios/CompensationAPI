@@ -7,7 +7,7 @@ const sanitize = require('sanitize-filename');
 
 
 router.get("/account-count", async (req, res) => {
-     var files = fs.readdirSync("/data/accounts");
+     var files = fs.readdirSync("./data/accounts");
      res.status(200).send(`${files.length - 1}`);
 });
 

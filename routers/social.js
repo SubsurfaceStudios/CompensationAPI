@@ -14,17 +14,17 @@ const notificationTemplates = {
 
 router.get("/imgfeed", async (req, res) => {
      // TODO Implement home page feed
-     return res.sendStatus(503);
+     return res.sendStatus(501);
 });
 
 router.get("/takenby", async (req, res) => {
      // TODO Implement photos taken by user
-     return res.sendStatus(503);
+     return res.sendStatus(501);
 });
 
 router.get("/takenwith", async (req, res) => {
      // TODO Implement photos taken with user
-     return res.sendStatus(503);
+     return res.sendStatus(501);
 });
 
 router.post("/friend-request", middleware.authenticateToken, async (req, res) => {

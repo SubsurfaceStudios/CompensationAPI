@@ -71,24 +71,34 @@ function NotifyPlayer(id, template, params) {
 
 function ArePlayersAnyFriendType(player1, player2) {
      var data = PullPlayerData(player1);
+     var data2 = PullPlayerData(player2);
      return data.private.acquaintances.includes(player2) || 
           data.private.friends.includes(player2) || 
-          data.private.favoriteFriends.includes(player2);
+          data.private.favoriteFriends.includes(player2) ||
+          data2.private.acquaintances.includes(player1) || 
+          data2.private.friends.includes(player1) ||
+          data2.private.favoriteFriends.includes(player1);
 }
 
 function ArePlayersAcquantances(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.acquaintances.includes(player2);
+     var data2 = PullPlayerData(player2);
+     return data.private.acquaintances.includes(player2) ||
+          data2.private.acquaintances.includes(player1);;
 }
 
 function ArePlayersFriends(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.friends.includes(player2);
+     var data2 = PullPlayerData(player2);
+     return data.private.friends.includes(player2) ||
+          data2.private.friends.includes(player1);
 }
 
 function ArePlayersFavoriteFriends(player1, player2) {
      var data = PullPlayerData(player1);
-     return data.private.favoriteFriends.includes(player2);
+     var data2 = PullPlayerData(player2);
+     return data.private.favoriteFriends.includes(player2) ||
+          data2.private.favoriteFriends.includes(player1);
 }
 
 function RemoveAcquaintance(player1, player2, both) {

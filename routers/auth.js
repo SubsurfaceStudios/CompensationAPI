@@ -167,8 +167,12 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
           });
      }
 
-     const accessToken = jwt.sign(req.user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
-     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+     const developer = data.private.availableTags.includes("Developer");
+
+     const user = {username: username, id: userID, developer: developer};
+
+     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
+     return res.status(200).json({ userID: req.user.id, username: username, accessToken: accessToken});
 });
 
 //Call to create an account from a set of credentials.

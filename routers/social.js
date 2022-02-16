@@ -13,70 +13,18 @@ const notificationTemplates = {
 }
 
 router.get("/imgfeed", async (req, res) => {
-     try {
-          var {count, offset, order} = req.body;
-          if(typeof(count) == 'undefined' || typeof(offset) == 'undefined' || typeof(order) == 'undefined') return res.status(400).send("Insufficient data in request JSON body. Required parameters are 'count', 'offset', and 'order'.");
-
-          var files = fs.readdirSync("data/images");
-          if(files.length < 1) return res.status(400).send("No photos available.")
-          files = files.filter((item => item.substring(0, 1) == '.'));
-          if(order == 0)
-               files = files.reverse();
-
-          if(count > files.length - offset) count = files.length - offset;
-          if(count < 1) count = 1;
-
-          var filesArray = [];
-          let i;
-          for(i = offset + 1; i < count; i++)
-               filesArray.push(helpers.PullPlayerData(i));
-          
-          res.status(200).json(filesArray);
-     } catch (exception) {
-          console.error(exception);
-          return res.sendStatus(500);
-     }
-     
+     // TODO Implement home page feed
+     return res.sendStatus(501);
 });
 
 router.get("/takenby", async (req, res) => {
-     var {user} = req.body;
-     if(typeof(user) == 'undefined') return res.status(400).send("Request body does not contain the required parameter of 'user'");
-     var dir = fs.readdirSync("data/images");
-
-     if(dir.length < 1) return res.status(500).send("No images available on the API.");
-     
-     const playerdata = helpers.PullPlayerData(user);
-     if(playerdata == null) return res.status(404).send("User does not exist!");
-
-     dir = dir.filter((item => item.substring(0, 1) == '.'));
-     dir = dir.map((item => JSON.parse(fs.readFileSync(`data/images/${item}`))));
-
-     var playerTakenPhotos = dir.filter((item => item.AuthorId == user));
-     
-     if(playerTakenPhotos.length < 1) return res.status(404).send("Player has not taken or uploaded any photos.");
-
-     return res.status(200).json(playerTakenPhotos);
+     // TODO Implement photos taken by user
+     return res.sendStatus(501);
 });
 
 router.get("/takenwith", async (req, res) => {
-     var {user} = req.body;
-     if(typeof(user) == 'undefined') return res.status(400).send("Request body does not contain the required parameter of 'user'");
-     var dir = fs.readdirSync("data/images");
-
-     if(dir.length < 1) return res.status(500).send("No images available on the API.");
-     
-     const playerdata = helpers.PullPlayerData(user);
-     if(playerdata == null) return res.status(404).send("User does not exist!");
-
-     dir = dir.filter((item => item.substring(0, 1) == '.'));
-     dir = dir.map((item => JSON.parse(fs.readFileSync(`data/images/${item}`))));
-
-     var playerTaggedPhotos = dir.filter((item => item.TaggedPlayers.includes(user)));
-     
-     if(playerTaggedPhotos.length < 1) return res.status(404).send("Player has not been tagged in any photos.");
-
-     return res.status(200).json(playerTaggedPhotos);
+     // TODO Implement photos taken with user
+     return res.sendStatus(501);
 });
 
 router.post("/friend-request", middleware.authenticateToken, async (req, res) => {

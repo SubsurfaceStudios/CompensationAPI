@@ -33,6 +33,7 @@ router.get("/imgfeed", async (req, res) => {
           else try {
                // If the offset is set, try and parse it.
                offset = parseInt(offset);
+               if(offset < 0) offset = 0;
           } catch {
                // If the offset cannot be parsed, set it to 0.
                count = 0;
@@ -58,7 +59,7 @@ router.get("/imgfeed", async (req, res) => {
           collection = db.collection("images");
 
           var final = [];
-          for (let index = offset + 1; index <= count + offset + 1; index++) {
+          for (let index = offset + 1; index <= count + 1; index++) {
                // Fetch each image in ID order.
                var item = await collection.findOne({_id: index});
                final.push(item);
@@ -77,6 +78,7 @@ router.get("/imgfeed", async (req, res) => {
 });
 
 router.get("/takenby", async (req, res) => {
+
      try {
           var {target, count, offset, reverse} = req.query;
 
@@ -94,6 +96,7 @@ router.get("/takenby", async (req, res) => {
           if(typeof offset !== 'string') offset = 0;
           else try {
                offset = parseInt(offset);
+               if(offset < 0) offset = 0;
           } catch {
                offset = 0;
           }
@@ -104,7 +107,9 @@ router.get("/takenby", async (req, res) => {
           var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
 
           var collection = db.collection("images");
-          var filtered_images = collection.find({"takenby.id": target});
+          var filtered_images = await collection.find({'takenBy.id': target}).toArray();
+
+          // const filtered_images = all_images.filter(item => item.takenBy.id == target);
           const ImageCount = filtered_images.length;
 
           // Ensure proper count handling.
@@ -116,7 +121,7 @@ router.get("/takenby", async (req, res) => {
 
           // Push image data into array and serve.
           var final_response = [];
-          for (let index = offset + 1; index < count + offset + 1; index++) {
+          for (let index = offset; index < count + offset; index++) {
                final_response.push(filtered_images[index]);
           }
 
@@ -145,6 +150,7 @@ router.get("/takenwith", async (req, res) => {
           if(typeof offset !== 'string') offset = 0;
           else try {
                offset = parseInt(offset);
+               if(offset < 0) offset = 0;
           } catch {
                offset = 0;
           }
@@ -155,9 +161,8 @@ router.get("/takenwith", async (req, res) => {
           var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
 
           var collection = db.collection("images");
-          var all_images = collection.find();
+          var filtered_images = await collection.find({others: {$all: [target]}}).toArray();
 
-          const filtered_images = all_images.filter(item => item.others.includes(target));
           const ImageCount = filtered_images.length;
 
           // Ensure proper count handling.
@@ -169,7 +174,7 @@ router.get("/takenwith", async (req, res) => {
 
           // Push image data into array and serve.
           var final_response = [];
-          for (let index = offset + 1; index < count + offset + 1; index++) {
+          for (let index = offset; index < count + offset; index++) {
                final_response.push(filtered_images[index]);
           }
 

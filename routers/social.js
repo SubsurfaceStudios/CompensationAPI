@@ -58,7 +58,7 @@ router.get("/imgfeed", async (req, res) => {
           collection = db.collection("images");
 
           var final = [];
-          for (let index = offset + 1; index <= count + 1; index++) {
+          for (let index = offset + 1; index <= count + offset + 1; index++) {
                // Fetch each image in ID order.
                var item = await collection.findOne({_id: index});
                final.push(item);
@@ -77,8 +77,53 @@ router.get("/imgfeed", async (req, res) => {
 });
 
 router.get("/takenby", async (req, res) => {
-     // TODO Implement photos taken by user
-     return res.sendStatus(501);
+     try {
+          var {target, count, offset, reverse} = req.query;
+
+          // Guard Clauses
+          if(typeof target !== 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
+
+          // Parameter validation
+          if(typeof count !== 'string') count = 50;
+          else try {
+               count = parseInt(count);
+          } catch {
+               count = 50;
+          }
+
+          if(typeof offset !== 'string') offset = 0;
+          else try {
+               offset = parseInt(offset);
+          } catch {
+               offset = 0;
+          }
+
+          // True if any value present, otherwise false.
+          reverse = (typeof reverse !== 'undefined');
+
+          var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+          var collection = db.collection("images");
+          var filtered_images = collection.find({"takenby.id": target});
+          const ImageCount = filtered_images.length;
+
+          // Ensure proper count handling.
+          if(count + offset > ImageCount) {
+               var discrepency = ImageCount - (count + offset)
+               if(count + discrepency > 0) count += discrepency;
+               else return res.status(404).send({message: "There are not enough images to fulfill your request with the given offset."});
+          }
+
+          // Push image data into array and serve.
+          var final_response = [];
+          for (let index = offset + 1; index < count + offset + 1; index++) {
+               final_response.push(filtered_images[index]);
+          }
+
+          return res.status(200).json(final_response);
+     } catch {
+          return res.sendStatus(500);
+     }
 });
 
 router.get("/takenwith", async (req, res) => {

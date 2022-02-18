@@ -13,8 +13,67 @@ const notificationTemplates = {
 }
 
 router.get("/imgfeed", async (req, res) => {
-     // TODO Implement home page feed
-     return res.sendStatus(501);
+     try {
+          var {count, reverse, offset} = req.query;
+
+          // If the count is not set, make it 50.
+          if(typeof count !== 'string') count = 50;
+          else try {
+               // If the count is set, try and parse it.
+               count = parseInt(count);
+               // Enforce maximum count of 50 for performance safety.
+               count = count > 50 ? 50 : count;
+          } catch {
+               // If the count cannot be parsed, set it to 50.
+               count = 50;
+          }
+
+          // If the offset is not set, make it 0.
+          if(typeof offset !== 'string') offset = 0;
+          else try {
+               // If the offset is set, try and parse it.
+               offset = parseInt(offset);
+          } catch {
+               // If the offset cannot be parsed, set it to 0.
+               count = 0;
+          }
+
+          // Value of ?reverse does not matter, only whether it exists.
+          reverse = (typeof reverse === 'undefined');
+
+          const {mongoClient} = require('../index');
+          const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+          
+          var collection = db.collection("configuration");
+
+          const ImageCount = await collection.findOne({_id: "ImageCount"}).count;
+
+          if(count + offset > ImageCount) {
+               var discrepency = ImageCount - (count + offset)
+               if(count + discrepency > 0) count += discrepency;
+               else return res.status(404).send({message: "There are not enough images to fulfill your request with the given offset."});
+          }
+
+          // Begin getting the image information.
+          collection = db.collection("images");
+
+          var final = [];
+          for (let index = offset + 1; index <= count + 1; index++) {
+               // Fetch each image in ID order.
+               var item = await collection.findOne({_id: index});
+               final.push(item);
+          }
+
+          // Reverse order if requested.
+          if(reverse) 
+               final = final.reverse();
+
+          return res.status(200).json(final);
+     } catch (ex) {
+          console.log(ex);
+          helpers.auditLog(`Exception during image feed request - exception:\n${ex}`);
+          return res.sendStatus(500);
+     }
 });
 
 router.get("/takenby", async (req, res) => {

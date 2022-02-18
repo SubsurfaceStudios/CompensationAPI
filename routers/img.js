@@ -113,6 +113,12 @@ router.get("/:id/info", async (req, res) => {
      var {id} = req.params;
      if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
      id = sanitize(id);
+     try {
+          id = parseInt(id);
+          if(id < 1) return res.status(400).send("Image ID is never below 0.");
+     } catch {
+          return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
+     }
 
      const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
      var collection = db.collection("images");

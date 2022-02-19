@@ -133,35 +133,55 @@ router.get("/:id/info", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-     var {id} = req.params;
-     var {base64} = req.query;
-     if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
-     id = sanitize(id);
-     id = parseInt(id);
-
-     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
-     var collection = db.collection("images");
-
      try {
-          var ImageMetaData = await collection.findOne({_id: id});
+          // Setup of parameters
+          var {id} = req.params;
+          var {base64} = req.query;
+
+          // Guard Clauses
+          if(typeof id !== 'string') return res.status(400).send({message:"You did not specify an image ID."});
+          else try {
+               id = parseInt(id);
+
+               if(isNaN(id)) return res.status(400).send({message: "Invalid image ID specified."});
+               if(id < 1) return res.status(400).send({message: "Image IDs are never below 0."});
+          } catch {
+               return res.status(500).send({message: "Failed to parse image ID."});
+          }
+
+          // Open database
+          const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+          // Validate collection
+          var collection = db.collection("configuration");
+          const ImageCount = await collection.findOne({_id: "ImageCount"});
+
+          if(id > ImageCount.count) return res.status(404).send({message: "The database does not contain that many images."});
+
+          // Switch collection to image data.
+          collection = db.collection("images");
+
+          var ImageInfo = await collection.findOne({_id: id});
           
           const storage = firebaseStorage.getStorage();
-          const ref = firebaseStorage.ref(storage, ImageMetaData.internalPathRef);
+          const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
 
           if (typeof base64 === 'undefined') {
-               var ImageBuffer = await firebaseStorage.getBytes(ref);
-               fs.writeFileSync(`data/cache/${id}.jpg`, Buffer.from(ImageBuffer));
-               res.status(200).sendFile(path.resolve(`data/cache/${id}.jpg`));
+               var ImageBytes = await firebaseStorage.getBytes(ref);
+               var ImageBuffer = Buffer.from(ImageBytes);
 
-               // Clear the file from cache later
-               setTimeout(() => fs.rmSync(`data/cache/${id}.jpg`), 1000);
+               var ImageFileMetadata = await firebaseStorage.getMetadata(ref);
+               
+               res.writeHead(200, {
+                    'ContentType': ImageFileMetadata.contentType,
+                    'Content-Length': ImageBuffer.length
+               });
+               return res.end(ImageBuffer);
           } else {
                var ImageBuffer = await firebaseStorage.getBytes(ref);
                var ImageBase64String = Buffer.from(ImageBuffer).toString('base64');
                res.status(200).contentType('text/plain').send(ImageBase64String);
           }
-
-          
      } catch (ex) {
           console.error(ex);
           return res.status(500).send("Failed to retrieve image.");

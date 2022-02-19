@@ -173,7 +173,7 @@ router.get("/:id", async (req, res) => {
                var ImageFileMetadata = await firebaseStorage.getMetadata(ref);
                
                res.writeHead(200, {
-                    'Content-Type': ImageFileMetadata.contentType,
+                    'Content-Type': 'image/jpeg',
                     'Content-Length': ImageBuffer.length
                });
                return res.end(ImageBuffer);

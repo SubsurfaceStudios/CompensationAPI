@@ -6,9 +6,22 @@ const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 
-router.get("/*", async (req, res) => {
-     res.sendStatus(501);
+const OncePerHour = new rateLimit.rateLimit({
+     "windowMs": 1 * 60 * 60 * 1000,
+     "max": 1,
+     "message": "This endpoint is limited to only 1 request per hour. Please try again in 60 minutes.",
+     "standardHeaders": true,
+     "legacyHeaders": true
+});
+
+router.post("/create", middleware.authenticateDeveloperToken, async (req, res) => {
+     try {
+          return res.sendStatus(501);
+     } catch {
+          return res.sendStatus(500);
+     }
 });
 
 

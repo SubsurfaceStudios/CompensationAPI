@@ -26,7 +26,7 @@ router.post("/create", OncePerHour, middleware.authenticateDeveloperToken, async
 
 router.get("/:id/public-info", middleware.authenticateDeveloperToken, async (req, res) => {
      try {
-          const {id} = req.params;
+          var {id} = req.params;
           const playerData = helpers.PullPlayerData(req.user.id);
 
           try {

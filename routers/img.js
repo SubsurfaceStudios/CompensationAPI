@@ -166,7 +166,7 @@ router.get("/:id", async (req, res) => {
           const storage = firebaseStorage.getStorage();
           const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
 
-          if (typeof base64 === 'undefined') {
+          if (typeof base64 === 'undefined' || base64 !== 'true') {
                var ImageBytes = await firebaseStorage.getBytes(ref);
                var ImageBuffer = Buffer.from(ImageBytes);
 

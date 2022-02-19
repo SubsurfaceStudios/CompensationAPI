@@ -16,7 +16,7 @@ const OncePerHour = new rateLimit.rateLimit({
      "legacyHeaders": true
 });
 
-router.post("/create", middleware.authenticateDeveloperToken, async (req, res) => {
+router.post("/create", OncePerHour, middleware.authenticateDeveloperToken, async (req, res) => {
      try {
           return res.sendStatus(501);
      } catch {

@@ -177,6 +177,10 @@ function sendStringToClient(id, data) {
      ws_connnected_clients[id].send(data);
 }
 
+function getClients() {
+     return ws_connnected_clients;
+}
+
 const { MongoClient } = require('mongodb');
 
 const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -210,7 +214,8 @@ client.connect(async (error, result) => {
 
      module.exports = {
           sendStringToClient: sendStringToClient,
-          mongoClient: client
+          mongoClient: client,
+          getClients: getClients
      };
      
      process.on('beforeExit', function () {

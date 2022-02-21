@@ -5,6 +5,7 @@ const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const jwt = require('jsonwebtoken');
 const firebaseAuth = require('firebase/auth');
+const MatchmakingAPI = require('./routers/matchmaking');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -53,7 +54,8 @@ app.use("/api/econ", econ.router);
 const matchmaking = require('./routers/matchmaking')
 app.use("/api/matchmaking", matchmaking.router);
 // /api/rooms/*
-app.use("/api/rooms", require('./routers/rooms'));
+const RoomsAPI = require('./routers/rooms');
+app.use("/api/rooms", RoomsAPI.router);
 
 //#endregion
 
@@ -87,7 +89,10 @@ const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols
 wss.on('connection', async (ws, request) => {
      var ignore_connection_closed = false;
      var tokenData;
-     var location;
+     var location = {
+          RoomId: null,
+          JoinCode: null
+     };
 
      console.log("User connected to websocket, awaiting authorization.");
 
@@ -137,11 +142,76 @@ wss.on('connection', async (ws, request) => {
                ws.send("AUTHORIZED");
 
           } else if (typeof tokenData !== 'undefined') {
-               const split = data.toString().split(' ');
+               const split = data.split(' ');
                switch(split[0]) {
                     // handle client input
-                    case "JOIN":
-                         ws.send("ASSERT Feature not implemented, how are you accessing this :face_with_raised_eyebrow:");
+                    case "MM_CMD":
+                         var RoomData = await RoomsAPI.GetRoomData(split[2]);
+                         if(typeof RoomData == 'undefined') return;
+                         switch (split[1]) {
+                              case "LEAVE":
+                                   if(location.JoinCode !== null) {
+                                        var previousInstance = await MatchmakingAPI.GetInstanceByJoinCode(location.RoomId, location.JoinCode);
+                                        await previousInstance.RemovePlayer(tokenData.id);
+                                        await MatchmakingAPI.SetInstance(previousInstance.RoomId, previousInstance.InstanceId, previousInstance);
+                                        console.log(`Player ${tokenData.id} left room with join code ${previousInstance.JoinCode}.`);
+                                        ws.send("CVR_CMD SIGN-OUT");
+                                   } else {
+                                        ws.send("EXCEPT You cannot leave an instance, you are not in one.");
+                                   }
+                                   return;
+                              case "CREATE-PRIVATE-INSTANCE":
+                                   var PlayerPermissions = Object.keys(RoomData.metadata.permissions).includes(tokenData.id) ? RoomData.metadata.permissions[tokenData.id] : "everyone";
+                                   var PermissionTable = RoomData.metadata.permissionTable[PlayerPermissions];
+
+                                   if(!PermissionTable.join) return ws.send("EXCEPT You do not have permission to join that room.");
+
+                                   var localInstance = await MatchmakingAPI.CreateInstance(split[2], MatchmakingModes.Private, 300, false, RoomData.metadata.subrooms[0].maxPlayers);
+                                   
+                                   localInstance.AddPlayer(tokenData.id);
+
+                                   await MatchmakingAPI.SetInstance(split[2], localInstance.InstanceId, localInstance);
+
+                                   if(location.JoinCode !== null) {
+                                        var previousInstance = await MatchmakingAPI.GetInstanceByJoinCode(location.RoomId, location.JoinCode);
+                                        await previousInstance.RemovePlayer(tokenData.id);
+                                        await MatchmakingAPI.SetInstance(previousInstance.RoomId, previousInstance.InstanceId, previousInstance);
+                                        console.log(`Player ${tokenData.id} left room with join code ${previousInstance.JoinCode}.`);
+                                   }
+
+                                   ws.send(`PUN_CMD CREATE-OR-JOIN-ROOM ${localInstance.JoinCode} ${RoomData.metadata.subrooms[0].maxPlayers}`);
+
+                                   location.RoomId = split[2];
+                                   location.JoinCode = localInstance.JoinCode;
+                                   console.log(`Player ${tokenData.id} entered room with join code ${localInstance.JoinCode}.`);
+                                   return;
+                              case "CREATE-PUBLIC-INSTANCE":
+                                   var PlayerPermissions = Object.keys(RoomData.metadata.permissions).includes(tokenData.id) ? RoomData.metadata.permissions[tokenData.id] : "everyone";
+                                   var PermissionTable = RoomData.metadata.permissionTable[PlayerPermissions];
+
+                                   if(!PermissionTable.join) return ws.send("EXCEPT You do not have permission to join that room.");
+                                   if(RoomData.metadata.subrooms[0].matchmakingMode !== MatchmakingModes.Public) return ws.send("EXCEPT Room does not allow public instances.");
+
+                                   var localInstance = await MatchmakingAPI.CreateInstance(split[2], MatchmakingModes.Public, 300, false, RoomData.metadata.subrooms[0].maxPlayers);
+                                   
+                                   localInstance.AddPlayer(tokenData.id);
+
+                                   await MatchmakingAPI.SetInstance(split[2], localInstance.InstanceId, localInstance);
+
+                                   if(location.JoinCode !== null) {
+                                        var previousInstance = await MatchmakingAPI.GetInstanceByJoinCode(location.RoomId, location.JoinCode);
+                                        await previousInstance.RemovePlayer(tokenData.id);
+                                        await MatchmakingAPI.SetInstance(previousInstance.RoomId, previousInstance.InstanceId, previousInstance);
+                                        console.log(`Player ${tokenData.id} left room with join code ${previousInstance.JoinCode}.`);
+                                   }
+
+                                   ws.send(`PUN_CMD CREATE-OR-JOIN-ROOM ${localInstance.JoinCode} ${RoomData.metadata.subrooms[0].maxPlayers}`);
+
+                                   location.RoomId = split[2];
+                                   location.JoinCode = localInstance.JoinCode;
+                                   console.log(`Player ${tokenData.id} entered room with join code ${localInstance.JoinCode}.`);
+                                   return;
+                         }
                          return;
                     case "LOG":
                          split = split.splice(0);
@@ -182,6 +252,7 @@ function getClients() {
 }
 
 const { MongoClient } = require('mongodb');
+const { MatchmakingModes } = require('./routers/matchmaking');
 
 const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {

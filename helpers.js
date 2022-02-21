@@ -233,7 +233,6 @@ function getAccountCount() {
 }
 
 
-
 function auditLog(message) {
      const file = fs.readFileSync("./data/audit.json");
      let data = JSON.parse(file);

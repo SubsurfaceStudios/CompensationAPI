@@ -9,14 +9,14 @@ const firebaseAuth = require('firebase/auth');
 const app = express();
 app.set('trust proxy', 1);
 
-var limiter = RateLimit({
+var GlobalLimiter = RateLimit({
      windowMs: 1*60*1000,
      max: 100,
      standardHeaders: true,
      legacyHeaders: false
 });
 
-app.use(limiter);
+app.use(GlobalLimiter);
 
 app.use(express.json({
      limit: '50mb'
@@ -27,7 +27,6 @@ app.use(fileUpload({
 }));
 
 const config = require('./config.json');
-
 
 //#region routers
 
@@ -51,7 +50,8 @@ app.use("/api/social", require('./routers/social'));
 const econ = require('./routers/econ');
 app.use("/api/econ", econ.router);
 // /api/matchmaking/*
-app.use("/api/matchmaking", require('./routers/matchmaking'));
+const matchmaking = require('./routers/matchmaking')
+app.use("/api/matchmaking", matchmaking.router);
 // /api/rooms/*
 app.use("/api/rooms", require('./routers/rooms'));
 
@@ -87,10 +87,13 @@ const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols
 wss.on('connection', async (ws, request) => {
      var ignore_connection_closed = false;
      var tokenData;
+     var location;
+
+     console.log("User connected to websocket, awaiting authorization.");
 
      ws.on('message', async (data) => {
           data = data.toString('utf-8');
-          if(data.slice(0, 7) == "Bearer " && tokenData == null){
+          if(data.slice(0, 7) == "Bearer " && typeof tokenData === 'undefined') {
                var token = data.slice(7);
                try {
                     tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -121,6 +124,8 @@ wss.on('connection', async (ws, request) => {
                }
 
                ws_connnected_clients[tokenData.id] = ws;
+               console.log(`User ${tokenData.id} has authenticated and is now connected.`);
+
                var presenceData = helpers.PullPlayerData(tokenData.id);
                presenceData.presence.status = "online";
                if(presenceData.econ.previous_daily_redeemed < (Date.now() - 86400000)) {
@@ -131,22 +136,37 @@ wss.on('connection', async (ws, request) => {
                helpers.PushPlayerData(tokenData.id, presenceData);
                ws.send("AUTHORIZED");
 
-               
+          } else if (typeof tokenData !== 'undefined') {
+               const split = data.toString().split(' ');
+               switch(split[0]) {
+                    // handle client input
+                    case "JOIN":
+                         ws.send("ASSERT Feature not implemented, how are you accessing this :face_with_raised_eyebrow:");
+                         return;
+                    case "LOG":
+                         split = split.splice(0);
+                         console.log(split.join(' '));
+                         return;
+                    case "PUT_ANALYTIC_VAL":
+                         ws.send("ASSERT Feature not implemented.");
+                         return;
+               }
           }
      });
 
      ws.on('close', async (data) => {
-          if(!ignore_connection_closed && tokenData != null) {
+          if(!ignore_connection_closed && typeof tokenData !== 'undefined') {
                var data = helpers.PullPlayerData(tokenData.id);
                data.presence.status = "offline";
                helpers.PushPlayerData(tokenData.id, data);
                delete ws_connnected_clients[tokenData.id];
+               console.log(`User ${tokenData.id} disconnected.`);
+          } else if (typeof tokenData !== 'undefined') {
+               // Handle leaving room in session
           }
      });
 
-     ws.send()
-     
-     console.log("connected");
+     ws.send();
 })
 wss.on('listening',()=>{
      console.log("WS system online.");
@@ -155,6 +175,10 @@ wss.on('listening',()=>{
 function sendStringToClient(id, data) {
      if(!Object.keys(ws_connnected_clients).includes(id)) return;
      ws_connnected_clients[id].send(data);
+}
+
+function getClients() {
+     return ws_connnected_clients;
 }
 
 const { MongoClient } = require('mongodb');
@@ -183,13 +207,15 @@ client.connect(async (error, result) => {
      if(typeof firebaseAuthUser.user.uid == 'undefined') {
           auditLog('Failed to connect to Firebase - fatal');
           console.error('Failed to connect to Firebase - fatal');
+          process.exit(1);
      }
 
      console.log('Firebase Connection Established.');
 
      module.exports = {
           sendStringToClient: sendStringToClient,
-          mongoClient: client
+          mongoClient: client,
+          getClients: getClients
      };
      
      process.on('beforeExit', function () {
@@ -202,6 +228,13 @@ client.connect(async (error, result) => {
      });
      
      process.on('SIGINT', function () {
+          var Instances = matchmaking.GetInstances("*");
+
+          if(Instances.length > 1) { // Maximum length of ONE because of the default instance for intellisense testing.
+               console.log("Server kill command rejected - there are players online with instances active.\nWait for the instances to close or use SIGKILL / SIGTERM");
+               return;
+          }
+
           helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)")
      
           setTimeout(() => process.exit(), 250);

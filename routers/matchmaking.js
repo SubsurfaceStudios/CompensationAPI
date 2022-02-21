@@ -29,30 +29,19 @@ class RoomSession {
      // * unlisted
      // * private
      // * locked
-     MatchmakingMode = "locked"; // How players can access this instance. Private by default, meaning you cannot join unless you have an invite.
-     Players = []; // The current players inside the instance.
-     MaxPlayers = 20; // The maximum number of players the instance can contain.
-     Age = 0; // Age of the instance.
      RoomId = "0"; // The room the instance is in.
-     TTL = 300 * 1000;
-     InstanceId = "UNJOINABLE";
-     JoinCode = "FAIL";
-     FlaggedForRemoval = false;
+     MatchmakingMode; // How players can access this instance. Private by default, meaning you cannot join unless you have an invite.
+     Players; // The current players inside the instance.
+     MaxPlayers; // The maximum number of players the instance can contain.
+     Age; // Age of the instance.
+     TTL;
+     Persistent;
+     FlaggedForRemoval;
      
-     async constructor(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
-          this.RoomId = RoomId;
-          this.MatchmakingMode = MatchmakingMode;
-          this.TTL = TTL;
-          this.Persistent = Persistent;
-          this.MaxPlayers = MaxPlayers;
-
-          this.InstanceId = uuid.v1();
-          this.JoinCode = `CVR_ROOM.${this.RoomId}.INSTANCE.${this.InstanceId}`;
-
-          this.BeginEventLoop();
-
-          return this;
-     }
+     InstanceId;
+     JoinCode;
+     
+     
 
      BeginEventLoop() {
           setInterval(this.EventLoop, 500);
@@ -75,6 +64,7 @@ class RoomSession {
      AutomaticInstanceCleanup() {
           if(this.Persistent || this.Age < this.TTL) return;
 
+          if(typeof this.Players == 'undefined') this.Players = [];
           if(this.Players.length < 1) {
                // Makes an instance unjoinable and begins the process of removing it.
                this.MatchmakingMode = MatchmakingModes.Locked;
@@ -89,6 +79,22 @@ class RoomSession {
           this.MatchmakingMode = MatchmakingModes.Locked;
           this.FlaggedForRemoval = true;
      }
+
+     constructor(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
+          this.RoomId = RoomId;
+          this.MatchmakingMode = MatchmakingMode;
+          this.Players = [];
+          this.MaxPlayers = MaxPlayers;
+          this.Age = 0;
+          this.TTL = TTL;
+          this.Persistent = Persistent;
+          this.FlaggedForRemoval = false;
+
+          this.InstanceId = uuid.v1();
+          this.JoinCode = `CVR_ROOM.${this.RoomId}.INSTANCE.${this.InstanceId}`;
+
+          setTimeout(() => this.BeginEventLoop(), 50);
+     }
 }
 
 var RoomInstances = {
@@ -97,13 +103,13 @@ var RoomInstances = {
      ]
 };
 
-setInterval(CleanupInstances, 300)
+setInterval(CleanupInstances, 300 * 1000);
 
 async function CleanupInstances() {
      console.log("Initiating automatic instance cleanup.");
      var CleanedInstances = 0;
      for(let RoomIdIndex = 0; RoomIdIndex < Object.keys(RoomInstances).length; RoomIdIndex++) {
-          const RoomId = RoomInstances[RoomIdIndex];
+          var RoomId = RoomInstances[RoomIdIndex];
           RoomId = RoomId.filter(item => {
                if(item.FlaggedForRemoval) {
                     console.log(`Removed flagged instance of room ${item.RoomId} with id ${item.InstanceId} and join code ${item.JoinCode}`);

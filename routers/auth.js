@@ -178,7 +178,7 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 //Call to create an account from a set of credentials.
 router.post("/create", async (req, res) => {
      var { username, nickname, password } = req.body;
-     const id = helpers.getAccountCount();
+     const id = helpers.getAccountCount() + 1;
 
      if(username == null || password == null) return res.status(400).send("Username or password empty or null.")
      if(nickname == null) nickname = username;

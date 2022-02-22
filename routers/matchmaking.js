@@ -124,14 +124,14 @@ module.exports = {
      router: router,
      MatchmakingModes: MatchmakingModes,
      GetInstances: async function GetInstances(RoomId) {
-          if(RoomId = "*") {
+          if(RoomId == "*") {
                var instances = [];
                Object.keys(RoomInstances).forEach(element => {
                     instances.push(RoomInstances[element]);
                });
                return instances;
           }
-          if(!RoomInstances.includes(RoomId)) return [];
+          if(!Object.keys(RoomInstances).includes(RoomId)) return [];
           return RoomInstances[RoomId];
      },
      GetInstanceById: async function GetInstanceById(RoomId, InstanceId) {

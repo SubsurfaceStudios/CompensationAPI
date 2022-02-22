@@ -212,17 +212,66 @@ wss.on('connection', async (ws, request) => {
                                    console.log(`Player ${tokenData.id} entered room with join code ${localInstance.JoinCode}.`);
                                    return;
                               case "JOIN-PUBLIC-INSTANCE":
-                                   ws.send("EXCEPT `MM_CMD JOIN-PUBLIC-INSTANCE` is not implemented.");
+                                   var PlayerPermissions = Object.keys(RoomData.metadata.permissions).includes(tokenData.id) ? RoomData.metadata.permissions[tokenData.id] : "everyone";
+                                   var PermissionTable = RoomData.metadata.permissionTable[PlayerPermissions];
+
+                                   if(!PermissionTable.join) return ws.send("EXCEPT You do not have permission to join that room.");
+
+                                   var instances = await MatchmakingAPI.GetInstances(split[2]);
+
+                                   instances = instances.filter(item => item.MatchmakingMode == MatchmakingModes.Public && item.Players + 1 < item.MaxPlayers);
+                                   if(instances.length < 1) {
+                                        // Normal instance creation
+                                        var localInstance = await MatchmakingAPI.CreateInstance(split[2], MatchmakingModes.Public, 300, false, RoomData.metadata.subrooms[0].maxPlayers);
+                                   
+                                        localInstance.AddPlayer(tokenData.id);
+
+                                        await MatchmakingAPI.SetInstance(split[2], localInstance.InstanceId, localInstance);
+
+                                        if(location.JoinCode !== null) {
+                                             var previousInstance = await MatchmakingAPI.GetInstanceByJoinCode(location.RoomId, location.JoinCode);
+                                             await previousInstance.RemovePlayer(tokenData.id);
+                                             await MatchmakingAPI.SetInstance(previousInstance.RoomId, previousInstance.InstanceId, previousInstance);
+                                             console.log(`Player ${tokenData.id} left room with join code ${previousInstance.JoinCode}.`);
+                                        }
+
+                                        ws.send(`PUN_CMD CREATE-OR-JOIN-ROOM ${localInstance.JoinCode} ${RoomData.metadata.subrooms[0].maxPlayers}`);
+
+                                        location.RoomId = split[2];
+                                        location.JoinCode = localInstance.JoinCode;
+                                        console.log(`Player ${tokenData.id} entered room with join code ${localInstance.JoinCode}.`);
+                                        return;
+                                   }
+                                   
+                                   instances = instances.sort((a, b) => (a.Players.length > b.Players.length) ? 1 : -1);
+
+                                   if(location.JoinCode !== null) {
+                                        var previousInstance = await MatchmakingAPI.GetInstanceByJoinCode(location.RoomId, location.JoinCode);
+                                        await previousInstance.RemovePlayer(tokenData.id);
+                                        await MatchmakingAPI.SetInstance(previousInstance.RoomId, previousInstance.InstanceId, previousInstance);
+                                        console.log(`Player ${tokenData.id} left room with join code ${previousInstance.JoinCode}.`);
+                                   }
+
+                                   var localInstance = instances[0];
+
+                                   localInstance.AddPlayer(tokenData.id);
+                                   MatchmakingAPI.SetInstance(localInstance.RoomId, localInstance.InstanceId, localInstance);
+
+                                   ws.send(`PUN_CMD CREATE-OR-JOIN-ROOM ${localInstance.JoinCode} ${localInstance.MaxPlayers}`);
+                                   
+                                   location.RoomId = localInstance.RoomId;
+                                   location.JoinCode = localInstance.JoinCode;
+                                   
+                                   console.log(`Player ${tokenData.id} joined the largest public instance, with join code ${localInstance.JoinCode}`);
                                    return;
                               case "JOIN-SPECIFIC-INSTANCE":
-                                   const InstanceId = split[3];
 
                                    var PlayerPermissions = Object.keys(RoomData.metadata.permissions).includes(tokenData.id) ? RoomData.metadata.permissions[tokenData.id] : "everyone";
                                    var PermissionTable = RoomData.metadata.permissionTable[PlayerPermissions];
 
                                    if(!PermissionTable.join) return ws.send("EXCEPT You do not have permission to join that room.");
                                    
-                                   var localInstance = await MatchmakingAPI.GetInstanceById(RoomId, InstanceId);
+                                   var localInstance = await MatchmakingAPI.GetInstanceById(split[2], split[3]);
                                    if(typeof localInstance == 'undefined') return ws.send("EXCEPT Instance does not exist.");
                                    
                                    if(localInstance.MatchmakingMode == MatchmakingModes.Private || localInstance.MatchmakingMode == MatchmakingModes.Locked) return ws.send("EXCEPT Instance is not joinable.");
@@ -239,9 +288,18 @@ wss.on('connection', async (ws, request) => {
                                    localInstance.AddPlayer(tokenData.id);
                                    MatchmakingAPI.SetInstance(localInstance.RoomId, localInstance.InstanceId, localInstance);
                                    
-                                   console.log(`Player ${tokenData.id} joined a specific instance with join code ${localInstance.JoinCode}`);
-
                                    ws.send(`PUN_CMD CREATE-OR-JOIN-ROOM ${localInstance.JoinCode} ${localInstance.MaxPlayers}`);
+                                   
+                                   location.RoomId = localInstance.RoomId;
+                                   location.JoinCode = localInstance.JoinCode;
+
+                                   console.log(`Player ${tokenData.id} joined a specific instance with join code ${localInstance.JoinCode}`);
+                                   return;
+                              case "LIST-PUBLIC-INSTANCES":
+                                   var instances = await MatchmakingAPI.GetInstances(split[2]);
+                                   instances = instances.filter(item => item.MatchmakingMode == MatchmakingModes.Public);
+                                   
+                                   ws.send(`PUBLIC-INSTANCE-LIST ${JSON.stringify(instances)}`);
                                    return;
                          }
                          return;

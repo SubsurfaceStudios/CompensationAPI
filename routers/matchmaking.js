@@ -56,10 +56,8 @@ class RoomSession {
      }
      RemovePlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
-          while(this.Players.includes(id)) {
-               var index = this.Players.findIndex(item => item == id);
-               this.Players = this.Players.splice(index);
-          }
+          var index = this.Players.findIndex(item => item == id);
+          this.Players = this.Players.splice(index);
      }
      AutomaticInstanceCleanup() {
           if(this.Persistent || this.Age < this.TTL) return;
@@ -126,14 +124,14 @@ module.exports = {
      router: router,
      MatchmakingModes: MatchmakingModes,
      GetInstances: async function GetInstances(RoomId) {
-          if(RoomId = "*") {
+          if(RoomId == "*") {
                var instances = [];
                Object.keys(RoomInstances).forEach(element => {
                     instances.push(RoomInstances[element]);
                });
                return instances;
           }
-          if(!RoomInstances.includes(RoomId)) return [];
+          if(!Object.keys(RoomInstances).includes(RoomId)) return [];
           return RoomInstances[RoomId];
      },
      GetInstanceById: async function GetInstanceById(RoomId, InstanceId) {
@@ -146,18 +144,19 @@ module.exports = {
           RoomInstances[RoomId] = InstanceList;
      },
      SetInstance: async function SetInstance(RoomId, InstanceId, Instance) {
-          if(!RoomInstances.includes(RoomId)) RoomInstances[RoomId] = [];
+          if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
 
           var index = RoomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
           if(index < 0) RoomInstances[RoomId].push(Instance);
           else RoomInstances[RoomId][index] = Instance;
      },
      CreateInstance: async function CreateInstance(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
-          if(!RoomInstances.includes(RoomId)) RoomInstances[RoomId] = [];
+          if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
 
           const room = new RoomSession(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
           RoomInstances[RoomId].push(room);
 
           console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);
+          return room;
      }
 };

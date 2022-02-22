@@ -146,6 +146,14 @@ module.exports = {
      SetInstance: async function SetInstance(RoomId, InstanceId, Instance) {
           if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
 
+          try {
+               RoomId = parseInt(RoomId);
+               if(isNaN(RoomId) || RoomId < 0) throw new TypeError("Invalid room ID in SetInstance.");
+          } catch (ex) {
+               console.error(ex);
+               throw new TypeError("^^^ Failed to parse room ID.");
+          }
+
           var index = RoomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
           if(index < 0) RoomInstances[RoomId].push(Instance);
           else RoomInstances[RoomId][index] = Instance;

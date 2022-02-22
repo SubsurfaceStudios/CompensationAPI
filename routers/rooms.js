@@ -176,4 +176,28 @@ router.get("/:id/subrooms", middleware.authenticateDeveloperToken, async (req, r
      }
 });
 
-module.exports = router;
+async function GetRoomData(RoomId) {
+     try {
+          RoomId = parseInt(RoomId);
+          if(isNaN(RoomId)) return null;
+     } catch {
+          return null;
+     }
+
+     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     var collection = db.collection("configuration");
+     const RoomCount = await collection.findOne({_id: "RoomCount"}).count;
+     if(RoomId > RoomCount || RoomId < 0) return null;
+
+     collection = db.collection("rooms");
+     var room = await collection.findOne({_id: RoomId});
+
+     
+     if(typeof room == 'undefined') return null;
+     return room;
+}
+
+module.exports = {
+     router: router,
+     GetRoomData: GetRoomData
+};

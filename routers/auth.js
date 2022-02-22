@@ -169,7 +169,7 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 
      const developer = data.private.availableTags.includes("Developer");
 
-     const user = {username: username, id: userID, developer: developer};
+     const user = {username: data.public.username, id: req.user.id, developer: developer};
 
      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
      return res.status(200).json({ userID: req.user.id, username: username, accessToken: accessToken});

@@ -172,7 +172,7 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
      const user = {username: data.public.username, id: req.user.id, developer: developer};
 
      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
-     return res.status(200).json({ userID: req.user.id, username: username, accessToken: accessToken});
+     return res.status(200).json({ userID: req.user.id, username: data.public.username, accessToken: accessToken});
 });
 
 //Call to create an account from a set of credentials.

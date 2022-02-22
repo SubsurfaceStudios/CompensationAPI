@@ -211,6 +211,38 @@ wss.on('connection', async (ws, request) => {
                                    location.JoinCode = localInstance.JoinCode;
                                    console.log(`Player ${tokenData.id} entered room with join code ${localInstance.JoinCode}.`);
                                    return;
+                              case "JOIN-PUBLIC-INSTANCE":
+                                   ws.send("EXCEPT `MM_CMD JOIN-PUBLIC-INSTANCE` is not implemented.");
+                                   return;
+                              case "JOIN-SPECIFIC-INSTANCE":
+                                   const InstanceId = split[3];
+
+                                   var PlayerPermissions = Object.keys(RoomData.metadata.permissions).includes(tokenData.id) ? RoomData.metadata.permissions[tokenData.id] : "everyone";
+                                   var PermissionTable = RoomData.metadata.permissionTable[PlayerPermissions];
+
+                                   if(!PermissionTable.join) return ws.send("EXCEPT You do not have permission to join that room.");
+                                   
+                                   var localInstance = await MatchmakingAPI.GetInstanceById(RoomId, InstanceId);
+                                   if(typeof localInstance == 'undefined') return ws.send("EXCEPT Instance does not exist.");
+                                   
+                                   if(localInstance.MatchmakingMode == MatchmakingModes.Private || localInstance.MatchmakingMode == MatchmakingModes.Locked) return ws.send("EXCEPT Instance is not joinable.");
+
+                                   if(localInstance.Players + 1 > localInstance.MaxPlayers) return ws.send("EXCEPT Instance is full.");
+                                   
+                                   if(location.JoinCode !== null) {
+                                        var previousInstance = await MatchmakingAPI.GetInstanceByJoinCode(location.RoomId, location.JoinCode);
+                                        await previousInstance.RemovePlayer(tokenData.id);
+                                        await MatchmakingAPI.SetInstance(previousInstance.RoomId, previousInstance.InstanceId, previousInstance);
+                                        console.log(`Player ${tokenData.id} left room with join code ${previousInstance.JoinCode}.`);
+                                   }
+
+                                   localInstance.AddPlayer(tokenData.id);
+                                   MatchmakingAPI.SetInstance(localInstance.RoomId, localInstance.InstanceId, localInstance);
+                                   
+                                   console.log(`Player ${tokenData.id} joined a specific instance with join code ${localInstance.JoinCode}`);
+
+                                   ws.send(`PUN_CMD CREATE-OR-JOIN-ROOM ${localInstance.JoinCode} ${localInstance.MaxPlayers}`);
+                                   return;
                          }
                          return;
                     case "LOG":

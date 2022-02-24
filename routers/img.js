@@ -169,8 +169,6 @@ router.get("/:id", async (req, res) => {
           if (typeof base64 === 'undefined' || base64 !== 'true') {
                var ImageBytes = await firebaseStorage.getBytes(ref);
                var ImageBuffer = Buffer.from(ImageBytes);
-
-               var ImageFileMetadata = await firebaseStorage.getMetadata(ref);
                
                res.writeHead(200, {
                     'Content-Type': 'image/jpeg',

@@ -180,8 +180,15 @@ router.get("/:id/subrooms", middleware.authenticateDeveloperToken, async (req, r
 router.get("/:roomId/subrooms/:subroomId/download-public-version", middleware.authenticateDeveloperToken, async (req, res) => {
      try { 
           var {roomId, subroomId} = req.params;
-          const room = GetRoomData(roomId);
+          const room = await GetRoomData(roomId);
           if(room == null) return res.status(404).send({message: "Room does not exist."});
+
+          try {
+               subroomId = parseInt(subroomId);
+               if(isNaN(subroomId)) return res.status(400).send({message: "Invalid subroom ID."});
+          } catch {
+               return res.status(400).send({message: "Invalid subroom ID."});
+          }
 
           const userPermissions = room.metadata.permissions;
           const permissionsTable = room.metadata.permissionsTable;
@@ -216,7 +223,7 @@ router.get("/:roomId/subrooms/:subroomId/download-public-version", middleware.au
           console.log(ex);
           return res.sendStatus(500);
      }
-})
+});
 
 async function GetRoomData(RoomId) {
      try {

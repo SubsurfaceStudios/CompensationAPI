@@ -7,6 +7,7 @@ const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
+const {getBytes, getStorage, ref} = require('firebase/storage');
 
 const OncePerHour = rateLimit.rateLimit({
      "windowMs": 1 * 60 * 60 * 1000,
@@ -173,6 +174,54 @@ router.get("/:id/subrooms", middleware.authenticateDeveloperToken, async (req, r
           res.status(200).json(room.metadata.subrooms);
      } catch {
           res.sendStatus(500);
+     }
+});
+
+router.get("/:roomId/subrooms/:subroomId/download-public-version", middleware.authenticateDeveloperToken, async (req, res) => {
+     try { 
+          var {roomId, subroomId} = req.params;
+          const room = await GetRoomData(roomId);
+          if(room == null) return res.status(404).send({message: "Room does not exist."});
+
+          try {
+               subroomId = parseInt(subroomId);
+               if(isNaN(subroomId)) return res.status(400).send({message: "Invalid subroom ID."});
+          } catch {
+               return res.status(400).send({message: "Invalid subroom ID."});
+          }
+
+          const userPermissions = room.metadata.permissions;
+          const permissionsTable = room.metadata.permissionsTable;
+
+          var localUserPermissionsKey = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
+          const localUserPermissionsValue = permissionsTable[localUserPermissionsKey];
+
+          if(!localUserPermissionsValue.join) return res.status(403).send({message: "You do not have access to that room."});
+
+          if(!room.metadata.subrooms.includes(subroomId)) return res.status(404).send({message: "Subroom not found."});
+
+          const subroom = room.metadata.subrooms[subroomId];
+          const versionId = subroom.currentVersionId;
+
+          if(typeof subroom.versions[versionId].filename !== 'string') return res.status(204).send({message: "This room does not have any custom room data to send. Load the base scene as-is."});
+
+          const pathRefString = subroom.versionFolderPath + subroom.versions[versionId].filename;
+
+          const storage = getStorage();
+          const pathRef = ref(storage, pathRefString);
+
+          const bytes = await getBytes(pathRef);
+
+          const buffer = Buffer.from(bytes);
+
+          res.writeHead(200, {
+               'Content-Type': 'application/json',
+               'Content-Length': buffer.length
+          });
+          return res.end(buffer);
+     } catch (ex) {
+          console.log(ex);
+          return res.sendStatus(500);
      }
 });
 

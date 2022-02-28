@@ -80,7 +80,7 @@ const server = app.listen(config.PORT, '0.0.0.0');
 helpers.auditLog("Server Init");
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 
-var ws_connnected_clients = {};
+var ws_connected_clients = {};
 
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
@@ -122,13 +122,13 @@ wss.on('connection', async (ws, request) => {
                     return;
                }
 
-               if(Object.keys(ws_connnected_clients).includes(tokenData.id)) {
+               if(Object.keys(ws_connected_clients).includes(tokenData.id)) {
                     ws.send("DUPLICATE CONNECTION");
                     ws.terminate();
                     return;
                }
 
-               ws_connnected_clients[tokenData.id] = ws;
+               ws_connected_clients[tokenData.id] = ws;
                console.log(`User ${tokenData.id} has authenticated and is now connected.`);
 
                var presenceData = helpers.PullPlayerData(tokenData.id);
@@ -310,6 +310,20 @@ wss.on('connection', async (ws, request) => {
                     case "PUT_ANALYTIC_VAL":
                          ws.send("ASSERT Feature not implemented.");
                          return;
+                    case "BROADCAST_STRING":
+                         if(!tokenData.developer) return;
+
+                         split = split.splice(0);
+                         broadcastStringToAllClients(split.join(' '));
+                         return;
+                    case "SEND_STRING":
+                         if(!tokenData.developer) return;
+
+                         const user = split[1];
+                         split = split.splice(0, 2);
+
+                         sendStringToClient(user, split.join(' '));
+                         return;
                }
           }
      });
@@ -319,7 +333,7 @@ wss.on('connection', async (ws, request) => {
                var data = helpers.PullPlayerData(tokenData.id);
                data.presence.status = "offline";
                helpers.PushPlayerData(tokenData.id, data);
-               delete ws_connnected_clients[tokenData.id];
+               delete ws_connected_clients[tokenData.id];
                console.log(`User ${tokenData.id} disconnected.`);
           } else if (typeof tokenData !== 'undefined') {
                // Handle leaving room in session
@@ -333,12 +347,19 @@ wss.on('listening',()=>{
 });
 
 function sendStringToClient(id, data) {
-     if(!Object.keys(ws_connnected_clients).includes(id)) return;
-     ws_connnected_clients[id].send(data);
+     if(!Object.keys(ws_connected_clients).includes(id)) return;
+     ws_connected_clients[id].send(data);
+}
+
+function broadcastStringToAllClients(data) {
+     for (let index = 0; index < Object.keys(ws_connected_clients).length; index++) {
+          const element = ws_connected_clients[Object.keys(ws_connected_clients)[index]];
+          element.send(data);          
+     }
 }
 
 function getClients() {
-     return ws_connnected_clients;
+     return ws_connected_clients;
 }
 
 const { MongoClient } = require('mongodb');

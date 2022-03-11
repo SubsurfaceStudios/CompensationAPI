@@ -5,7 +5,8 @@ const bcrypt = require('bcrypt');
 
 module.exports = {
      authenticateToken: authenticateToken,
-     authenticateDeveloperToken: authenticateDeveloperToken
+     authenticateDeveloperToken: authenticateDeveloperToken,
+     authenticateToken_internal: authenticateToken_internal
 };
 
 function authenticateToken(req, res, next) {
@@ -71,5 +72,29 @@ function authenticateDeveloperToken(req, res, next) {
      catch
      {
           return res.status(403).send("Invalid or expired authorization token.")
+     }
+}
+
+function authenticateToken_internal(token) {
+     if(typeof token !== 'string') return {success: false, tokenData: null, playerData: null, reason: "no_token"};
+
+     //then we need to authenticate that token in this middleware and return a user
+     try
+     {
+          const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+          const playerData = helpers.PullPlayerData(tokenData.id);
+          if(playerData == null) return {success: false, tokenData: tokenData, playerData: null, reason: "player_not_found"};
+
+          for (let index = 0; index < playerData.auth.bans.length; index++) {
+               const element = playerData.auth.bans[index];
+               
+               if(element.endTS > Date.now()) return {success: false, tokenData: tokenData, playerData: playerData, reason: "player_banned"};
+          }
+          return {success: true, tokenData: tokenData, playerData: playerData, reason: "success"};
+     }
+     catch
+     {
+          return {success: false, tokenData: null, playerData: null, reason: "invalid_token"};
      }
 }

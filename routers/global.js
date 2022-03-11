@@ -8,25 +8,34 @@ const sanitize = require('sanitize-filename');
 
 router.route("/:key")
      .get(async (req, res) => {
-          const { key } = req.params;
+          const { mongoClient } = require('../index');
+          try {
+               const { key } = req.params;
      
-          const global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
-     
-          if(!(key in global)) return res.status(404).send("ID not in global title data.");
-     
-          res.status(200).send(global[key].toString());
+               const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
+
+               const doc = await collection.findOne({_id: key});
+
+               return res.status(200).send(`${doc.data}`);
+          } catch {
+               res.sendStatus(404);
+          }
      })
      .post(middleware.authenticateDeveloperToken, async (req, res) => {
-          const { key } = req.params;
-          const { value } = req.body;
-     
-          var global = await JSON.parse(fs.readFileSync("./data/global/global.json"));
-     
-          global[key] = value;
-     
-          fs.writeFileSync("./data/global/global.json", JSON.stringify(global, null, "    "));
-          helpers.auditLog(`!DEVELOPER ACTION! Developer ${req.user.username} with ID ${req.user.id} updated GLOBAL title data with key ${key}.`);
-          res.status(200).send();
+          const { mongoClient } = require('../index');
+          try {
+               const { key } = req.params;
+               const { value } = req.body;
+
+               const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
+
+               collection.findOneAndUpdate({_id: key}, {data: value});
+
+               return res.sendStatus(200);
+          } catch (ex) {
+               res.sendStatus(500);
+               throw ex;
+          }
      });
      
 module.exports = router;

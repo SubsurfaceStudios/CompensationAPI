@@ -6,6 +6,12 @@ const helpers = require('./helpers');
 const jwt = require('jsonwebtoken');
 const firebaseAuth = require('firebase/auth');
 const MatchmakingAPI = require('./routers/matchmaking');
+const middleware = require('./middleware');
+
+const WebSocketV2_MessageTemplate = {
+     data: {},
+     code: "string"
+};
 
 const app = express();
 app.set('trust proxy', 1);
@@ -83,10 +89,10 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connected_clients = {};
 
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
+const wss_v1 = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
      console.log('server started')
 });
-wss.on('connection', async (ws, request) => {
+wss_v1.on('connection', async (ws, request) => {
      var ignore_connection_closed = false;
      var tokenData;
      var location = {
@@ -123,12 +129,17 @@ wss.on('connection', async (ws, request) => {
                }
 
                if(Object.keys(ws_connected_clients).includes(tokenData.id)) {
+                    ignore_connection_closed = true;
                     ws.send("DUPLICATE CONNECTION");
                     ws.terminate();
                     return;
                }
 
-               ws_connected_clients[tokenData.id] = ws;
+               ws_connected_clients[tokenData.id] = 
+               {
+                    socket: ws,
+                    version: 1
+               };
                console.log(`User ${tokenData.id} has authenticated and is now connected.`);
 
                var presenceData = helpers.PullPlayerData(tokenData.id);
@@ -304,8 +315,8 @@ wss.on('connection', async (ws, request) => {
                          }
                          return;
                     case "LOG":
-                         split = split.splice(0);
-                         console.log(split.join(' '));
+                         var split_but_cooler = split.splice(0);
+                         console.log(split_but_cooler.join(' '));
                          return;
                     case "PUT_ANALYTIC_VAL":
                          ws.send("ASSERT Feature not implemented.");
@@ -342,19 +353,118 @@ wss.on('connection', async (ws, request) => {
 
      ws.send();
 })
-wss.on('listening',()=>{
-     console.log("WS system online.");
+wss_v1.once('listening',()=>{
+     console.log("WebSockets v1 online & listening.");
 });
+
+
+const WebSocketServerV2 = new WebSocket.Server({server: server, path: '/ws/v2', 'skipUTF8Validation': true}, () => {
+     
+});
+WebSocketServerV2.once('listening', () => {
+     console.log("WebSockets v2 online & listening.");
+});
+WebSocketServerV2.on('connection', (stream) => {
+     var ConnectedUserData = {
+          uid: null,
+          username: "",
+          nickname: "",
+          isAuthenticated: false,
+          tags: [],
+          isDeveloper: false,
+          isCreativeToolsBetaProgramMember: false
+     };
+
+     stream.on('message', (data, isBinary) => {
+          try {
+               var ParsedContent = JSON.parse(data);
+          } catch {
+               var send = WebSocketV2_MessageTemplate;
+               send.code = "throw_exception";
+               send.data = {
+                    text: "json_parse_failed"
+               };
+
+               return stream.send(send);
+          }
+
+          if(typeof ParsedContent.code !== 'string' || typeof send.data !== 'object') return;
+
+          // begin parsing data
+
+          switch(data.code) {
+               case "authenticate":
+                    if(ConnectedUserData.isAuthenticated) return;
+                    
+                    if(typeof ParsedContent.data.token !== 'string') {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "authentication_failed";
+                         send.data = {
+                              reason: "no_token"
+                         };
+
+                         return stream.close(4003, send);
+                    }
+
+                    const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
+
+                    if(!success) {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "authentication_failed";
+                         send.data = {
+                              reason: reason
+                         };
+
+                         return stream.close(4001, send);
+                    }
+
+                    if(Object.keys(ws_connected_clients).includes(tokenData.id)) {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "connection_declined";
+                         send.data = {
+                              reason: "duplicate_connection"
+                         }
+
+                         return stream.close(4002, send);
+                    }
+
+                    // all clear to clean up and proceed
+
+                    ConnectedUserData.uid = tokenData.id;
+                    ConnectedUserData.nickname = playerData.public.nickname;
+                    ConnectedUserData.isAuthenticated = true;
+                    ConnectedUserData.username = tokenData.username;
+                    ConnectedUserData.isCreativeToolsBetaProgramMember = playerData.private.availableTags.includes("Creative Tools Beta Program Member");
+                    ConnectedUserData.isDeveloper = tokenData.developer;
+                    ConnectedUserData.tags = playerData.private.availableTags;
+
+                    var final_send = WebSocketV2_MessageTemplate;
+                    final_send.code = "authentication_completed";
+                    final_send.data = {
+                         message: tokenData.id != "2" ? `Welcome back to Compensation VR.\nYou have ${playerData.notifications.length} unread notifications.` : `welcome back dumbfuck\nread your notifications you've got 9999.`
+                    };
+
+                    return stream.send(final_send);
+          }
+     });
+     stream.on('close', (code, reason) => {
+
+     });
+     stream.on('error', (err) => {
+
+     });
+});
+
 
 function sendStringToClient(id, data) {
      if(!Object.keys(ws_connected_clients).includes(id)) return;
-     ws_connected_clients[id].send(data);
+     ws_connected_clients[id].socket.send(data);
 }
 
 function broadcastStringToAllClients(data) {
      for (let index = 0; index < Object.keys(ws_connected_clients).length; index++) {
           const element = ws_connected_clients[Object.keys(ws_connected_clients)[index]];
-          element.send(data);          
+          element.socket.send(data);          
      }
 }
 

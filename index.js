@@ -62,6 +62,10 @@ app.use("/api/matchmaking", matchmaking.router);
 // /api/rooms/*
 const RoomsAPI = require('./routers/rooms');
 app.use("/api/rooms", RoomsAPI.router);
+// /api/messaging/*
+const messaging = require('./routers/messages');
+app.use("/api/messaging", messaging.router);
+
 
 //#endregion
 
@@ -439,26 +443,60 @@ WebSocketServerV2.on('connection', (stream) => {
                     ConnectedUserData.tags = playerData.private.availableTags;
 
                     var final_send = WebSocketV2_MessageTemplate;
-                    final_send.code = "authentication_completed";
+                    final_send.code = "show_screen_message";
                     final_send.data = {
                          message: tokenData.id != "2" ? `Welcome back to Compensation VR.\nYou have ${playerData.notifications.length} unread notifications.` : `welcome back dumbfuck\nread your notifications you've got 9999.`
                     };
 
+                    ws_connected_clients[tokenData.id] = {
+                         socket: stream,
+                         version: 2
+                    };
+
                     return stream.send(final_send);
+               case "dev_force_emit_string":
+                    // This command requires you to be signed in.
+                    if(!ConnectedUserData.isAuthenticated) return;
+
+                    // This command requires you to be a Developer.
+                    if(!ConnectedUserData.isDeveloper) return;
+
+                    if(typeof ParsedContent.data == 'undefined') return;
+
+                    broadcastStringToAllClients(ParsedContent.data);
+                    return;
+               case "dev_force_send_string":
+                    // This command requires you to be signed in.
+                    if(!ConnectedUserData.isAuthenticated) return;
+
+                    // This command requires you to be a Developer.
+                    if(!ConnectedUserData.isDeveloper) return;
+
+                    if(typeof ParsedContent.data.id == 'undefined') return;
+                    if(typeof ParsedContent.data.data == 'undefined') return;
+
+                    sendStringToClient(ParsedContent.data.id, ParsedContent.data.data);
+                    return;
           }
      });
      stream.on('close', (code, reason) => {
+          if(!ConnectedUserData.isAuthenticated) return;
+          if(!Object.keys(ws_connected_clients).includes(ConnectedUserData.uid)) return;
 
+          delete ws_connected_clients[ConnectedUserData.uid];
      });
      stream.on('error', (err) => {
-
+          helpers.auditLog(`Error in WebSocket. UID ${ConnectedUserData.uid} @${ConnectedUserData.username} err:\n\`\`\`${err}\`\`\``);
      });
 });
 
 
 function sendStringToClient(id, data) {
      if(!Object.keys(ws_connected_clients).includes(id)) return;
-     ws_connected_clients[id].socket.send(data);
+
+     const client = ws_connected_clients[id];
+
+     client.socket.send(data);
 }
 
 function broadcastStringToAllClients(data) {

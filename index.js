@@ -354,13 +354,12 @@ wss_v1.on('connection', async (ws, request) => {
                // Handle leaving room in session
           }
      });
-
-     ws.send();
 })
 wss_v1.once('listening',()=>{
      console.log("WebSockets v1 online & listening.");
 });
 
+/*
 
 const WebSocketServerV2 = new WebSocket.Server({server: server, path: '/ws/v2', 'skipUTF8Validation': true}, () => {
      
@@ -489,6 +488,8 @@ WebSocketServerV2.on('connection', (stream) => {
           helpers.auditLog(`Error in WebSocket. UID ${ConnectedUserData.uid} @${ConnectedUserData.username} err:\n\`\`\`${err}\`\`\``);
      });
 });
+
+*/
 
 
 function sendStringToClient(id, data) {

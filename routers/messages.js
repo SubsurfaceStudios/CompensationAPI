@@ -104,7 +104,11 @@ router.route("/channels/:channel_id/messages")
 			channel.messages.push(message._id);
 			collection.replaceOne({_id: channel_id}, channel);
 	
-			return res.sendStatus(200);
+			res.sendStatus(200);
+
+			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+				client.emit('message_sent', message.server, message.channel, message._id);
+			});
 		} catch (ex) {
 			res.sendStatus(500);
 			throw ex;
@@ -174,7 +178,11 @@ router.route("/messages/:message_id")
 
 			collection.replaceOne({_id: {$eq: message_id}}, message);
 
-			return res.sendStatus(200);
+			res.sendStatus(200);
+
+			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+				client.emit('message_edited', message.server, message.channel, message._id);
+			});
 		} catch (ex) {
 			res.sendStatus(500);
 			throw ex;
@@ -214,7 +222,11 @@ router.route("/messages/:message_id")
 
 			collection.replaceOne({_id: {$eq: message.channel}}, channel);
 
-			return res.sendStatus(200);
+			res.sendStatus(200);
+
+			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+				client.emit('message_deleted', message.server, message.channel, message._id);
+			});
 		} catch (ex) {
 			res.sendStatus(500);
 			throw ex;

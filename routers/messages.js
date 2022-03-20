@@ -209,7 +209,7 @@ router.route("/messages/:message_id")
 			//#region handling of permissions
 
 			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
-			if(message.author !== req.user.id) return res.status(400).send({message: "not_message_author"});
+			if(message.author !== req.user.id && !req.user.developer) return res.status(400).send({message: "not_message_author"});
 
 			collection = db.collection("messages");
 			collection.deleteOne({_id: {$eq: message_id}});

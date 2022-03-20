@@ -9,8 +9,8 @@ const MatchmakingAPI = require('./routers/matchmaking');
 const middleware = require('./middleware');
 
 const WebSocketV2_MessageTemplate = {
-     data: {},
-     code: "string"
+     code: "string",
+     data: {}
 };
 
 const app = express();
@@ -550,6 +550,12 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
                     ClientData.isCreativeToolsBetaProgramMember = playerData.private.availableTags.includes("Creative Tools Beta Program Member");
                     ClientData.isDeveloper = tokenData.developer;
                     ClientData.tags = playerData.private.availableTags;
+
+                    var send = WebSocketV2_MessageTemplate;
+                    send.code = "authentication_confirmed";
+                    
+                    // confirms connection
+                    stream.send(JSON.stringify(send, null, 5));
           }
           
 

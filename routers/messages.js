@@ -233,6 +233,34 @@ router.route("/messages/:message_id")
 		}
      });
 
+router.route("/servers/:server_id/channels")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		try {
+			const {server_id} = req.params;
+
+			const client = require('../index').mongoClient;
+
+			const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+
+			const server_collection = db.collection("servers");
+
+			const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+			if(server_data == null) return res.status(404).send({message: "server_not_found"});
+
+			if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+			return res.status(200).json(server_data.channels);
+		} catch (ex) {
+			res.sendStatus(500);
+			throw ex;
+		}
+	})
+	.put(middleware.authenticateDeveloperToken, async (req, res) => {
+		// TODO creating channels
+
+		return res.sendStatus(501);
+	});
+
 module.exports = {
      router: router
 };

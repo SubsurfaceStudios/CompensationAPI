@@ -82,20 +82,19 @@ app.get("/api/dingus", async(req, res) => {
      //hmm
 });
 
-
-
 //#endregion
 
 const server = app.listen(config.PORT, '0.0.0.0');
+
+
+
 helpers.auditLog("Server Init");
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 
 var ws_connected_clients = {};
 
 const WebSocket = require('ws');
-const wss_v1 = new WebSocket.Server({ server: server, path: '/ws', 'handleProtocols': true, 'skipUTF8Validation': true },()=>{    
-     console.log('server started')
-});
+const wss_v1 = new WebSocket.Server({ noServer: true });
 wss_v1.on('connection', async (ws, request) => {
      var ignore_connection_closed = false;
      var tokenData;
@@ -108,6 +107,7 @@ wss_v1.on('connection', async (ws, request) => {
 
      ws.on('message', async (data) => {
           data = data.toString('utf-8');
+          console.log(data);
           if(data.slice(0, 7) == "Bearer " && typeof tokenData === 'undefined') {
                var token = data.slice(7);
                try {
@@ -354,19 +354,9 @@ wss_v1.on('connection', async (ws, request) => {
                // Handle leaving room in session
           }
      });
-})
-wss_v1.once('listening',()=>{
-     console.log("WebSockets v1 online & listening.");
 });
 
-/*
-
-const WebSocketServerV2 = new WebSocket.Server({server: server, path: '/ws/v2', 'skipUTF8Validation': true}, () => {
-     
-});
-WebSocketServerV2.once('listening', () => {
-     console.log("WebSockets v2 online & listening.");
-});
+const WebSocketServerV2 = new WebSocket.Server({noServer: true});
 WebSocketServerV2.on('connection', (stream) => {
      var ConnectedUserData = {
           uid: null,
@@ -380,22 +370,23 @@ WebSocketServerV2.on('connection', (stream) => {
 
      stream.on('message', (data, isBinary) => {
           try {
-               var ParsedContent = JSON.parse(data);
-          } catch {
+               var ParsedContent = JSON.parse(data.toString('utf-8'));
+          } catch (ex) {
                var send = WebSocketV2_MessageTemplate;
                send.code = "throw_exception";
                send.data = {
                     text: "json_parse_failed"
                };
 
-               return stream.send(send);
+               stream.send(send);
+               throw ex;
           }
 
-          if(typeof ParsedContent.code !== 'string' || typeof send.data !== 'object') return;
+          if(typeof ParsedContent.code != 'string' || typeof ParsedContent.data != 'object') return;
 
           // begin parsing data
 
-          switch(data.code) {
+          switch(ParsedContent.code) {
                case "authenticate":
                     if(ConnectedUserData.isAuthenticated) return;
                     
@@ -406,11 +397,21 @@ WebSocketServerV2.on('connection', (stream) => {
                               reason: "no_token"
                          };
 
-                         return stream.close(4003, send);
+                         return stream.close(4003, JSON.stringify(send, null, 5));
                     }
 
                     const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
 
+                    if(!tokenData.developer) {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "access_denied";
+                         send.data = {
+                              reason: "developer_only"
+                         };
+
+                         return stream.close(4003, JSON.stringify(send, null, 5));
+                    }
+                    
                     if(!success) {
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "authentication_failed";
@@ -418,7 +419,7 @@ WebSocketServerV2.on('connection', (stream) => {
                               reason: reason
                          };
 
-                         return stream.close(4001, send);
+                         return stream.close(4001, JSON.stringify(send, null, 5));
                     }
 
                     if(Object.keys(ws_connected_clients).includes(tokenData.id)) {
@@ -428,7 +429,7 @@ WebSocketServerV2.on('connection', (stream) => {
                               reason: "duplicate_connection"
                          }
 
-                         return stream.close(4002, send);
+                         return stream.close(4002, JSON.stringify(send, null, 5));
                     }
 
                     // all clear to clean up and proceed
@@ -447,49 +448,48 @@ WebSocketServerV2.on('connection', (stream) => {
                          message: tokenData.id != "2" ? `Welcome back to Compensation VR.\nYou have ${playerData.notifications.length} unread notifications.` : `welcome back dumbfuck\nread your notifications you've got 9999.`
                     };
 
-                    ws_connected_clients[tokenData.id] = {
+                    ws_connected_clients[ConnectedUserData.uid] = {
                          socket: stream,
                          version: 2
                     };
 
-                    return stream.send(final_send);
-               case "dev_force_emit_string":
-                    // This command requires you to be signed in.
-                    if(!ConnectedUserData.isAuthenticated) return;
-
-                    // This command requires you to be a Developer.
-                    if(!ConnectedUserData.isDeveloper) return;
-
-                    if(typeof ParsedContent.data == 'undefined') return;
-
-                    broadcastStringToAllClients(ParsedContent.data);
-                    return;
-               case "dev_force_send_string":
-                    // This command requires you to be signed in.
-                    if(!ConnectedUserData.isAuthenticated) return;
-
-                    // This command requires you to be a Developer.
-                    if(!ConnectedUserData.isDeveloper) return;
-
-                    if(typeof ParsedContent.data.id == 'undefined') return;
-                    if(typeof ParsedContent.data.data == 'undefined') return;
-
-                    sendStringToClient(ParsedContent.data.id, ParsedContent.data.data);
-                    return;
+                    return stream.send(JSON.stringify(final_send, null, 5));
           }
      });
      stream.on('close', (code, reason) => {
           if(!ConnectedUserData.isAuthenticated) return;
           if(!Object.keys(ws_connected_clients).includes(ConnectedUserData.uid)) return;
 
+          if(ws_connected_clients[ConnectedUserData.uid].version != 2) return;
+
           delete ws_connected_clients[ConnectedUserData.uid];
      });
      stream.on('error', (err) => {
-          helpers.auditLog(`Error in WebSocket. UID ${ConnectedUserData.uid} @${ConnectedUserData.username} err:\n\`\`\`${err}\`\`\``);
+          throw err;
      });
 });
 
-*/
+server.on("upgrade", (request, socket, head) => {
+     console.log(`WebSocket request made to ${request.url}, handling.`);
+
+     switch(request.url) {
+          case "/ws":
+               wss_v1.handleUpgrade(request, socket, head, (ws) => {
+                    wss_v1.emit('connection', ws, request);
+               });
+               return;
+          case "/ws-v2":
+               WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
+                    WebSocketServerV2.emit('connection', ws, request);
+               });
+               return;
+          default:
+               socket.destroy();
+               return;
+     }
+});
+
+console.log("Initialized WebSockets v1 and v2.");
 
 
 function sendStringToClient(id, data) {

@@ -21,7 +21,7 @@ router.route("/channels/:channel_id/messages")
 		try {
 			const client = require('../index').mongoClient;
 
-			var {count, offset} = req.body;
+			var {count, offset} = req.query;
 			if(typeof count !== 'number' || count > 50) count = 50;
 			if(typeof offset !== 'number') offset = 0;
 

@@ -46,7 +46,7 @@ const imageMetadataTemplate = {
 }
 
 
-router.post("/upload", middleware.authenticateDeveloperToken, async (req, res) => {
+router.post("/upload", middleware.authenticateToken, async (req, res) => {
      try { 
           var {others, roomId, tags} = req.query;
           if(req.headers['content-type'] !== 'text/plain' || typeof req.body !== 'string') return res.status(400).send("You did not send encoded photo data.");
@@ -99,13 +99,13 @@ router.post("/upload", middleware.authenticateDeveloperToken, async (req, res) =
           const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
           firebaseStorage.uploadBytes(ref, buff);
 
+          helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.`);
 
           // Finalize request
           res.status(200).send("Successfully uploaded image.");
      } catch (ex) {
-          // Error handling
-          console.error(ex);
-          res.status(500).send("Failed to upload image.");
+          res.sendStatus(500);
+          throw ex;
      }
 });
 

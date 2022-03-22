@@ -9,8 +9,8 @@ const MatchmakingAPI = require('./routers/matchmaking');
 const middleware = require('./middleware');
 
 const WebSocketV2_MessageTemplate = {
-     data: {},
-     code: "string"
+     code: "string",
+     data: {}
 };
 
 const app = express();
@@ -329,7 +329,7 @@ wss_v1.on('connection', async (ws, request) => {
                          if(!tokenData.developer) return;
 
                          split = split.splice(0);
-                         broadcastStringToAllClients(split.join(' '));
+                         wsv1_broadcastStringToAllClients(split.join(' '));
                          return;
                     case "SEND_STRING":
                          if(!tokenData.developer) return;
@@ -337,7 +337,7 @@ wss_v1.on('connection', async (ws, request) => {
                          const user = split[1];
                          split = split.splice(0, 2);
 
-                         sendStringToClient(user, split.join(' '));
+                         wsv1_sendStringToClient(user, split.join(' '));
                          return;
                }
           }
@@ -453,6 +453,7 @@ WebSocketServerV2.on('connection', (stream) => {
                          version: 2
                     };
 
+                    console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has connected.`);
                     return stream.send(JSON.stringify(final_send, null, 5));
           }
      });
@@ -463,9 +464,166 @@ WebSocketServerV2.on('connection', (stream) => {
           if(ws_connected_clients[ConnectedUserData.uid].version != 2) return;
 
           delete ws_connected_clients[ConnectedUserData.uid];
+          console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has disconnected.`);
      });
      stream.on('error', (err) => {
           throw err;
+     });
+});
+
+const MessagingGatewayServerV1 = new WebSocket.Server({noServer: true});
+MessagingGatewayServerV1.on('connection', async (stream) => {
+     var ClientData = {
+          uid: null,
+          username: "",
+          nickname: "",
+          isAuthenticated: false,
+          tags: [],
+          isDeveloper: false,
+          isCreativeToolsBetaProgramMember: false
+     };
+     const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+     const channel_collection = db.collection("channels");
+     const server_collection = db.collection("servers");
+     const message_collection = db.collection("messages");
+
+     stream.on('message', async (data, isBinary) => {
+          try {
+               var ParsedContent = JSON.parse(data.toString('utf-8'));
+          } catch (ex) {
+               var send = WebSocketV2_MessageTemplate;
+               send.code = "throw_exception";
+               send.data = {
+                    text: "json_parse_failed"
+               };
+
+               stream.send(send);
+               throw ex;
+          }
+
+          if(typeof ParsedContent.code != 'string' || typeof ParsedContent.data != 'object') return;
+
+          // begin parsing data
+
+          switch(ParsedContent.code) {
+               case "authenticate":
+                    if(ClientData.isAuthenticated) return;
+                    
+                    if(typeof ParsedContent.data.token !== 'string') {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "authentication_failed";
+                         send.data = {
+                              reason: "no_token"
+                         };
+
+                         return stream.close(4003, JSON.stringify(send, null, 5));
+                    }
+
+                    const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
+
+                    if(!tokenData.developer) {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "access_denied";
+                         send.data = {
+                              reason: "developer_only"
+                         };
+
+                         return stream.close(4003, JSON.stringify(send, null, 5));
+                    }
+                    
+                    if(!success) {
+                         var send = WebSocketV2_MessageTemplate;
+                         send.code = "authentication_failed";
+                         send.data = {
+                              reason: reason
+                         };
+
+                         return stream.close(4001, JSON.stringify(send, null, 5));
+                    }
+
+                    // all clear to clean up and proceed
+
+                    ClientData.uid = tokenData.id;
+                    ClientData.nickname = playerData.public.nickname;
+                    ClientData.isAuthenticated = true;
+                    ClientData.username = tokenData.username;
+                    ClientData.isCreativeToolsBetaProgramMember = playerData.private.availableTags.includes("Creative Tools Beta Program Member");
+                    ClientData.isDeveloper = tokenData.developer;
+                    ClientData.tags = playerData.private.availableTags;
+
+                    var send = WebSocketV2_MessageTemplate;
+                    send.code = "authentication_confirmed";
+                    
+                    // confirms connection
+                    stream.send(JSON.stringify(send, null, 5));
+          }
+          
+
+     });
+
+     stream.on('message_sent', async (server_id, channel_id, message_id) => {
+          if(!ClientData.isAuthenticated) return;
+
+          const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+          if(server_data == null) return;
+          if(!Object.keys(server_data.users).includes(ClientData.uid)) return;
+
+          const message_content = await message_collection.findOne({_id: {$eq: message_id, $exists: true}});
+          if(message_content == null) return;
+
+          const send = {
+               code: "message_sent",
+               data: {
+                    server_id: server_id,
+                    channel_id: channel_id,
+                    message_id: message_id,
+                    message_content: message_content
+               }
+          };
+
+          stream.send(JSON.stringify(send, null, 5));
+     });
+
+     stream.on('message_deleted', async (server_id, channel_id, message_id) => {
+          if(!ClientData.isAuthenticated) return;
+
+          const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+          if(server_data == null) return;
+          if(!Object.keys(server_data.users).includes(ClientData.uid)) return;
+
+          const send = {
+               code: "message_deleted",
+               data: {
+                    server_id: server_id,
+                    channel_id: channel_id,
+                    message_id: message_id
+               }
+          };
+
+          stream.send(JSON.stringify(send, null, 5));
+     });
+
+     stream.on('message_edited', async (server_id, channel_id, message_id) => {
+          if(!ClientData.isAuthenticated) return;
+
+          const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+          if(server_data == null) return;
+          if(!Object.keys(server_data.users).includes(ClientData.uid)) return;
+
+          const message_data = await message_collection.findOne({_id: {$eq: message_id, $exists: true}});
+          if(message_data == null) return;
+
+          const send = {
+               code: "message_edited",
+               data: {
+                    server_id: server_id,
+                    channel_id: channel_id,
+                    message_id: message_id,
+                    message_content: message_data
+               }
+          };
+
+          stream.send(JSON.stringify(send, null, 5));
      });
 });
 
@@ -483,6 +641,11 @@ server.on("upgrade", (request, socket, head) => {
                     WebSocketServerV2.emit('connection', ws, request);
                });
                return;
+          case "/messaging-gateway":
+               MessagingGatewayServerV1.handleUpgrade(request, socket, head, (ws) => {
+                    MessagingGatewayServerV1.emit('connection', ws, request);
+               });
+               return;
           default:
                socket.destroy();
                return;
@@ -492,7 +655,7 @@ server.on("upgrade", (request, socket, head) => {
 console.log("Initialized WebSockets v1 and v2.");
 
 
-function sendStringToClient(id, data) {
+function wsv1_sendStringToClient(id, data) {
      if(!Object.keys(ws_connected_clients).includes(id)) return;
 
      const client = ws_connected_clients[id];
@@ -500,7 +663,7 @@ function sendStringToClient(id, data) {
      client.socket.send(data);
 }
 
-function broadcastStringToAllClients(data) {
+function wsv1_broadcastStringToAllClients(data) {
      for (let index = 0; index < Object.keys(ws_connected_clients).length; index++) {
           const element = ws_connected_clients[Object.keys(ws_connected_clients)[index]];
           element.socket.send(data);          
@@ -544,9 +707,10 @@ client.connect(async (error, result) => {
      console.log('Firebase Connection Established.');
 
      module.exports = {
-          sendStringToClient: sendStringToClient,
+          sendStringToClient: wsv1_sendStringToClient,
           mongoClient: client,
-          getClients: getClients
+          getClients: getClients,
+          MessagingGatewayServerV1: MessagingGatewayServerV1
      };
      
      process.on('beforeExit', function () {

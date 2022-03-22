@@ -3,8 +3,6 @@ const helpers = require('../helpers');
 const middleware = require('../middleware');
 const uuid = require('uuid');
 
-const {ObjectId} = require('mongodb');
-
 
 
 const message_template = {
@@ -21,7 +19,7 @@ router.route("/channels/:channel_id/messages")
 		try {
 			const client = require('../index').mongoClient;
 
-			var {count, offset} = req.body;
+			var {count, offset} = req.query;
 			if(typeof count !== 'number' || count > 50) count = 50;
 			if(typeof offset !== 'number') offset = 0;
 
@@ -104,7 +102,11 @@ router.route("/channels/:channel_id/messages")
 			channel.messages.push(message._id);
 			collection.replaceOne({_id: channel_id}, channel);
 	
-			return res.sendStatus(200);
+			res.sendStatus(200);
+
+			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+				client.emit('message_sent', message.server, message.channel, message._id);
+			});
 		} catch (ex) {
 			res.sendStatus(500);
 			throw ex;
@@ -174,7 +176,11 @@ router.route("/messages/:message_id")
 
 			collection.replaceOne({_id: {$eq: message_id}}, message);
 
-			return res.sendStatus(200);
+			res.sendStatus(200);
+
+			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+				client.emit('message_edited', message.server, message.channel, message._id);
+			});
 		} catch (ex) {
 			res.sendStatus(500);
 			throw ex;
@@ -201,7 +207,7 @@ router.route("/messages/:message_id")
 			//#region handling of permissions
 
 			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
-			if(message.author !== req.user.id) return res.status(400).send({message: "not_message_author"});
+			if(message.author !== req.user.id && !req.user.developer) return res.status(400).send({message: "not_message_author"});
 
 			collection = db.collection("messages");
 			collection.deleteOne({_id: {$eq: message_id}});
@@ -214,12 +220,44 @@ router.route("/messages/:message_id")
 
 			collection.replaceOne({_id: {$eq: message.channel}}, channel);
 
-			return res.sendStatus(200);
+			res.sendStatus(200);
+
+			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+				client.emit('message_deleted', message.server, message.channel, message._id);
+			});
 		} catch (ex) {
 			res.sendStatus(500);
 			throw ex;
 		}
      });
+
+router.route("/servers/:server_id/channels")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		try {
+			const {server_id} = req.params;
+
+			const client = require('../index').mongoClient;
+
+			const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+
+			const server_collection = db.collection("servers");
+
+			const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+			if(server_data == null) return res.status(404).send({message: "server_not_found"});
+
+			if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+			return res.status(200).json(server_data.channels);
+		} catch (ex) {
+			res.sendStatus(500);
+			throw ex;
+		}
+	})
+	.put(middleware.authenticateDeveloperToken, async (req, res) => {
+		// TODO creating channels
+
+		return res.sendStatus(501);
+	});
 
 module.exports = {
      router: router

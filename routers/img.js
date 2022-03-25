@@ -47,8 +47,7 @@ const imageMetadataTemplate = {
 
 
 router.post("/upload", middleware.authenticateToken, async (req, res) => {
-     try { 
-          console.log(req.headers);
+     try {
           var {others, room_id, tags} = req.query;
           if(req.headers['content-type'] != 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
           if(typeof room_id !== 'string') return res.status(400).send("Room ID not specified.");

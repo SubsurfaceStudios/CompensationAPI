@@ -16,63 +16,43 @@ router.get("/imgfeed", async (req, res) => {
      try {
           var {count, reverse, offset} = req.query;
 
-          // If the count is not set, make it 50.
-          if(typeof count !== 'string') count = 50;
-          else try {
-               // If the count is set, try and parse it.
-               count = parseInt(count);
-               // Enforce maximum count of 50 for performance safety.
-               count = count > 50 ? 50 : count;
-          } catch {
-               // If the count cannot be parsed, set it to 50.
-               count = 50;
-          }
-
-          // If the offset is not set, make it 0.
-          if(typeof offset !== 'string') offset = 0;
-          else try {
-               // If the offset is set, try and parse it.
-               offset = parseInt(offset);
-               if(offset < 0) offset = 0;
-          } catch {
-               // If the offset cannot be parsed, set it to 0.
-               count = 0;
-          }
-
-          // Value of ?reverse does not matter, only whether it exists.
-          reverse = (typeof reverse === 'undefined');
-
-          const {mongoClient} = require('../index');
-          const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+          const client = require('../index').mongoClient;
+          const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+          const config_collection = db.collection("configuration");
+          const image_collection = db.collection("images");
           
-          var collection = db.collection("configuration");
-
-          const ImageCount = await collection.findOne({_id: "ImageCount"}).count;
-
-          if(count + offset > ImageCount) {
-               var discrepency = ImageCount - (count + offset)
-               if(count + discrepency > 0) count += discrepency;
-               else return res.status(404).send({message: "There are not enough images to fulfill your request with the given offset."});
+          const all_images = await image_collection.find().toArray();
+          const image_count = all_images.length;
+          
+          // input validation
+          try {
+               count = parseInt(count);
+               if(isNaN(count)) count = 50;
+          } catch {
+               return res.status(400).send({message: "cannot_parse_count"});
           }
 
-          // Begin getting the image information.
-          collection = db.collection("images");
-
-          var final = [];
-          for (let index = offset + 1; index <= count + 1; index++) {
-               // Fetch each image in ID order.
-               var item = await collection.findOne({_id: index});
-               final.push(item);
+          try {
+               offset = parseInt(offset);
+               if(isNaN(offset)) return res.status(400).send({message: "cannot_parse_offset"});
+               if(image_count < offset) return res.status(400).send({message: "not_enough_images"});
+          } catch {
+               return res.status(400).send({message: "cannot_parse_offset"});
           }
 
-          // Reverse order if requested.
-          if(reverse) 
-               final = final.reverse();
+          if(image_count < (count + offset)) count = (image_count - offset) - 1;
 
-          return res.status(200).json(final);
+          var feed = [];
+          if(typeof reverse != 'undefined' && reverse != "false") {
+               for(let i = 1; i < count + 1; i++) 
+                    feed.push(all_images[(image_count - offset) - i]);
+          } else {
+               for(let i = 0; i < count; i++)
+                    feed.push(all_images[offset + i]);
+          }
+
+          return res.status(200).json(feed);
      } catch (ex) {
-          console.log(ex);
-          helpers.auditLog(`Exception during image feed request - exception:\n${ex}`);
           return res.sendStatus(500);
      }
 });

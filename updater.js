@@ -129,16 +129,6 @@ function legacy_updater() {
                          file = JSON.stringify(file, null, 4);
                
                          fs.writeFileSync(`${response}/${element}`, file);
-                         
-                         // this is stupid but i'm not fucking with brackets rn
-                         // i'm just trying to get this to work
-                         // please don't hate me
-                         // copilot wrote this comment
-                         var filter_idk = {};
-                         filter_idk.users = {};
-                         filter_idk.users[element.split(".")[0]] = {};
-
-                         console.log(await servers.findOneAndUpdate({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766"}}, {$set: filter_idk}, {upsert: true}));
                     }
                
                     process.exit(0);

@@ -84,30 +84,65 @@ function MigrateAllAccounts() {
 }
 
 function legacy_updater() {
-     rl.question("Please enter the directory you want to read data from.\n", async (response) => {
-          var files = fs.readdirSync(response);
-          
-          rl.question("Please enter the name of the template file. Name is in the read directory.\n\n", async (response_2) => {
-               files = files.filter(item => item != 'ACCT_TEMPLATE.json');
+     rl.write("Connecting to MDB.\n");
+
+
+     const { MongoClient } = require('mongodb');
      
-               template = fs.readFileSync(`${response}/${response_2}`);
+     const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+     const client = new MongoClient(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+     });
+
+     client.connect(async (error, client) => {
+          if(error) {
+               console.log("Failed to connect to MongoDB.");
+               console.error(error);
+               process.exit(1);
+          }
+
+          const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+          const servers = db.collection("servers");
+
+          rl.question("Please enter the directory you want to read data from.\n", async (response) => {
+               var files = fs.readdirSync(response);
+               
+               rl.question("Please enter the name of the template file. Name is in the read directory.\n\n", async (response_2) => {
+                    files = files.filter(item => item != 'ACCT_TEMPLATE.json');
           
-               template = JSON.parse(template);
-          
-               for (let index = 0; index < files.length; index++) {
-                    const element = files[index];
-                    
-                    var file = fs.readFileSync(`${response}/${element}`);
-                    file = JSON.parse(file);
-          
-                    file = recursiveCheck(file, template);
-          
-                    file = JSON.stringify(file, null, 4);
-          
-                    fs.writeFileSync(`${response}/${element}`, file);
-               }
-          
-               process.exit(0);
+                    template = fs.readFileSync(`${response}/${response_2}`);
+               
+                    template = JSON.parse(template);
+               
+                    for (let index = 0; index < files.length; index++) {
+                         const element = files[index];
+                         
+                         var file = fs.readFileSync(`${response}/${element}`);
+                         file = JSON.parse(file);
+               
+                         file = recursiveCheck(file, template);
+
+                         if(!file.private.messaging_servers.includes("a8ec2c20-a4c7-11ec-896d-419328454766"))
+                              file.private.messaging_servers.push("a8ec2c20-a4c7-11ec-896d-419328454766");
+               
+                         file = JSON.stringify(file, null, 4);
+               
+                         fs.writeFileSync(`${response}/${element}`, file);
+                         
+                         // this is stupid but i'm not fucking with brackets rn
+                         // i'm just trying to get this to work
+                         // please don't hate me
+                         // copilot wrote this comment
+                         var filter_idk = {};
+                         filter_idk.users = {};
+                         filter_idk.users[element.split(".")[0]] = {};
+
+                         console.log(await servers.findOneAndUpdate({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766"}}, {$set: filter_idk}, {upsert: true}));
+                    }
+               
+                    process.exit(0);
+               });
           });
      });
 }

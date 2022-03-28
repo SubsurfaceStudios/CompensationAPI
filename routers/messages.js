@@ -3,8 +3,6 @@ const helpers = require('../helpers');
 const middleware = require('../middleware');
 const uuid = require('uuid');
 
-
-
 const message_template = {
      _id: "aaaa-bbbb-cccc-dddd-0000",
      author: "0",
@@ -257,6 +255,78 @@ router.route("/servers/:server_id/channels")
 		// TODO creating channels
 
 		return res.sendStatus(501);
+	});
+
+router.route("/servers/:server_id/name")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		const {server_id} = req.params;
+
+		const client = require('../index').mongoClient;
+		const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+
+		const server_collection = db.collection("servers");
+
+		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+		if(server_data == null) return res.status(404).send({message: "server_not_found"});
+
+		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+		return res.status(200).json(server_data.name);
+	});
+
+router.route("/servers/:server_id/description")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		const {server_id} = req.params;
+
+		const client = require('../index').mongoClient;
+		const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+
+		const server_collection = db.collection("servers");
+
+		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+		if(server_data == null) return res.status(404).send({message: "server_not_found"});
+
+		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+		return res.status(200).json(server_data.description);
+	});
+
+router.route("/servers/:server_id/users")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		const {server_id} = req.params;
+		const client = require('../index').mongoClient;
+
+		const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+		const server_collection = db.collection("servers");
+
+		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+		if(server_data == null) return res.status(404).send({message: "server_not_found"});
+
+		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+		return res.status(200).json(Object.keys(server_data.users));
+	});
+
+router.route("/servers/:server_id/icon_id")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		const {server_id} = req.params;
+		const client = require('../index').mongoClient;
+
+		const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+		const server_collection = db.collection("servers");
+
+		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
+		if(server_data == null) return res.status(404).send({message: "server_not_found"});
+
+		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+		return res.status(200).json(server_data.icon_id);
+	});
+
+router.route("/servers/mine")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		const data = await helpers.PullPlayerData(req.user.id);
+		return res.status(200).json(data.private.messaging_servers);
 	});
 
 module.exports = {

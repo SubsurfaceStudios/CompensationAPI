@@ -28,6 +28,8 @@
           "favoriteFriends": [
           ],
           "friendRequestsSent": [
+          ],
+          "messaging_servers": [
           ]
      },
      "auth": {

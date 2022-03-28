@@ -243,7 +243,8 @@ router.route("/servers/:server_id/channels")
 			const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
 			if(server_data == null) return res.status(404).send({message: "server_not_found"});
 
-			if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+			const player_data = await helpers.PullPlayerData(req.user.id);
+		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 			return res.status(200).json(server_data.channels);
 		} catch (ex) {
@@ -269,7 +270,8 @@ router.route("/servers/:server_id/name")
 		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
 		if(server_data == null) return res.status(404).send({message: "server_not_found"});
 
-		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+		const player_data = await helpers.PullPlayerData(req.user.id);
+		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 		return res.status(200).json(server_data.name);
 	});
@@ -286,7 +288,8 @@ router.route("/servers/:server_id/description")
 		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
 		if(server_data == null) return res.status(404).send({message: "server_not_found"});
 
-		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+		const player_data = await helpers.PullPlayerData(req.user.id);
+		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 		return res.status(200).json(server_data.description);
 	});
@@ -302,7 +305,8 @@ router.route("/servers/:server_id/users")
 		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
 		if(server_data == null) return res.status(404).send({message: "server_not_found"});
 
-		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+		const player_data = await helpers.PullPlayerData(req.user.id);
+		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 		return res.status(200).json(Object.keys(server_data.users));
 	});
@@ -318,7 +322,8 @@ router.route("/servers/:server_id/icon_id")
 		const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
 		if(server_data == null) return res.status(404).send({message: "server_not_found"});
 
-		if(!Object.keys(server_data.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+		const player_data = await helpers.PullPlayerData(req.user.id);
+		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 		return res.status(200).json(server_data.icon_id);
 	});

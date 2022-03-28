@@ -208,6 +208,20 @@ router.post("/create", async (req, res) => {
 
      fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "    "));
      res.sendStatus(200);
+
+     const client = require('../index').mongoClient;
+     const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+     const collection = db.collection("servers");
+     
+     // this is stupid but i'm not fucking with brackets rn
+     // i'm just trying to get this to work
+     // please don't hate me
+     // copilot wrote this comment
+     var filter_idk = {};
+     filter_idk.users = {};
+     filter_idk.users[id] = {};
+
+     console.log(await collection.findOneAndUpdate({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766"}}, {$set: filter_idk}, {upsert: true}));
 });
 
 router.post("/check", middleware.authenticateToken, async (req, res) => {

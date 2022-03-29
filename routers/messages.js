@@ -34,7 +34,8 @@ router.route("/channels/:channel_id/messages")
 
 			//#region handling of permissions
 
-			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+			const player_data = await helpers.PullPlayerData(req.user.id);
+			if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 			// TODO permission implementation, for now the only permission is "administrator".
 
@@ -78,7 +79,8 @@ router.route("/channels/:channel_id/messages")
 	
 			//#region handling of permissions
 	
-			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+			const player_data = await helpers.PullPlayerData(req.user.id);
+			if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 	
 			// TODO permission implementation, for now the only permission is "administrator".
 	
@@ -127,7 +129,8 @@ router.route("/channels/:channel_id/info")
 
 		//#region handling of permissions
 
-		if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+		const player_data = await helpers.PullPlayerData(req.user.id);
+		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 		// TODO permission implementation, for now the only permission is "administrator".
 
@@ -161,7 +164,8 @@ router.route("/messages/:message_id")
 
 			//#region handling of permissions
 
-			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+			const player_data = await helpers.PullPlayerData(req.user.id);
+			if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 			// TODO permission implementation, for now the only permission is "administrator".
 
@@ -193,7 +197,9 @@ router.route("/messages/:message_id")
 
 			//#region handling of permissions
 
-			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+			const player_data = await helpers.PullPlayerData(req.user.id);
+			if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
+			
 			if(message.author !== req.user.id) return res.status(400).send({message: "not_message_author"});
 
 			// TODO permission implementation, for now the only permission is "administrator".
@@ -236,7 +242,9 @@ router.route("/messages/:message_id")
 
 			//#region handling of permissions
 
-			if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+			const player_data = await helpers.PullPlayerData(req.user.id);
+			if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
+
 			if(message.author !== req.user.id && !req.user.developer) return res.status(400).send({message: "not_message_author"});
 
 			collection = db.collection("messages");
@@ -276,7 +284,7 @@ router.route("/servers/:server_id/channels")
 			if(server_data == null) return res.status(404).send({message: "server_not_found"});
 
 			const player_data = await helpers.PullPlayerData(req.user.id);
-		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
+			if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
 			return res.status(200).json(server_data.channels);
 		} catch (ex) {

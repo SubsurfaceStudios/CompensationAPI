@@ -111,6 +111,38 @@ router.route("/channels/:channel_id/messages")
 		}
      });
 
+router.route("/channels/:channel_id/info")
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+		const {channel_id} = req.params;
+
+		const client = require('../index').mongoClient;
+		const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+		var collection = db.collection("channels");
+
+		const channel = await collection.findOne({'_id': {$exists: true, $eq: channel_id}});
+		if(channel == null) return res.status(404).send({message: "channel_not_found"});
+
+		collection = db.collection("servers");
+		const server = await collection.findOne({'_id': channel.server_id});
+
+		//#region handling of permissions
+
+		if(!Object.keys(server.users).includes(req.user.id)) return res.status(400).send({message: "not_in_server"});
+
+		// TODO permission implementation, for now the only permission is "administrator".
+
+		//#endregion
+
+		var channel_info = {
+			_id: channel._id,
+			name: channel.name,
+			description: channel.description,
+			server_id: channel.server_id,
+		}
+
+		res.status(200).json(channel_info);
+	});
+
 router.route("/messages/:message_id")
      .get(middleware.authenticateDeveloperToken, async (req, res) => {
 		try {

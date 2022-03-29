@@ -352,7 +352,7 @@ router.route("/servers/:server_id/users")
 	});
 
 router.route("/servers/:server_id/icon_id")
-	.get(middleware.pauthenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateDeveloperToken, async (req, res) => {
 		const {server_id} = req.params;
 		const client = require('../index').mongoClient;
 

@@ -273,7 +273,7 @@ router.route("/servers/:server_id/name")
 		const player_data = await helpers.PullPlayerData(req.user.id);
 		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
-		return res.status(200).json(server_data.name);
+		return res.status(200).send(server_data.name);
 	});
 
 router.route("/servers/:server_id/description")
@@ -325,7 +325,7 @@ router.route("/servers/:server_id/icon_id")
 		const player_data = await helpers.PullPlayerData(req.user.id);
 		if(!player_data.private.messaging_servers.includes(server_id)) return res.status(400).send({message: "not_in_server"});
 
-		return res.status(200).json(server_data.icon_id);
+		return res.status(200).send(server_data.icon_id);
 	});
 
 router.route("/servers/mine")

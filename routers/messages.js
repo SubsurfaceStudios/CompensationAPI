@@ -226,9 +226,6 @@ router.route("/messages/:message_id")
 		try {
 			const client = require('../index').mongoClient;
 
-			const {content} = req.body;
-			if(typeof content !== 'string') return res.status(400).send({message: "invalid_message_content"});
-
 			const {message_id} = req.params;
 
 			const db = client.db(process.env.MONGOOSE_DATABASE_NAME);

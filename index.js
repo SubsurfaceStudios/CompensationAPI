@@ -88,7 +88,7 @@ const server = app.listen(config.PORT, '0.0.0.0');
 
 
 
-helpers.auditLog("Server Init");
+helpers.auditLog("Server Init", false);
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 
 var ws_connected_clients = {};
@@ -677,7 +677,7 @@ const client = new MongoClient(uri, {
 client.connect(async (error, result) => {
      if(error) {
           console.error(`Failed to connect to MongoDB - fatal\n` + error);
-          helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error);
+          helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
           process.exit(1);
      }
 
@@ -705,11 +705,11 @@ client.connect(async (error, result) => {
      };
      
      process.on('beforeExit', function () {
-          helpers.auditLog("Server exit.");
+          helpers.auditLog("Server exit.", false);
      });
      
      process.on('uncaughtException', function (exception) {
-          helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``);
+          helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``, false);
           console.error(exception);
      });
      
@@ -721,7 +721,7 @@ client.connect(async (error, result) => {
                return;
           }
 
-          helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)")
+          helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)", false)
      
           setTimeout(() => process.exit(), 250);
      });

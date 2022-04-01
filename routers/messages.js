@@ -13,7 +13,7 @@ const message_template = {
 };
 
 router.route("/channels/:channel_id/messages")
-     .get(middleware.authenticateDeveloperToken, async (req, res) => {
+     .get(middleware.authenticateToken, async (req, res) => {
 		try {
 			const client = require('../index').mongoClient;
 
@@ -60,7 +60,7 @@ router.route("/channels/:channel_id/messages")
 			throw ex;
 		}
      })
-     .put(middleware.authenticateDeveloperToken, async (req, res) => {
+     .put(middleware.authenticateToken, async (req, res) => {
 		try {
 			const client = require('../index').mongoClient;
 	
@@ -114,7 +114,7 @@ router.route("/channels/:channel_id/messages")
      });
 
 router.route("/channels/:channel_id/info")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		const {channel_id} = req.params;
 
 		const client = require('../index').mongoClient;
@@ -147,7 +147,7 @@ router.route("/channels/:channel_id/info")
 	});
 
 router.route("/messages/:message_id")
-     .get(middleware.authenticateDeveloperToken, async (req, res) => {
+     .get(middleware.authenticateToken, async (req, res) => {
 		try {
 			const client = require('../index').mongoClient;
 
@@ -177,7 +177,7 @@ router.route("/messages/:message_id")
 			throw ex;
 		}
      })
-     .patch(middleware.authenticateDeveloperToken, async (req, res) => {
+     .patch(middleware.authenticateToken, async (req, res) => {
 		try {
 			const client = require('../index').mongoClient;
 
@@ -222,7 +222,7 @@ router.route("/messages/:message_id")
 			throw ex;
 		}
      })
-     .delete(middleware.authenticateDeveloperToken, async (req, res) => {
+     .delete(middleware.authenticateToken, async (req, res) => {
 		try {
 			const client = require('../index').mongoClient;
 
@@ -267,7 +267,7 @@ router.route("/messages/:message_id")
      });
 
 router.route("/servers/:server_id/channels")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		try {
 			const {server_id} = req.params;
 
@@ -296,7 +296,7 @@ router.route("/servers/:server_id/channels")
 	});
 
 router.route("/servers/:server_id/name")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		const {server_id} = req.params;
 
 		const client = require('../index').mongoClient;
@@ -314,7 +314,7 @@ router.route("/servers/:server_id/name")
 	});
 
 router.route("/servers/:server_id/description")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		const {server_id} = req.params;
 
 		const client = require('../index').mongoClient;
@@ -332,7 +332,7 @@ router.route("/servers/:server_id/description")
 	});
 
 router.route("/servers/:server_id/users")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		const {server_id} = req.params;
 		const client = require('../index').mongoClient;
 
@@ -349,7 +349,7 @@ router.route("/servers/:server_id/users")
 	});
 
 router.route("/servers/:server_id/icon_id")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		const {server_id} = req.params;
 		const client = require('../index').mongoClient;
 
@@ -366,7 +366,7 @@ router.route("/servers/:server_id/icon_id")
 	});
 
 router.route("/servers/mine")
-	.get(middleware.authenticateDeveloperToken, async (req, res) => {
+	.get(middleware.authenticateToken, async (req, res) => {
 		const data = await helpers.PullPlayerData(req.user.id);
 		return res.status(200).json(data.private.messaging_servers);
 	});

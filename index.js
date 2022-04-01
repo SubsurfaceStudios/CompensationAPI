@@ -520,16 +520,6 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
                     }
 
                     const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
-
-                    if(!tokenData.developer) {
-                         var send = WebSocketV2_MessageTemplate;
-                         send.code = "access_denied";
-                         send.data = {
-                              reason: "developer_only"
-                         };
-
-                         return stream.close(4003, JSON.stringify(send, null, 5));
-                    }
                     
                     if(!success) {
                          var send = WebSocketV2_MessageTemplate;
@@ -553,6 +543,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
 
                     var send = WebSocketV2_MessageTemplate;
                     send.code = "authentication_confirmed";
+                    send.data = {};
                     
                     // confirms connection
                     stream.send(JSON.stringify(send, null, 5));

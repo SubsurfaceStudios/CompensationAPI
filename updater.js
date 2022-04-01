@@ -105,6 +105,10 @@ function legacy_updater() {
           const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
           const servers = db.collection("servers");
 
+          var server = await servers.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
+
+          if(server == null) return rl.write("Failed to read official server.");
+
           rl.question("Please enter the directory you want to read data from.\n", async (response) => {
                var files = fs.readdirSync(response);
                
@@ -129,7 +133,13 @@ function legacy_updater() {
                          file = JSON.stringify(file, null, 4);
                
                          fs.writeFileSync(`${response}/${element}`, file);
+
+                         if(!Object.keys(server.users).includes(element.split(".")[0])) {
+                              server.users[element.split(".")[0]] = {};
+                         }
                     }
+
+                    console.log(await servers.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
                
                     process.exit(0);
                });

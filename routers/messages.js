@@ -41,6 +41,10 @@ router.route("/channels/:channel_id/messages")
 
 			//#endregion
 			
+			// yes, this is dumb
+			// deal with it
+			if(channel.messages.length == 0) return res.status(200).send([]);
+
 			var discrepency = -(channel.messages.length - (count + offset));
 
 			if(count - discrepency < 1) return res.status(400).send({message: "not_enough_messages"});
@@ -51,7 +55,11 @@ router.route("/channels/:channel_id/messages")
 			var send = [];
 			for (let index = offset; index < offset + count; index++) {
 				const message = await collection.findOne({_id: {$exists: true, $eq: channel.messages[index]}});
-				send.push(message);
+				if(message != null) send.push(message);
+				else {
+					helpers.auditLog(`ah fuck yea the fuckin servers r broken again <@533872282393903105> go fuckin fix it dumbass`, true);
+					continue;
+				}
 			}
 
 			res.status(200).json(send);

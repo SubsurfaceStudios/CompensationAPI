@@ -153,7 +153,7 @@ router.post("/report", middleware.authenticateToken, async (req, res) => {
 
      helpers.PushPlayerData(req.user.id, reportingData);
 
-     helpers.auditLog(`!MODERATION! User ${req.user.id} filed a report against user ${target} for the reason of ${reason}`);
+     helpers.auditLog(`!MODERATION! User ${req.user.id} filed a report against user ${target} for the reason of ${reason}`, false);
      
      res.status(200).send("Report successfully applied. Thank you for helping keep Compensation VR safe.");
      helpers.onPlayerReportedCallback(report);
@@ -167,7 +167,7 @@ router.post("/:id/ban", middleware.authenticateDeveloperToken, async (req, res) 
 
      helpers.BanPlayer(id, reason, duration);
 
-     helpers.auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`)
+     helpers.auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`, false)
      res.status(200).send();
 });
 
@@ -188,7 +188,7 @@ router.post("/:id/currency/set", middleware.authenticateDeveloperToken, async (r
 
      helpers.PushPlayerData(id_clean, data);
 
-     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`);
+     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`, false);
 
      res.status(200).send("Action successful.");
 });
@@ -210,7 +210,7 @@ router.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async
 
      helpers.PushPlayerData(id_clean, data)
 
-     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`);
+     helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`, false);
 
      res.status(200).send("Action successful.");
 });

@@ -233,7 +233,7 @@ function getAccountCount() {
 }
 
 
-function auditLog(message) {
+function auditLog(message, isRaw) {
      const file = fs.readFileSync("./data/audit.json");
      let data = JSON.parse(file);
 
@@ -246,7 +246,10 @@ function auditLog(message) {
      fs.writeFileSync("./data/audit.json", final);
 
      if(!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return console.log("Failed to send webhook audit - either the AUDIT_SERVER_ID or the AUDIT_WEBHOOK_URI has not been set.");
-     const globalAuditMessage = `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
+     const globalAuditMessage = 
+          isRaw ? 
+          `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\n${message}` : 
+          `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
      request.post(process.env.AUDIT_WEBHOOK_URI, {json: {"content": globalAuditMessage}});
 }
 

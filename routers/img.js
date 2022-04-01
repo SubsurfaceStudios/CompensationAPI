@@ -99,7 +99,7 @@ router.post("/upload", middleware.authenticateToken, async (req, res) => {
           const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
           firebaseStorage.uploadBytes(ref, buff);
 
-          helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.`);
+          helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\nhttps://api.compensationvr.tk/img/${MetaData._id}`, true);
 
           // Finalize request
           res.status(200).send("Successfully uploaded image.");

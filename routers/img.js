@@ -45,6 +45,7 @@ const imageMetadataTemplate = {
      }
 }
 
+router.use(require('../temporarilyBlocked'));
 
 router.post("/upload", middleware.authenticateToken, async (req, res) => {
      try {

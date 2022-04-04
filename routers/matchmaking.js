@@ -57,7 +57,7 @@ class RoomSession {
      RemovePlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
           var index = this.Players.findIndex(item => item == id);
-          this.Players = this.Players.splice(index);
+          this.Players.splice(index);
      }
      AutomaticInstanceCleanup() {
           if(this.Persistent || this.Age < this.TTL) return;

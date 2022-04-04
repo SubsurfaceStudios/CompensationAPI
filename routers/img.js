@@ -47,7 +47,7 @@ const imageMetadataTemplate = {
      }
 }
 
-// router.use(require('../temporarilyBlocked'));
+
 
 // 24 hour cache
 const imgCache = new NodeCache({

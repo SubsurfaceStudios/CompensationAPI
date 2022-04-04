@@ -319,8 +319,7 @@ wss_v1.on('connection', async (ws, request) => {
                          }
                          return;
                     case "LOG":
-                         var split_but_cooler = split.splice(0);
-                         console.log(split_but_cooler.join(' '));
+                         console.log(split.splice(0));
                          return;
                     case "PUT_ANALYTIC_VAL":
                          ws.send("ASSERT Feature not implemented.");
@@ -328,14 +327,14 @@ wss_v1.on('connection', async (ws, request) => {
                     case "BROADCAST_STRING":
                          if(!tokenData.developer) return;
 
-                         split = split.splice(0);
+                         split.splice(0);
                          wsv1_broadcastStringToAllClients(split.join(' '));
                          return;
                     case "SEND_STRING":
                          if(!tokenData.developer) return;
 
                          const user = split[1];
-                         split = split.splice(0, 2);
+                         split.splice(0, 2);
 
                          wsv1_sendStringToClient(user, split.join(' '));
                          return;

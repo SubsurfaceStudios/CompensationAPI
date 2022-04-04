@@ -259,9 +259,9 @@ router.route("/messages/:message_id")
 
 			var channel = await collection.findOne({_id: {$eq: message.channel}});
 
-			channel.messages = channel.messages.splice(channel.messages.findIndex(item => item == message._id));
+			channel.messages.splice(channel.messages.findIndex(item => item == message_id), 1);
 
-			collection.replaceOne({_id: {$eq: message.channel}}, channel);
+			collection.updateOne({_id: {$eq: message.channel}}, {$set: {messages: channel.messages}});
 
 			res.sendStatus(200);
 

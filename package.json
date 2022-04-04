@@ -21,6 +21,7 @@
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.3.1",
+    "node-cache": "^5.1.2",
     "nodemon": "^2.0.13",
     "request": "^2.88.2",
     "sanitize-filename": "^1.6.3",

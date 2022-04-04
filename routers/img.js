@@ -9,6 +9,8 @@ const mongodb = require('mongodb');
 const firebaseStorage = require('firebase/storage');
 const path = require('node:path');
 
+const NodeCache = require('node-cache');
+
 const index = require('../index');
 
 router.use(express.text({limit: '150mb'}));
@@ -45,7 +47,13 @@ const imageMetadataTemplate = {
      }
 }
 
-router.use(require('../temporarilyBlocked'));
+// router.use(require('../temporarilyBlocked'));
+
+// 24 hour cache
+const imgCache = new NodeCache({
+     "deleteOnExpire": true,
+     "stdTTL": 60 * 60 * 8
+});
 
 router.post("/upload", middleware.authenticateToken, async (req, res) => {
      try {
@@ -163,23 +171,47 @@ router.get("/:id", async (req, res) => {
           collection = db.collection("images");
 
           var ImageInfo = await collection.findOne({_id: id});
-          
-          const storage = firebaseStorage.getStorage();
-          const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
 
           if (typeof base64 === 'undefined' || base64 !== 'true') {
-               var ImageBytes = await firebaseStorage.getBytes(ref);
-               var ImageBuffer = Buffer.from(ImageBytes);
+               var ImageBuffer;
+
+               if(!imgCache.has(id)) {
+                    const storage = firebaseStorage.getStorage();
+                    const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
+
+                    var ImageBytes = await firebaseStorage.getBytes(ref);
+                    ImageBuffer = Buffer.from(ImageBytes);
+               } else {
+                    ImageBuffer = imgCache.get(id);
+               }
                
                res.writeHead(200, {
                     'Content-Type': 'image/jpeg',
                     'Content-Length': ImageBuffer.length
                });
-               return res.end(ImageBuffer);
+               res.end(ImageBuffer);
+
+               if(!imgCache.has(id)) {
+                    imgCache.set(id, ImageBuffer);
+                    console.log(`Request submitted for uncached image ${id}, cached.`);
+               } else console.log(`Request submitted for cached image ${id}.`);
           } else {
-               var ImageBuffer = await firebaseStorage.getBytes(ref);
+               var ImageBuffer;
+               if(!imgCache.has(id)) {
+                    const storage = firebaseStorage.getStorage();
+                    const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
+
+                    ImageBuffer = await firebaseStorage.getBytes(ref);
+               } else {
+                    ImageBuffer = imgCache.get(id);
+               }
                var ImageBase64String = Buffer.from(ImageBuffer).toString('base64');
+
                res.status(200).contentType('text/plain').send(ImageBase64String);
+               if(!imgCache.has(id)) {
+                    imgCache.set(id, ImageBuffer);
+                    console.log(`Request submitted for uncached image ${id}, cached.`);
+               } else console.log(`Request submitted for cached image ${id}.`);
           }
      } catch (ex) {
           console.error(ex);

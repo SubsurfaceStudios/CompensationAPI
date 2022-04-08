@@ -37,5 +37,19 @@ router.route("/:key")
                throw ex;
           }
      });
+
+router.get("/config", async (req, res) => {
+     const { mongoClient } = require('../index');
+     try {
+          const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
+
+          const doc = await collection.findOne({_id: "config"});
+          if(doc == null) return res.sendStatus(404);
+
+          return res.status(200).json(doc.data);
+     } catch {
+          res.sendStatus(500);
+     }  
+});
      
 module.exports = router;

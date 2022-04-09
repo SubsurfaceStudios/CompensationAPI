@@ -216,7 +216,7 @@ function getUserID(username) {
      for (let index = 0; index < files.length; index++) {
           const element = files[index];
           
-          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`))
+          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}.json`));
 
           const username2 = data.auth.username.toLowerCase();
           if(username2 == username.toLowerCase()) {

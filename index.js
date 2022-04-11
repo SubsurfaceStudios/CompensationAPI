@@ -356,7 +356,7 @@ wss_v1.on('connection', async (ws, request) => {
 });
 
 const WebSocketServerV2 = new WebSocket.Server({noServer: true});
-WebSocketServerV2.on('connection', (stream) => {
+WebSocketServerV2.on('connection', (Socket) => {
      var ConnectedUserData = {
           uid: null,
           username: "",
@@ -367,7 +367,7 @@ WebSocketServerV2.on('connection', (stream) => {
           isCreativeToolsBetaProgramMember: false
      };
 
-     stream.on('message', (data, isBinary) => {
+     Socket.on('message', (data, isBinary) => {
           try {
                var ParsedContent = JSON.parse(data.toString('utf-8'));
           } catch (ex) {
@@ -377,7 +377,7 @@ WebSocketServerV2.on('connection', (stream) => {
                     text: "json_parse_failed"
                };
 
-               stream.send(send);
+               Socket.send(send);
                throw ex;
           }
 
@@ -396,20 +396,11 @@ WebSocketServerV2.on('connection', (stream) => {
                               reason: "no_token"
                          };
 
-                         return stream.close(4003, JSON.stringify(send, null, 5));
+                         return Socket.close(4003, JSON.stringify(send, null, 5));
                     }
 
                     const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
 
-                    if(!tokenData.developer) {
-                         var send = WebSocketV2_MessageTemplate;
-                         send.code = "access_denied";
-                         send.data = {
-                              reason: "developer_only"
-                         };
-
-                         return stream.close(4003, JSON.stringify(send, null, 5));
-                    }
                     
                     if(!success) {
                          var send = WebSocketV2_MessageTemplate;
@@ -418,17 +409,17 @@ WebSocketServerV2.on('connection', (stream) => {
                               reason: reason
                          };
 
-                         return stream.close(4001, JSON.stringify(send, null, 5));
+                         return Socket.close(4001, JSON.stringify(send, null, 5));
                     }
 
                     if(Object.keys(ws_connected_clients).includes(tokenData.id)) {
                          var send = WebSocketV2_MessageTemplate;
-                         send.code = "connection_declined";
+                         send.code = "authentication_failed";
                          send.data = {
                               reason: "duplicate_connection"
                          }
 
-                         return stream.close(4002, JSON.stringify(send, null, 5));
+                         return Socket.close(4002, JSON.stringify(send, null, 5));
                     }
 
                     // all clear to clean up and proceed
@@ -442,21 +433,21 @@ WebSocketServerV2.on('connection', (stream) => {
                     ConnectedUserData.tags = playerData.private.availableTags;
 
                     var final_send = WebSocketV2_MessageTemplate;
-                    final_send.code = "show_screen_message";
+                    final_send.code = "authentication_success";
                     final_send.data = {
                          message: tokenData.id != "2" ? `Welcome back to Compensation VR.\nYou have ${playerData.notifications.length} unread notifications.` : `welcome back dumbfuck\nread your notifications you've got 9999.`
                     };
 
                     ws_connected_clients[ConnectedUserData.uid] = {
-                         socket: stream,
+                         socket: Socket,
                          version: 2
                     };
 
                     console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has connected.`);
-                    return stream.send(JSON.stringify(final_send, null, 5));
+                    return Socket.send(JSON.stringify(final_send, null, 5));
           }
      });
-     stream.on('close', (code, reason) => {
+     Socket.on('close', (code, reason) => {
           if(!ConnectedUserData.isAuthenticated) return;
           if(!Object.keys(ws_connected_clients).includes(ConnectedUserData.uid)) return;
 
@@ -465,7 +456,7 @@ WebSocketServerV2.on('connection', (stream) => {
           delete ws_connected_clients[ConnectedUserData.uid];
           console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has disconnected.`);
      });
-     stream.on('error', (err) => {
+     Socket.on('error', (err) => {
           throw err;
      });
 });

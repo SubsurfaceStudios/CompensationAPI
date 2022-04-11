@@ -43,9 +43,10 @@ router.get("/config", async (req, res) => {
      try {
           const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
 
-          const doc = await collection.findOne({_id: "config"});
+          const doc = await collection.findOne({_id: {$eq: "config", $exists: true}});
           if(doc == null) return res.sendStatus(404);
 
+          console.log(doc);
           return res.status(200).json(doc.data);
      } catch {
           res.sendStatus(500);

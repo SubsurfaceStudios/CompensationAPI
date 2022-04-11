@@ -14,8 +14,10 @@ router.route("/:key")
      
                const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
 
-               const doc = await collection.findOne({_id: key});
+               const doc = await collection.findOne({_id: {$eq: key, $exists: true}});
 
+               if(doc == null) return res.status(404).send({message:"key_not_found"});
+               if(key == "config") return res.status(200).json(doc.data);
                return res.status(200).send(`${doc.data}`);
           } catch {
                res.sendStatus(404);
@@ -37,20 +39,5 @@ router.route("/:key")
                throw ex;
           }
      });
-
-router.get("/config", async (req, res) => {
-     const { mongoClient } = require('../index');
-     try {
-          const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
-
-          const doc = await collection.findOne({_id: {$eq: "config", $exists: true}});
-          if(doc == null) return res.sendStatus(404);
-
-          console.log(doc);
-          return res.status(200).json(doc.data);
-     } catch {
-          res.sendStatus(500);
-     }  
-});
      
 module.exports = router;

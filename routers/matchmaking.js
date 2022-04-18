@@ -1,15 +1,61 @@
 const router = require('express').Router();
 const uuid = require('uuid');
+const middleware = require('../middleware');
 
-router.get("/*", async (req, res) => {
-     res.sendStatus(501);
+router.get("/:room_id/:subroom_id/public-instances", middleware.authenticateToken, async (req, res) => {
+     try {     
+          const {room_id, subroom_id} = req.params;
+
+          const instances = await GetInstances(room_id);
+          const filtered = instances.filter(item => item.SubroomId == subroom_id && item.MatchmakingMode == MatchmakingModes.Public);
+          const mapped = filtered.map(item => {
+               return {
+                    instance_id: item.InstanceId,
+                    ttl: item.TTL,
+                    persistent: item.Persistent,
+                    max_players: item.MaxPlayers,
+                    players: item.Players.length,
+               };
+          })
+
+          res.status(200).json(mapped);
+     } catch (ex) {
+          res.sendStatus(500);
+          throw ex;
+     }
 });
 
+router.get("/:room_id/:subroom_id/all-instances", middleware.authenticateDeveloperToken, async (req, res) => {
+     try {     
+          const {room_id, subroom_id} = req.params;
+
+          const instances = await GetInstances(room_id);
+          const filtered = instances.filter(item => item.SubroomId == subroom_id);
+          const mapped = filtered.map(item => {
+               return {
+                    instance_id: item.InstanceId,
+                    ttl: item.TTL,
+                    persistent: item.Persistent,
+                    max_players: item.MaxPlayers,
+                    players: item.Players.length,
+               };
+          })
+
+          res.status(200).json(mapped);
+     } catch (ex) {
+          res.sendStatus(500);
+          throw ex;
+     }
+});
+
+
+
+// yes this is literally just an enum
 const MatchmakingModes = {
-     Public: "public",
-     Unlisted: "unlisted",
-     Private: "private",
-     Locked: "locked"
+     Public: 0,
+     Unlisted: 1,
+     Private: 2,
+     Locked: 3
 };
 
 // YES, I'M AWARE
@@ -30,6 +76,7 @@ class RoomSession {
      // * private
      // * locked
      RoomId = "0"; // The room the instance is in.
+     SubroomId = "home"
      MatchmakingMode; // How players can access this instance. Private by default, meaning you cannot join unless you have an invite.
      Players; // The current players inside the instance.
      MaxPlayers; // The maximum number of players the instance can contain.
@@ -40,8 +87,6 @@ class RoomSession {
      
      InstanceId;
      JoinCode;
-     
-     
 
      BeginEventLoop() {
           setInterval(this.EventLoop, 500);
@@ -78,8 +123,9 @@ class RoomSession {
           this.FlaggedForRemoval = true;
      }
 
-     constructor(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
+     constructor(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
           this.RoomId = RoomId;
+          this.SubroomId = SubroomId;
           this.MatchmakingMode = MatchmakingMode;
           this.Players = [];
           this.MaxPlayers = MaxPlayers;
@@ -120,51 +166,55 @@ async function CleanupInstances() {
      console.log(`Finished cleanup of instances, cleared ${CleanedInstances} instances in total.`);
 }
 
+async function GetInstances(RoomId) {
+     if(RoomId == null) {
+          var instances = [];
+          Object.keys(RoomInstances).forEach(element => {
+               instances.push(RoomInstances[element]);
+          });
+          return instances;
+     }
+     if(!Object.keys(RoomInstances).includes(RoomId)) return [];
+     return RoomInstances[RoomId];
+}
+
+async function GetInstanceById(RoomId, InstanceId) {
+     return RoomInstances[RoomId].find(item => item.InstanceId == InstanceId);
+}
+
+async function GetInstanceByJoinCode(RoomId, JoinCode) {
+     return RoomInstances[RoomId].find(item => item.JoinCode == JoinCode);
+}
+
+async function SetInstances(RoomId, InstanceList) {
+     RoomInstances[RoomId] = InstanceList;
+}
+
+async function SetInstance(RoomId, InstanceId, Instance) {
+     if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
+
+     var index = RoomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
+     if(index < 0) RoomInstances[RoomId].push(Instance);
+     else RoomInstances[RoomId][index] = Instance;
+}
+
+async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
+     if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
+
+     const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
+     RoomInstances[RoomId].push(room);
+
+     console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);
+     return room;
+}
+
 module.exports = {
      router: router,
      MatchmakingModes: MatchmakingModes,
-     GetInstances: async function GetInstances(RoomId) {
-          if(RoomId == "*") {
-               var instances = [];
-               Object.keys(RoomInstances).forEach(element => {
-                    instances.push(RoomInstances[element]);
-               });
-               return instances;
-          }
-          if(!Object.keys(RoomInstances).includes(RoomId)) return [];
-          return RoomInstances[RoomId];
-     },
-     GetInstanceById: async function GetInstanceById(RoomId, InstanceId) {
-          return RoomInstances[RoomId].find(item => item.InstanceId == InstanceId);
-     },
-     GetInstanceByJoinCode: async function GetInstanceByJoinCode(RoomId, JoinCode) {
-          return RoomInstances[RoomId].find(item => item.JoinCode == JoinCode);
-     },
-     SetInstances: async function SetInstances(RoomId, InstanceList) {
-          RoomInstances[RoomId] = InstanceList;
-     },
-     SetInstance: async function SetInstance(RoomId, InstanceId, Instance) {
-          if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
-
-          try {
-               RoomId = parseInt(RoomId);
-               if(isNaN(RoomId) || RoomId < 0) throw new TypeError("Invalid room ID in SetInstance.");
-          } catch (ex) {
-               console.error(ex);
-               throw new TypeError("^^^ Failed to parse room ID.");
-          }
-
-          var index = RoomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
-          if(index < 0) RoomInstances[RoomId].push(Instance);
-          else RoomInstances[RoomId][index] = Instance;
-     },
-     CreateInstance: async function CreateInstance(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
-          if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
-
-          const room = new RoomSession(RoomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
-          RoomInstances[RoomId].push(room);
-
-          console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);
-          return room;
-     }
+     GetInstances: GetInstances,
+     GetInstanceById: GetInstanceById,
+     GetInstanceByJoinCode: GetInstanceByJoinCode,
+     SetInstances: SetInstances,
+     SetInstance: SetInstance,
+     CreateInstance: CreateInstance
 };

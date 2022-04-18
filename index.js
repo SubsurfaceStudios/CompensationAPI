@@ -330,9 +330,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                     }
 
                     // this method will strive for the largest possible instance, within the bounds of the room's max players
-                    var sorted = filtered.sort((a, b) => a.Players - b.Players);
+                    var final_selection = filtered.sort((a, b) => a.Players - b.Players)[0];
 
-                    var final_selection = sorted.first();
 
                     final_selection.AddPlayer(ConnectedUserData.uid);
                     await MatchmakingAPI.SetInstance(ParsedContent.data.roomId, final_selection.InstanceId, final_selection);

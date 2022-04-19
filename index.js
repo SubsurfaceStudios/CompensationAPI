@@ -294,7 +294,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     if(!ConnectedUserData.isAuthenticated) return;
                     if(typeof ParsedContent.data.roomId !== 'string' || typeof ParsedContent.data.subroomId !== 'string') return;
 
-                    var db = this.mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+                    var db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
                     var collection = db.collection("rooms");
 
                     var room = await collection.findOne({_id: {$eq: ParsedContent.data.roomId, $exists: true}});
@@ -353,7 +353,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     if(!ConnectedUserData.isAuthenticated) return;
                     if(typeof ParsedContent.data.roomId !== 'string' || typeof ParsedContent.data.subroomId !== 'string') return;
 
-                    var db = this.mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+                    var db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
                     var collection = db.collection("rooms");
 
                     var room = await collection.findOne({_id: {$eq: ParsedContent.data.roomId, $exists: true}});

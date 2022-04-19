@@ -23,7 +23,7 @@ router.route("/room/:room_id/info")
 
                const room_collection = db.collection("rooms");
 
-               const room = await room_collection.findOne({_id: {$eq: room_id, $exists: true}}, {projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1}});
+               const room = await room_collection.findOne({_id: {$eq: room_id, $exists: true}}, {projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1}});
                if(room == null) return res.status(404).send({message: "room_not_found"});
 
                return res.status(200).json(room);

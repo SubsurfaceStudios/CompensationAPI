@@ -49,7 +49,7 @@ const imageMetadataTemplate = {
 
 
 
-// 24 hour cache
+// 8 hour cache
 const imgCache = new NodeCache({
      "deleteOnExpire": true,
      "stdTTL": 60 * 60 * 8

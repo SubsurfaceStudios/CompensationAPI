@@ -141,11 +141,7 @@ class RoomSession {
      }
 }
 
-var RoomInstances = {
-     "0": [
-          new RoomSession("0", MatchmakingModes.Locked, 300, true, 20)
-     ]
-};
+var RoomInstances = Object.create(null);
 
 setInterval(CleanupInstances, 300 * 1000);
 

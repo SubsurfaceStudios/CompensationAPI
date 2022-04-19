@@ -314,7 +314,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                          send.code = "join_or_create_photon_room";
                          send.data = {
                               name: instance.JoinCode,
-                              baseSceneId: subroom.baseSceneId
+                              baseSceneIndex: subroom.versions[subroom.publicVersionId].baseSceneIndex
                          };
 
                          Socket.send(JSON.stringify(send, null, 5));
@@ -339,9 +339,10 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                     var send = WebSocketV2_MessageTemplate;
                     send.code = "join_or_create_photon_room";
+                    var subroom = room.subrooms[ParsedContent.data.subroomId];
                     send.data = {
                          name: final_selection.JoinCode,
-                         baseSceneId: room.subrooms[ParsedContent.data.subroomId].baseSceneId
+                         baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex
                     };
 
                     Socket.send(JSON.stringify(send, null, 5));
@@ -371,7 +372,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     send.code = "join_or_create_photon_room";
                     send.data = {
                          name: instance.JoinCode,
-                         baseSceneId: subroom.baseSceneId
+                         baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex
                     };
 
                     Socket.send(JSON.stringify(send, null, 5));

@@ -314,7 +314,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                          send.code = "join_or_create_photon_room";
                          send.data = {
                               name: instance.JoinCode,
-                              baseSceneIndex: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                              baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                               spawn: subroom.versions[subroom.publicVersionId].spawn
                          };
 

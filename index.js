@@ -211,6 +211,10 @@ WebSocketServerV2.on('connection', (Socket) => {
           matchmakingRoomId: null
      };
 
+     Socket.on('ping', async (data) => {
+          Socket.pong();
+     });
+
      Socket.on('message', async (data, isBinary) => {
           try {
                var ParsedContent = JSON.parse(data.toString('utf-8'));
@@ -421,6 +425,10 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
      const channel_collection = db.collection("channels");
      const server_collection = db.collection("servers");
      const message_collection = db.collection("messages");
+
+     stream.on('ping', async (data) => {
+          stream.pong();
+     })
 
      stream.on('message', async (data, isBinary) => {
           try {

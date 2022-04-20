@@ -146,20 +146,13 @@ var RoomInstances = Object.create(null);
 setInterval(CleanupInstances, 300 * 1000);
 
 async function CleanupInstances() {
-     console.log("Initiating automatic instance cleanup.");
-     var CleanedInstances = 0;
      for(let RoomIdIndex = 0; RoomIdIndex < Object.keys(RoomInstances).length; RoomIdIndex++) {
-          var RoomId = RoomInstances[RoomIdIndex];
-          RoomId = RoomId.filter(item => {
-               if(item.FlaggedForRemoval) {
-                    console.log(`Removed flagged instance of room ${item.RoomId} with id ${item.InstanceId} and join code ${item.JoinCode}`);
-                    CleanedInstances++;
-                    return false;
-               }
-               return true;
-          });
+          var RoomId = Object.keys(RoomInstances)[RoomIdIndex];
+          
+          var instances = RoomInstances[RoomId];
+          instances = instances.filter(item => !item.FlaggedForRemoval);
+          RoomInstances[RoomId] = instances;
      }
-     console.log(`Finished cleanup of instances, cleared ${CleanedInstances} instances in total.`);
 }
 
 async function GetInstances(RoomId) {

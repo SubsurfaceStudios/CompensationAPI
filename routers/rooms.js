@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const {authenticateDeveloperToken} = require('../middleware');
 const firebaseStorage = require('firebase/storage');
+const Fuse = require('fuse.js');
 
 // Base URL: /api/rooms/...
 
@@ -66,6 +67,30 @@ router.route("/room/:room_id/subrooms/:subroom_id/download")
           }
      });
 
+router.get("/", async (req, res) => {
+     const {mode, query} = req.query;
+     const {mongoClient: client} = require('../index');
+
+     const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+     const rooms_collection = db.collection("rooms");
+
+     const all = await rooms_collection.find({}, {sort: {visits: 1}}).toArray();
+
+     switch(mode) {
+          case "search":
+               const fuse = new Fuse(all, {
+                    includeScore: false,
+                    keys: ["name", "description"],
+               });
+               return res.status(200).json(fuse.search(query));
+          case "originals":
+               return res.status(200).json(all.filter(room => room.creator_id == "16"));
+          case "most-visited":
+               return res.status(200).json(all);
+          default:
+               return res.status(400).json({message: "invalid_mode"});
+     }
+});
 
 module.exports = {
      Router: router

@@ -308,7 +308,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
                     var filtered = instances.filter(instance => instance.Players < instance.MaxPlayers && instance.SubroomId == ParsedContent.data.subroomId && instance.MatchmakingMode == MatchmakingModes.Public);
 
-                    if(instances.length < 1) {
+                    if(filtered.length < 1) {
                          var subroom = room.subrooms[ParsedContent.data.subroomId];
                          var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300, false, subroom.maxPlayers);
                          instance.AddPlayer(ConnectedUserData.uid);
@@ -387,6 +387,15 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmakingInstanceId = instance.InstanceId;
                     ConnectedUserData.matchmakingRoomId = ParsedContent.data.roomId;
 
+                    return;
+               case "matchmaking_reconnection_verify":
+                    if(!ConnectedUserData.isAuthenticated) return;
+                    if(typeof ParsedContent.data.room_id !== 'string' || typeof ParsedContent.data.join_code !== 'string') return;
+
+                    var instance = await MatchmakingAPI.GetInstanceByJoinCode(ParsedContent.data.room_id, ParsedContent.data.join_code);
+                    instance.AddPlayer(ConnectedUserData.uid);
+                    
+                    await MatchmakingAPI.SetInstance(ParsedContent.data.room_id, instance.InstanceId, instance);
                     return;
                }
      });

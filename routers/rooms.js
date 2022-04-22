@@ -82,7 +82,8 @@ router.get("/search", async (req, res) => {
                     includeScore: false,
                     keys: ["name"],
                });
-               return res.status(200).json(fuse.search(query));
+               const result = fuse.search(query);
+               return res.status(200).json(result);
           case "originals":
                return res.status(200).json(all.filter(room => room.creator_id == "16"));
           case "most-visited":

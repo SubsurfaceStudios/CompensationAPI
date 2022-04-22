@@ -74,7 +74,7 @@ router.get("/search", async (req, res) => {
      const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
      const rooms_collection = db.collection("rooms");
 
-     const all = await rooms_collection.find({}, {sort: {visits: 1}}).toArray();
+     const all = await rooms_collection.find({}, {sort: {visits: 1}, projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1}}).toArray();
 
      switch(mode) {
           case "search":

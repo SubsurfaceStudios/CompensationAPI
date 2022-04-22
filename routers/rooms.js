@@ -84,9 +84,7 @@ router.get("/search", async (req, res) => {
                });
                const result = fuse.search(query);
 
-               var final = [];
-               result.forEach(item => final.push(item.item));
-               return res.status(200).json(final);
+               return res.status(200).json(result.map(item => item.item));
           case "originals":
                return res.status(200).json(all.filter(room => room.creator_id == "16"));
           case "most-visited":

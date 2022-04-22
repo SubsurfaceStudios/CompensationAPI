@@ -67,7 +67,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/download")
           }
      });
 
-router.get("/", async (req, res) => {
+router.get("/search", async (req, res) => {
      const {mode, query} = req.query;
      const {mongoClient: client} = require('../index');
 

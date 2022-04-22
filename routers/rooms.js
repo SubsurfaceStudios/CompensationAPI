@@ -80,7 +80,7 @@ router.get("/search", async (req, res) => {
           case "search":
                const fuse = new Fuse(all, {
                     includeScore: false,
-                    keys: ["name", "description"],
+                    keys: ["name"],
                });
                return res.status(200).json(fuse.search(query));
           case "originals":

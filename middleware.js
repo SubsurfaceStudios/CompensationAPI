@@ -6,7 +6,8 @@ const bcrypt = require('bcrypt');
 module.exports = {
      authenticateToken: authenticateToken,
      authenticateDeveloperToken: authenticateDeveloperToken,
-     authenticateToken_internal: authenticateToken_internal
+     authenticateToken_internal: authenticateToken_internal,
+     authenticateToken_optional: authenticateToken_optional
 };
 
 function authenticateToken(req, res, next) {
@@ -38,6 +39,13 @@ function authenticateToken(req, res, next) {
      {
           return res.status(403).send("Invalid or expired authorization token.")
      }
+}
+
+async function authenticateToken_optional(req, res, next) {
+     const authHeader = req.headers['authorization'];
+
+     if(typeof authHeader != 'string') return next();
+     return authenticateToken(req, res, next);
 }
 
 function authenticateDeveloperToken(req, res, next) {

@@ -108,7 +108,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
      const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
      const rooms_collection = db.collection("rooms");
 
-     var all = await rooms_collection.find({}, {sort: {visits: 1}, projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1}}).toArray();
+     var all = await rooms_collection.find({}, {sort: {visits: 1}}).toArray();
      all = all.filter(item => {
           const userPermissions = item.userPermissions;
           const rolePermissions = item.rolePermissions;
@@ -123,9 +123,22 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
           }
      });
 
+
+     const results = all.map(item => {
+          return {
+               _id: item._id,
+               name: item.name,
+               description: item.description,
+               creator_id: item.creator_id,
+               tags: item.tags,
+               visits: item.visits,
+               created_at: item.created_at
+          };
+     });
+
      switch(mode) {
           case "search":
-               const fuse = new Fuse(all, {
+               const fuse = new Fuse(results, {
                     includeScore: false,
                     keys: ["name"],
                });
@@ -133,9 +146,9 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
 
                return res.status(200).json(result.map(item => item.item));
           case "originals":
-               return res.status(200).json(all.filter(room => room.creator_id == "16"));
+               return res.status(200).json(results.filter(room => room.creator_id == "16"));
           case "most-visited":
-               return res.status(200).json(all);
+               return res.status(200).json(results);
           default:
                return res.status(400).json({message: "invalid_mode"});
      }

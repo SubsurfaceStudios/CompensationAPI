@@ -410,8 +410,10 @@ WebSocketServerV2.on('connection', (Socket) => {
 
           if(ConnectedUserData.matchmakingInstanceId != null) {
                var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId);
-               instance.RemovePlayer(ConnectedUserData.uid);
-               await MatchmakingAPI.SetInstance(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId, instance);
+               if(instance != null) {
+                    instance.RemovePlayer(ConnectedUserData.uid);
+                    await MatchmakingAPI.SetInstance(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId, instance);
+               }
           }
      });
      Socket.on('error', (err) => {

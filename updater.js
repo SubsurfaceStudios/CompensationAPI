@@ -13,11 +13,13 @@ var depth = 0;
 
 const answers = [
      "1",
-     "3"
+     "3",
+     "4",
+     "5"
 ]
 
 function main() {
-     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. Legacy Updater\n2. Current Updater (UNAVAILABLE)\n3. Account Migration\n\n", async (res) => {
+     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. Legacy Updater\n2. Current Updater (UNAVAILABLE)\n3. Account Migration\n4. Room Updater - Global\n5. Update a specific room.\n\n", async (res) => {
           if(!answers.includes(res)) {
                rl.write("Invalid or unavailable option.\n");
                main();
@@ -29,6 +31,14 @@ function main() {
                     return;
                case "3":
                     MigrateAllAccounts();
+                    return;
+               case "4":
+                    room_updater(null);
+                    return;
+               case "5":
+                    rl.question("Enter the ID of the room you want to update.\n\n", async (res) => {
+                         room_updater(res);
+                    });
                     return;
           }
      });
@@ -147,7 +157,6 @@ function legacy_updater() {
      });
 }
 
-
 function recursiveCheck(object, _template) {
      depth++;
      console.log('\x1b[31m%s\x1b[0m', `Dropping to layer with depth of ${depth}.`);
@@ -197,6 +206,101 @@ function recursiveCheck(object, _template) {
      depth--;
      console.log('\x1b[36m%s\x1b[0m', `Returning to layer of depth ${depth}.`);
      return object;
+}
+
+function room_updater(id) {
+     rl.write("Connecting to MDB.\n");
+     const { MongoClient } = require('mongodb');
+     
+     const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+     const client = new MongoClient(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+     });
+
+     client.connect(async (error, client) => {
+          if(error) {
+               console.log("Failed to connect to MongoDB.");
+               console.error(error);
+               process.exit(1);
+          }
+          
+          const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+          const rooms = db.collection("rooms");
+          if(id != null) {
+               var room = await rooms.findOne({_id: {$eq: id, $exists: true}});
+               if(room == null) {
+                    console.log("room does not exist");
+                    return;
+               }
+               room = await updateRoom(room);
+
+               console.log(room);
+               console.log("Updated room, writing to database.");
+
+               console.log(await rooms.updateOne({_id: {$eq: id, $exists: true}}, {$set: room}, {upsert: true}));
+               return;
+          }
+
+          const rooms_array = await rooms.find().toArray();
+
+          console.log("Beginning room update. This is a long and intensive operation.");
+          for (let index = 0; index < rooms_array.length; index++) {
+               rooms_array[index] = await updateRoom(rooms_array[index]);
+          }
+
+          console.log("Writing updated rooms to database.");
+
+          for(let index = 0; index < rooms_array.length; index++) {
+               console.log(await rooms.updateOne({_id: {$eq: rooms_array[index]._id, $exists: true}}, {$set: rooms_array[index]}, {upsert: true}));
+          }
+     });
+}
+
+async function updateRoom(room) {
+     console.log(`Updating room - _id = \`${room._id}\`.`);
+
+     if(typeof room.name != 'string') room.name = "undefinedRoom";
+     if(typeof room.description != 'string') room.description = "Automatically generated room description during room update.";
+     if(typeof room.creator_id != 'string') room.creator_id = "0";
+     if(typeof room.tags != 'object') room.tags = [];
+     if(typeof room.created_at != 'number') room.created_at = Date.now();
+     if(typeof room.visits != 'number') room.visits = 0;
+     if(typeof room.subrooms != 'object') room.subrooms = {
+          "home": {
+               "publicVersionId": 0,
+               "maxPlayers": 20,
+               "versions": [
+                    {
+                         "baseSceneIndex": 2,
+                         "shortHandCommitMessage": "Initial Commit",
+                         "longHandCommitMessage": "Initial Commit",
+                         "author": "0",
+                         "collaborators": []
+                    }
+               ]
+          }
+     };
+     if(typeof room.homeSubroomId != 'string') room.homeSubroomId = "home";
+     if(typeof room.rolePermissions != 'object') {
+          room.rolePermissions = {
+               "everyone": {
+                    "viewAndJoin": true
+               }
+          };
+     } else {
+          for(let i = 0; i < Object.keys(room.rolePermissions).length; i++) {
+               const key = Object.keys(room.rolePermissions)[i];
+               var value = room.rolePermissions[key];
+
+               if(typeof value.viewAndJoin != 'boolean') value.viewAndJoin = true;
+
+               room.rolePermissions[key] = value;
+          }
+     }
+     if(typeof room.userPermissions != 'object') room.userPermissions = {};
+
+     return room;
 }
 
 main();

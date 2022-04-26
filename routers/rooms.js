@@ -142,13 +142,15 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
                     includeScore: false,
                     keys: ["name"],
                });
-               const result = fuse.search(query);
+               const searchResults = fuse.search(query);
 
-               return res.status(200).json(result.map(item => item.item));
+               return res.status(200).json(searchResults.map(item => item.item));
           case "originals":
                return res.status(200).json(results.filter(room => room.creator_id == "16"));
           case "most-visited":
                return res.status(200).json(results);
+          case "mine":
+               return res.status(200).json(results.filter(room => room.creator_id == req.user.id));
           default:
                return res.status(400).json({message: "invalid_mode"});
      }

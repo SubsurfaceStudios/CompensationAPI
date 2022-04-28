@@ -219,4 +219,18 @@ router.get("/:id", async (req, res) => {
      }
 });
 
+// this is extremely stupid
+// yes im clearing the cache if more than 50 images happen to be cached
+// is this a waste of bandwidth? yes.
+// too bad!
+function fycache() {
+     if(imgCache.keys.length > 50) {
+          for (let index = 0; index < imgCache.keys.length; index++) {
+               imgCache.del(imgCache.keys[index]);
+          }
+     }
+}
+
+setInterval(fycache, 5000);
+
 module.exports = router;

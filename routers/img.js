@@ -187,7 +187,8 @@ router.get("/:id", async (req, res) => {
                
                res.writeHead(200, {
                     'Content-Type': 'image/jpeg',
-                    'Content-Length': ImageBuffer.length
+                    'Content-Length': ImageBuffer.length,
+                    'Cache-Control': 'public, max-age=604800'
                });
                res.end(ImageBuffer);
 
@@ -224,7 +225,7 @@ router.get("/:id", async (req, res) => {
 // is this a waste of bandwidth? yes.
 // too bad!
 function fycache() {
-     if(imgCache.keys.length > 50) {
+     if(imgCache.keys.length > 20) {
           for (let index = 0; index < imgCache.keys.length; index++) {
                imgCache.del(imgCache.keys[index]);
           }

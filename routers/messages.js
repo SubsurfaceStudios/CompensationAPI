@@ -51,7 +51,7 @@ router.route("/channels/:channel_id/messages")
 
 			if(count - discrepency < 1) return res.status(400).send({message: "not_enough_messages"});
 
-			count -= discrepency;
+			if(channel.messages.length < count + offset) count -= discrepency;
 
 			collection = db.collection("messages");
 			var send = [];

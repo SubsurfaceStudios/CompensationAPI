@@ -1,0 +1,75 @@
+{
+    "public": {
+        "nickname": "raven",
+        "username": "raven",
+        "tag": "",
+        "ownedRooms": [],
+        "moderatedRooms": [],
+        "outfit": {
+            "player.hair_style": "27",
+            "player.equip_slot.undershirt": "0",
+            "player.skin_color": "17",
+            "player.hair_color": "20"
+        },
+        "bio": "",
+        "pronouns": "Ask Me"
+    },
+    "private": {
+        "availableTags": [
+            ""
+        ],
+        "inventory": {},
+        "acquaintances": [],
+        "friends": [],
+        "favoriteFriends": [],
+        "friendRequestsSent": [],
+        "messaging_servers": [
+            "a8ec2c20-a4c7-11ec-896d-419328454766"
+        ]
+    },
+    "auth": {
+        "username": "raven",
+        "HASHED_PASSWORD": "$2b$10$R0ba0jIXHnPqCTGbkjZiHu5VZ35F31SY9KdLz6S0MHOR.YDFHqjc.",
+        "salt": "$2b$10$R0ba0jIXHnPqCTGbkjZiHu",
+        "bans": [],
+        "reportedUsers": [],
+        "recievedReports": [],
+        "mfa_enabled": false,
+        "mfa_factor_sid": "undefined",
+        "multi_factor_authenticated_logins": []
+    },
+    "notifications": [],
+    "presence": {
+        "status": "offline",
+        "appearTo": "all"
+    },
+    "econ": {
+        "currency": 0,
+        "inventory": {
+            "0": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "18": 1,
+            "19": 1,
+            "20": 1,
+            "21": 1,
+            "22": 1,
+            "23": 1,
+            "25": 1,
+            "26": 1,
+            "27": 1,
+            "35": 1,
+            "36": 1,
+            "40": 1,
+            "41": 1,
+            "42": 1,
+            "43": 1,
+            "44": 1,
+            "45": 1,
+            "46": 1
+        },
+        "previous_daily_redeemed": 0
+    }
+}

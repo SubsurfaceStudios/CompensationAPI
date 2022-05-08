@@ -18,8 +18,10 @@ router.route("/channels/:channel_id/messages")
 			const client = require('../index').mongoClient;
 
 			var {count, offset} = req.query;
-			if(typeof count !== 'number' || count > 50) count = 50;
-			if(typeof offset !== 'number') offset = 0;
+			count = parseInt(count);
+			if(typeof count !== 'number' || count > 50 || isNaN(count)) count = 50;
+			offset = parseInt(offset);
+			if(typeof offset !== 'number' || isNaN(offset)) offset = 0;
 
 			const {channel_id} = req.params;
 

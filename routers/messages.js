@@ -110,7 +110,7 @@ router.route("/channels/:channel_id/messages")
 			channel.messages.push(message._id);
 			collection.replaceOne({_id: channel_id}, channel);
 	
-			res.sendStatus(200);
+			res.status(200).json({message_id: message._id});
 
 			require('../index').MessagingGatewayServerV1.clients.forEach(client => {
 				client.emit('message_sent', message.server, message.channel, message._id);

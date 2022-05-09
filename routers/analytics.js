@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const fs = require('fs');
-const {getClients} = require('../index');
 const { GetInstances } = require('./matchmaking');
 
 
@@ -10,13 +9,13 @@ router.get("/account-count", async (req, res) => {
 });
 
 router.get("/online-count", async (req, res) => {
-     const clients = Object.keys(getClients());
-     res.status(200).send(clients.length);
+     const clients = Object.keys(require('../index').getClients());
+     res.status(200).send(`${clients.length}`);
 });
 
 router.get("/instance-count", async (req, res) => {
      const instances = await GetInstances("*");
-     res.status(200).send(instances.length);
+     res.status(200).send(`${instances.length}`);
 });
 
 module.exports = router;

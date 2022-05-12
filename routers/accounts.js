@@ -81,6 +81,8 @@ router.post("/nickname", middleware.authenticateToken, async (req, res) => {
      data.public.nickname = nickname;
 
      helpers.PushPlayerData(req.user.id, data);
+
+     helpers.auditLog(`${req.user.id} changed their nickname to ${nickname}`, false);
      return res.sendStatus(200);
 });
 
@@ -97,6 +99,8 @@ router.post("/bio", middleware.authenticateToken, async (req, res) => {
 
      data.public.bio = bio;
      helpers.PushPlayerData(req.user.id, data);
+
+     helpers.auditLog(`${req.user.id} changed their bio to ${bio}`, false);
 
      return res.sendStatus(200);
 });

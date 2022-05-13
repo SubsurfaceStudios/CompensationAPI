@@ -214,11 +214,13 @@ router.post("/create", async (req, res) => {
      const collection = db.collection("servers");
 
      var server = await collection.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
-     if(server == null) return helpers.auditLog("The official server was not found. This is a critical error. How did you manage to fuck this up so badly?", true);
+     if(server == null) return helpers.auditLog("The official server was not found. This is a critical error. How did you manage to fuck this up so badly?", false);
 
      server.users[id] = {};
 
      console.log(await collection.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
+
+     helpers.auditLog(`Created account ${username}`, false);
 });
 
 router.post("/check", middleware.authenticateToken, async (req, res) => {

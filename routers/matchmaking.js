@@ -70,19 +70,21 @@ const MatchmakingModes = {
 // "Well, just make it so Photon Instances never expire, and you can persist as long as you like"
 // THIS IS A WASTE OF RESOURCES. It may also incur additional fees from Photon.
 class RoomSession {
+     RoomId = "0"; // The room the instance is in.
+     SubroomId = "home"
+
      // Options:
      // * public
      // * unlisted
      // * private
      // * locked
-     RoomId = "0"; // The room the instance is in.
-     SubroomId = "home"
-     MatchmakingMode; // How players can access this instance. Private by default, meaning you cannot join unless you have an invite.
-     Players; // The current players inside the instance.
+     MatchmakingMode; // How players can access this instance.
+
+     Players = []; // The current players inside the instance.
      MaxPlayers; // The maximum number of players the instance can contain.
      Age; // Age of the instance.
      AgeWithoutPlayer;
-     TTL;
+     TTL = 1;
      Persistent;
      FlaggedForRemoval;
      
@@ -91,35 +93,35 @@ class RoomSession {
 
      GlobalInstanceId;
 
+     #eventLoopHandle = null;
+     #automaticCleanupHandle = null;
+
      BeginEventLoop() {
-          setInterval(this.EventLoop, 500);
-          setInterval(this.AutomaticInstanceCleanup, this.TTL);
-     }
+          this.#eventLoopHandle = setInterval(() => this.EventLoop(), 5000);
+          this.#automaticCleanupHandle = setInterval(() => this.AutomaticInstanceCleanup(), 5000);
+
+          console.log(`BEGAN EVENT LOOP OF INSTANCE ${this.InstanceId}`);
+     };
      async EventLoop() {
-          this.Age += 500;
+          this.Age += 5000;
 
           // TTL
-          this.AgeWithoutPlayer = this.Players.length > 0 ? 0 : this.AgeWithoutPlayer + 500;
-     }
+          if(typeof this.Players != 'object') this.Players = [];
+          this.AgeWithoutPlayer = this.Players.length > 0 ? 0 : this.AgeWithoutPlayer + 5000;
+     };
      AddPlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in AddPlayer - Parameter 'id' must be a string.");
           if(!this.Players.includes(id)) this.Players.push(id);
-     }
+
+          console.log(`ADDED PLAYER ${id} TO INSTANCE ${this.InstanceId}`);
+     };
      RemovePlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
           var index = this.Players.indexOf(id);
           this.Players.splice(index);
-     }
-     AutomaticInstanceCleanup() {
-          // damn i really messed up how TTL should work originally haha
-          if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
 
-          if(typeof this.Players == 'undefined') this.Players = [];
-          if(this.Players.length < 1) {
-               // Makes an instance unjoinable and begins the process of removing it.
-               this.InstanceCleanup();
-          }
-     }
+          console.log(`REMOVED PLAYER ${id} FROM INSTANCE ${this.InstanceId}`);
+     };
      InstanceCleanup() {
           // Prevent weird behaviour with undefined instances.
           if(this.Players.length > 0) return;
@@ -128,14 +130,32 @@ class RoomSession {
           this.MatchmakingMode = MatchmakingModes.Locked;
           this.FlaggedForRemoval = true;
 
-          if(typeof GlobalRoomInstances[RoomId] != 'object') return;
-          if(typeof GlobalRoomInstances[RoomId][this.GlobalInstanceId] != 'object') return;
+          if(typeof GlobalRoomInstances[this.RoomId] != 'object') return;
+          if(typeof GlobalRoomInstances[this.RoomId][this.GlobalInstanceId] != 'object') return;
 
           // this is a monstrosity but ah well
           delete GlobalRoomInstances[this.RoomId][this.GlobalInstanceId][this.SubroomId];
 
+          // clear from the main list
+          var index = SubroomInstances[this.RoomId].indexOf(this);
+          SubroomInstances[this.RoomId].splice(index);
+
+          // end event loops
+          clearInterval(this.#eventLoopHandle);
+          clearInterval(this.#automaticCleanupHandle);
+
           console.log(`CLEANUP OF INSTANCE ${this.InstanceId}`);
-     }
+     };
+     AutomaticInstanceCleanup() {
+          // damn i really messed up how TTL should work originally haha
+          if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
+
+          if(typeof this.Players != 'object') this.Players = [];
+          if(this.Players.length < 1) {
+               this.InstanceCleanup();
+               console.log(`AUTOMATIC CLEANUP OF INSTANCE ${this.InstanceId}`);
+          }
+     };
 
      constructor(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers, GlobalInstanceId = null) {
           this.RoomId = RoomId;
@@ -161,7 +181,7 @@ class RoomSession {
           else 
                GlobalRoomInstances[RoomId][this.GlobalInstanceId][SubroomId] = this.InstanceId;
 
-          setTimeout(() => this.BeginEventLoop(), 50);
+          this.BeginEventLoop();
      }
 }
 
@@ -196,11 +216,11 @@ async function CleanupInstances() {
      }
 }
 
-async function GetInstances(RoomId) {
+async function GetInstances(RoomId = null) {
      if(RoomId == null) {
           var instances = [];
           Object.keys(SubroomInstances).forEach(element => {
-               instances.push(SubroomInstances[element]);
+               instances.concat(SubroomInstances[element]);
           });
           return instances;
      }

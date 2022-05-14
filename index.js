@@ -323,7 +323,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     // short circuit for if no instances are available to create a new one
                     if(filtered.length < 1) {
                          var subroom = room.subrooms[ParsedContent.data.subroomId];
-                         var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300, false, subroom.maxPlayers, null);
+                         var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 1, false, subroom.maxPlayers, null);
                          instance.AddPlayer(ConnectedUserData.uid);
                          MatchmakingAPI.SetInstance(ParsedContent.data.roomId, instance.InstanceId, instance);
                          
@@ -356,6 +356,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                          final_selection = element;
 
                          // we can handle the rest of the join logic normally
+
+                         console.log("short-circuit for same global instance");
                     }
 
                     // non-full, joinable & public instances exist, choose one
@@ -397,7 +399,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
 
                     var subroom = room.subrooms[ParsedContent.data.subroomId];
-                    var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300, false, subroom.maxPlayers);
+                    var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 1, false, subroom.maxPlayers);
                     instance.AddPlayer(ConnectedUserData.uid);
                     MatchmakingAPI.SetInstance(ParsedContent.data.roomId, instance.InstanceId, instance);
                     

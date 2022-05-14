@@ -14,7 +14,7 @@ router.get("/online-count", async (req, res) => {
 });
 
 router.get("/instance-count", async (req, res) => {
-     const instances = await GetInstances("*");
+     const instances = await GetInstances(null);
      res.status(200).send(`${instances.length}`);
 });
 

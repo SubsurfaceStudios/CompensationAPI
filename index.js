@@ -207,8 +207,9 @@ WebSocketServerV2.on('connection', (Socket) => {
           tags: [],
           isDeveloper: false,
           isCreativeToolsBetaProgramMember: false,
-          matchmakingInstanceId: null,
-          matchmakingRoomId: null
+          matchmaking_InstanceId: null,
+          matchmaking_RoomId: null,
+          matchmaking_GlobalInstanceId: null
      };
 
      Socket.on('ping', async (data) => {
@@ -305,12 +306,24 @@ WebSocketServerV2.on('connection', (Socket) => {
                     if(room == null) return;
                     if(!Object.keys(room.subrooms).includes(ParsedContent.data.subroomId)) return;
 
+
+                    // leave current room
+                    if(ConnectedUserData.matchmaking_InstanceId != null) {
+                         var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);
+                         instance.RemovePlayer(ConnectedUserData.uid);
+                         await MatchmakingAPI.SetInstance(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId, instance);
+                         ConnectedUserData.matchmaking_InstanceId = null;
+                         ConnectedUserData.matchmaking_RoomId = null;
+                    }
+
                     var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
                     var filtered = instances.filter(instance => instance.Players < instance.MaxPlayers && instance.SubroomId == ParsedContent.data.subroomId && instance.MatchmakingMode == MatchmakingModes.Public);
 
+
+                    // short circuit for if no instances are available to create a new one
                     if(filtered.length < 1) {
                          var subroom = room.subrooms[ParsedContent.data.subroomId];
-                         var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300, false, subroom.maxPlayers);
+                         var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300, false, subroom.maxPlayers, null);
                          instance.AddPlayer(ConnectedUserData.uid);
                          MatchmakingAPI.SetInstance(ParsedContent.data.roomId, instance.InstanceId, instance);
                          
@@ -324,20 +337,33 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                          Socket.send(JSON.stringify(send, null, 5));
 
-                         ConnectedUserData.matchmakingInstanceId = instance.InstanceId;
+                         ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+                         ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+                         ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+                         return;
                     }
 
-                    if(ConnectedUserData.matchmakingInstanceId != null) {
-                         var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId);
-                         instance.RemovePlayer(ConnectedUserData.uid);
-                         await MatchmakingAPI.SetInstance(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId, instance);
-                         ConnectedUserData.matchmakingInstanceId = null;
-                         ConnectedUserData.matchmakingRoomId = null;
+                    var final_selection;
+
+                    var shortCircuit = false;
+                    // short-circuit for rooms in the same global instance
+                    for(let i = 0; i < filtered.length; i++) {
+                         const element = filtered[i];
+                         if(element.GlobalInstanceId != ConnectedUserData.matchmaking_GlobalInstanceId) continue;
+
+                         // element has the same global instance id as the user, so we can short circuit this whole process to make sure they stay with their current nearby players.
+                         shortCircuit = true;
+                         final_selection = element;
+
+                         // we can handle the rest of the join logic normally
                     }
 
+                    // non-full, joinable & public instances exist, choose one
                     // this method will strive for the largest possible instance, within the bounds of the room's max players
-                    var final_selection = filtered.sort((a, b) => a.Players - b.Players)[0];
-
+                    // can change later but rn idgaf
+                    if(!shortCircuit) {
+                         final_selection = filtered.sort((a, b) => a.Players - b.Players)[0];
+                    }
 
                     final_selection.AddPlayer(ConnectedUserData.uid);
                     await MatchmakingAPI.SetInstance(ParsedContent.data.roomId, final_selection.InstanceId, final_selection);
@@ -353,8 +379,9 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                     Socket.send(JSON.stringify(send, null, 5));
 
-                    ConnectedUserData.matchmakingInstanceId = final_selection.InstanceId;
-                    ConnectedUserData.matchmakingRoomId = final_selection.RoomId;
+                    ConnectedUserData.matchmaking_InstanceId = final_selection.InstanceId;
+                    ConnectedUserData.matchmaking_RoomId = final_selection.RoomId;
+                    ConnectedUserData.matchmaking_GlobalInstanceId = final_selection.GlobalInstanceId;
                     return;
                case "create_public_matchmaking_instance":
                     if(!ConnectedUserData.isAuthenticated) return;
@@ -384,8 +411,9 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                     Socket.send(JSON.stringify(send, null, 5));
 
-                    ConnectedUserData.matchmakingInstanceId = instance.InstanceId;
-                    ConnectedUserData.matchmakingRoomId = ParsedContent.data.roomId;
+                    ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+                    ConnectedUserData.matchmaking_RoomId = ParsedContent.data.roomId;
+                    ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
                     return;
                case "matchmaking_reconnection_verify":
@@ -396,6 +424,10 @@ WebSocketServerV2.on('connection', (Socket) => {
                     instance.AddPlayer(ConnectedUserData.uid);
                     
                     await MatchmakingAPI.SetInstance(ParsedContent.data.room_id, instance.InstanceId, instance);
+
+                    ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+                    ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+                    ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
                     return;
                }
      });
@@ -408,11 +440,11 @@ WebSocketServerV2.on('connection', (Socket) => {
           delete ws_connected_clients[ConnectedUserData.uid];
           console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has disconnected.`);
 
-          if(ConnectedUserData.matchmakingInstanceId != null) {
-               var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId);
+          if(ConnectedUserData.matchmaking_InstanceId != null) {
+               var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);
                if(instance != null) {
                     instance.RemovePlayer(ConnectedUserData.uid);
-                    await MatchmakingAPI.SetInstance(ConnectedUserData.matchmakingRoomId, ConnectedUserData.matchmakingInstanceId, instance);
+                    await MatchmakingAPI.SetInstance(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId, instance);
                }
           }
      });

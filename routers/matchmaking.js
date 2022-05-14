@@ -81,6 +81,7 @@ class RoomSession {
      Players; // The current players inside the instance.
      MaxPlayers; // The maximum number of players the instance can contain.
      Age; // Age of the instance.
+     AgeWithoutPlayer;
      TTL;
      Persistent;
      FlaggedForRemoval;
@@ -88,12 +89,17 @@ class RoomSession {
      InstanceId;
      JoinCode;
 
+     GlobalInstanceId;
+
      BeginEventLoop() {
           setInterval(this.EventLoop, 500);
           setInterval(this.AutomaticInstanceCleanup, this.TTL);
      }
      async EventLoop() {
           this.Age += 500;
+
+          // TTL
+          this.AgeWithoutPlayer = this.Players.length > 0 ? 0 : this.AgeWithoutPlayer + 500;
      }
      AddPlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in AddPlayer - Parameter 'id' must be a string.");
@@ -101,29 +107,37 @@ class RoomSession {
      }
      RemovePlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
-          var index = this.Players.findIndex(item => item == id);
+          var index = this.Players.indexOf(id);
           this.Players.splice(index);
      }
      AutomaticInstanceCleanup() {
-          if(this.Persistent || this.Age < this.TTL) return;
+          // damn i really messed up how TTL should work originally haha
+          if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
 
           if(typeof this.Players == 'undefined') this.Players = [];
           if(this.Players.length < 1) {
                // Makes an instance unjoinable and begins the process of removing it.
-               this.MatchmakingMode = MatchmakingModes.Locked;
-               this.FlaggedForRemoval = true;
+               this.InstanceCleanup();
           }
      }
-     ManualInstanceCleanup() {
+     InstanceCleanup() {
           // Prevent weird behaviour with undefined instances.
           if(this.Players.length > 0) return;
 
           // Makes an instance unjoinable and begins the process of removing it.
           this.MatchmakingMode = MatchmakingModes.Locked;
           this.FlaggedForRemoval = true;
+
+          if(typeof GlobalRoomInstances[RoomId] != 'object') return;
+          if(typeof GlobalRoomInstances[RoomId][this.GlobalInstanceId] != 'object') return;
+
+          // this is a monstrosity but ah well
+          delete GlobalRoomInstances[this.RoomId][this.GlobalInstanceId][this.SubroomId];
+
+          console.log(`CLEANUP OF INSTANCE ${this.InstanceId}`);
      }
 
-     constructor(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
+     constructor(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers, GlobalInstanceId = null) {
           this.RoomId = RoomId;
           this.SubroomId = SubroomId;
           this.MatchmakingMode = MatchmakingMode;
@@ -137,61 +151,88 @@ class RoomSession {
           this.InstanceId = uuid.v1();
           this.JoinCode = `CVR_ROOM.${this.RoomId}.INSTANCE.${this.InstanceId}`;
 
+          // global instance handling
+          this.GlobalInstanceId = GlobalInstanceId == null ? uuid.v1() : GlobalInstanceId;
+
+          if(typeof GlobalRoomInstances[RoomId] != 'object') GlobalRoomInstances[RoomId] = {};
+
+          if(typeof GlobalRoomInstances[RoomId][this.GlobalInstanceId] != 'object') 
+               GlobalRoomInstances[RoomId][this.GlobalInstanceId] = {SubroomId: this.InstanceId};
+          else 
+               GlobalRoomInstances[RoomId][this.GlobalInstanceId][SubroomId] = this.InstanceId;
+
           setTimeout(() => this.BeginEventLoop(), 50);
      }
 }
 
-var RoomInstances = Object.create(null);
+var SubroomInstances = Object.create(null);
+
+// please don't judge me i am very confused and don't feel like drawing this on paper
+const figuring_out_my_life = {
+     // first layer is room ids
+     "4b7d3810-be88-11ec-b306-43a037ec5b07": { // apartment
+          // second layer is global room instance ids
+          "hahahahahhahahaha i am going batshit insane": {
+               // third layer is subroom ids mapped to instance ids
+               "home": "49555110-d3a7-11ec-aee1-3f535ae7f63a"
+               // now if we try to join the 'home' subroom in the Apartment while in the apartment, we will be taken here.
+               // if the instance is full, we will create a new global room instance.
+          }
+     }
+};
+
+// this will mock the data structure above, but at runtime
+var GlobalRoomInstances = Object.create(null);
 
 setInterval(CleanupInstances, 300 * 1000);
 
 async function CleanupInstances() {
-     for(let RoomIdIndex = 0; RoomIdIndex < Object.keys(RoomInstances).length; RoomIdIndex++) {
-          var RoomId = Object.keys(RoomInstances)[RoomIdIndex];
+     for(let RoomIdIndex = 0; RoomIdIndex < Object.keys(SubroomInstances).length; RoomIdIndex++) {
+          var RoomId = Object.keys(SubroomInstances)[RoomIdIndex];
           
-          var instances = RoomInstances[RoomId];
+          var instances = SubroomInstances[RoomId];
           instances = instances.filter(item => !item.FlaggedForRemoval);
-          RoomInstances[RoomId] = instances;
+          SubroomInstances[RoomId] = instances;
      }
 }
 
 async function GetInstances(RoomId) {
      if(RoomId == null) {
           var instances = [];
-          Object.keys(RoomInstances).forEach(element => {
-               instances.push(RoomInstances[element]);
+          Object.keys(SubroomInstances).forEach(element => {
+               instances.push(SubroomInstances[element]);
           });
           return instances;
      }
-     if(!Object.keys(RoomInstances).includes(RoomId)) return [];
-     return RoomInstances[RoomId];
+     if(!Object.keys(SubroomInstances).includes(RoomId)) return [];
+     return SubroomInstances[RoomId];
 }
 
 async function GetInstanceById(RoomId, InstanceId) {
-     return RoomInstances[RoomId].find(item => item.InstanceId == InstanceId);
+     return SubroomInstances[RoomId].find(item => item.InstanceId == InstanceId);
 }
 
 async function GetInstanceByJoinCode(RoomId, JoinCode) {
-     return RoomInstances[RoomId].find(item => item.JoinCode == JoinCode);
+     return SubroomInstances[RoomId].find(item => item.JoinCode == JoinCode);
 }
 
 async function SetInstances(RoomId, InstanceList) {
-     RoomInstances[RoomId] = InstanceList;
+     SubroomInstances[RoomId] = InstanceList;
 }
 
 async function SetInstance(RoomId, InstanceId, Instance) {
-     if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
+     if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
-     var index = RoomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
-     if(index < 0) RoomInstances[RoomId].push(Instance);
-     else RoomInstances[RoomId][index] = Instance;
+     var index = SubroomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
+     if(index < 0) SubroomInstances[RoomId].push(Instance);
+     else SubroomInstances[RoomId][index] = Instance;
 }
 
 async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
-     if(!Object.keys(RoomInstances).includes(RoomId)) RoomInstances[RoomId] = [];
+     if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
      const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
-     RoomInstances[RoomId].push(room);
+     SubroomInstances[RoomId].push(room);
 
      console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);
      return room;
@@ -200,6 +241,8 @@ async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persisten
 module.exports = {
      router: router,
      MatchmakingModes: MatchmakingModes,
+     SubroomInstances: SubroomInstances,
+     GlobalRoomInstances: GlobalRoomInstances,
      GetInstances: GetInstances,
      GetInstanceById: GetInstanceById,
      GetInstanceByJoinCode: GetInstanceByJoinCode,

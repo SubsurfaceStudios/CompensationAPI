@@ -1,8 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 //minor change for commit test
 // whoopty do another fake commit
@@ -18,7 +16,6 @@ router.get("/imgfeed", async (req, res) => {
 
           const client = require('../index').mongoClient;
           const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
-          const config_collection = db.collection("configuration");
           const image_collection = db.collection("images");
           
           const all_images = await image_collection.find().toArray();
@@ -60,7 +57,7 @@ router.get("/imgfeed", async (req, res) => {
 router.get("/takenby", async (req, res) => {
 
      try {
-          var {target, count, offset, reverse} = req.query;
+          var {target, count, offset} = req.query;
 
           // Guard Clauses
           if(typeof target !== 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
@@ -82,7 +79,6 @@ router.get("/takenby", async (req, res) => {
           }
 
           // True if any value present, otherwise false.
-          reverse = (typeof reverse !== 'undefined');
 
           var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
 
@@ -114,7 +110,7 @@ router.get("/takenby", async (req, res) => {
 router.get("/takenwith", async (req, res) => {
 
      try {
-          var {target, count, offset, reverse} = req.query;
+          var {target, count, offset} = req.query;
 
           // Guard Clauses
           if(typeof target !== 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
@@ -134,9 +130,6 @@ router.get("/takenwith", async (req, res) => {
           } catch {
                offset = 0;
           }
-
-          // True if any value present, otherwise false.
-          reverse = (typeof reverse !== 'undefined');
 
           var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
 
@@ -166,7 +159,6 @@ router.get("/takenwith", async (req, res) => {
 
 router.post("/friend-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
-     target = target;
 
      var sendingData = helpers.PullPlayerData(req.user.id);
      var recievingData = helpers.PullPlayerData(target);
@@ -212,6 +204,7 @@ router.post("/accept-request", middleware.authenticateToken, async (req, res) =>
 
      res.status(200).send("Successfully added acquaintance.");
 
+     // eslint-disable-next-line no-redeclare
      var sendingData = helpers.PullPlayerData(target);
      
      var index = sendingData.private.friendRequestsSent.findIndex(item => item == req.user.id);
@@ -227,7 +220,6 @@ router.get("/sent-requests", middleware.authenticateToken, async (req, res) => {
 router.post("/make-acquaintance", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -242,7 +234,6 @@ router.post("/make-acquaintance", middleware.authenticateToken, async (req, res)
 router.post("/make-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -257,7 +248,6 @@ router.post("/make-friend", middleware.authenticateToken, async (req, res) => {
 router.post("/make-favorite-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -272,7 +262,6 @@ router.post("/make-favorite-friend", middleware.authenticateToken, async (req, r
 router.post("/remove-friend", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target;
      var sender = req.user.id;
 
      if(!helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are not acquaintances, friends, or favorite friends with this user.");
@@ -286,7 +275,6 @@ router.post("/remove-friend", middleware.authenticateToken, async (req, res) => 
 router.post("/decline-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(!target) return res.status(400).send("You did not specify a target!");
-     target = target;
      const sender = req.user.id;
 
      if(helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");

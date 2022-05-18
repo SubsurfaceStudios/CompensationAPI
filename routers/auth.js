@@ -135,7 +135,7 @@ router.post("/login", (req, res) => {
           switch(status) {
                case 'approved':
                     if(typeof hwid !== 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
-                    const login = {
+                    var login = {
                          ips: req.ips,
                          hwid: hwid,
                          timestamp: Date.now()

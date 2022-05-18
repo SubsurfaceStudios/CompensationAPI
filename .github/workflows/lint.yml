@@ -1,0 +1,23 @@
+name: "ESLint"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+
+jobs:
+  analyze:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+	  
+    - run: |
+	  npm run lint

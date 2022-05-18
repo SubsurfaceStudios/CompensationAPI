@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint ./",
     "start": "forever index.js",
     "updater": "node updater.js"
   },
@@ -22,11 +23,14 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.3.1",
     "node-cache": "^5.1.2",
-    "nodemon": "^2.0.13",
     "request": "^2.88.2",
     "sanitize-filename": "^1.6.3",
     "twilio": "^3.73.1",
     "uuid": "^8.3.2",
     "ws": "^8.4.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "nodemon": "^2.0.13"
   }
 }

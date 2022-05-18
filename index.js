@@ -95,13 +95,9 @@ var ws_connected_clients = {};
 
 const WebSocket = require('ws');
 const wss_v1 = new WebSocket.Server({ noServer: true });
-wss_v1.on('connection', async (ws, request) => {
+wss_v1.on('connection', async (ws) => {
      var ignore_connection_closed = false;
      var tokenData;
-     var location = {
-          RoomId: null,
-          JoinCode: null
-     };
 
      console.log("User connected to websocket, awaiting authorization.");
 
@@ -175,7 +171,7 @@ wss_v1.on('connection', async (ws, request) => {
                     case "SEND_STRING":
                          if(!tokenData.developer) return;
 
-                         const user = split[1];
+                         var user = split[1];
                          split.splice(0, 2);
 
                          wsv1_sendStringToClient(user, split.join(' '));
@@ -184,11 +180,11 @@ wss_v1.on('connection', async (ws, request) => {
           }
      });
 
-     ws.on('close', async (data) => {
+     ws.on('close', async () => {
           if(!ignore_connection_closed && typeof tokenData !== 'undefined') {
-               var data = helpers.PullPlayerData(tokenData.id);
-               data.presence.status = "offline";
-               helpers.PushPlayerData(tokenData.id, data);
+               var player_data = helpers.PullPlayerData(tokenData.id);
+               player_data.presence.status = "offline";
+               helpers.PushPlayerData(tokenData.id, player_data);
                delete ws_connected_clients[tokenData.id];
                console.log(`User ${tokenData.id} disconnected.`);
           } else if (typeof tokenData !== 'undefined') {
@@ -212,11 +208,11 @@ WebSocketServerV2.on('connection', (Socket) => {
           matchmaking_GlobalInstanceId: null
      };
 
-     Socket.on('ping', async (data) => {
+     Socket.on('ping', async () => {
           Socket.pong();
      });
 
-     Socket.on('message', async (data, isBinary) => {
+     Socket.on('message', async (data) => {
           try {
                var ParsedContent = JSON.parse(data.toString('utf-8'));
           } catch (ex) {
@@ -239,6 +235,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                     if(ConnectedUserData.isAuthenticated) return;
                     
                     if(typeof ParsedContent.data.token !== 'string') {
+
+                         // eslint-disable-next-line no-redeclare
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "authentication_failed";
                          send.data = {
@@ -248,10 +246,11 @@ WebSocketServerV2.on('connection', (Socket) => {
                          return Socket.close(4003, JSON.stringify(send, null, 5));
                     }
 
-                    const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
+                    var {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
 
                     
                     if(!success) {
+                         // eslint-disable-next-line no-redeclare
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "authentication_failed";
                          send.data = {
@@ -262,6 +261,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     }
 
                     if(Object.keys(ws_connected_clients).includes(tokenData.id)) {
+                         // eslint-disable-next-line no-redeclare
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "authentication_failed";
                          send.data = {
@@ -323,10 +323,12 @@ WebSocketServerV2.on('connection', (Socket) => {
                     // short circuit for if no instances are available to create a new one
                     if(filtered.length < 1) {
                          var subroom = room.subrooms[ParsedContent.data.subroomId];
+                         // eslint-disable-next-line no-redeclare
                          var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300*1000, false, subroom.maxPlayers, null);
                          instance.AddPlayer(ConnectedUserData.uid);
                          MatchmakingAPI.SetInstance(ParsedContent.data.roomId, instance.InstanceId, instance);
                          
+                         // eslint-disable-next-line no-redeclare
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "join_or_create_photon_room";
                          send.data = {
@@ -370,8 +372,11 @@ WebSocketServerV2.on('connection', (Socket) => {
                     final_selection.AddPlayer(ConnectedUserData.uid);
                     await MatchmakingAPI.SetInstance(ParsedContent.data.roomId, final_selection.InstanceId, final_selection);
 
+                    // eslint-disable-next-line no-redeclare
                     var send = WebSocketV2_MessageTemplate;
                     send.code = "join_or_create_photon_room";
+
+                    // eslint-disable-next-line no-redeclare
                     var subroom = room.subrooms[ParsedContent.data.subroomId];
                     send.data = {
                          name: final_selection.JoinCode,
@@ -389,20 +394,27 @@ WebSocketServerV2.on('connection', (Socket) => {
                     if(!ConnectedUserData.isAuthenticated) return;
                     if(typeof ParsedContent.data.roomId !== 'string' || typeof ParsedContent.data.subroomId !== 'string') return;
 
+                    // eslint-disable-next-line no-redeclare
                     var db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+                    // eslint-disable-next-line no-redeclare
                     var collection = db.collection("rooms");
 
+                    // eslint-disable-next-line no-redeclare
                     var room = await collection.findOne({_id: {$eq: ParsedContent.data.roomId, $exists: true}});
                     if(room == null) return;
                     if(!Object.keys(room.subrooms).includes(ParsedContent.data.subroomId)) return;
 
+                    // eslint-disable-next-line no-redeclare
                     var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
 
+                    // eslint-disable-next-line no-redeclare
                     var subroom = room.subrooms[ParsedContent.data.subroomId];
+                    // eslint-disable-next-line no-redeclare
                     var instance = await MatchmakingAPI.CreateInstance(ParsedContent.data.roomId, ParsedContent.data.subroomId, MatchmakingModes.Public, 300*1000, false, subroom.maxPlayers);
                     instance.AddPlayer(ConnectedUserData.uid);
                     MatchmakingAPI.SetInstance(ParsedContent.data.roomId, instance.InstanceId, instance);
                     
+                    // eslint-disable-next-line no-redeclare
                     var send = WebSocketV2_MessageTemplate;
                     send.code = "join_or_create_photon_room";
                     send.data = {
@@ -422,6 +434,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     if(!ConnectedUserData.isAuthenticated) return;
                     if(typeof ParsedContent.data.room_id !== 'string' || typeof ParsedContent.data.join_code !== 'string') return;
 
+                    // eslint-disable-next-line no-redeclare
                     var instance = await MatchmakingAPI.GetInstanceByJoinCode(ParsedContent.data.room_id, ParsedContent.data.join_code);
                     instance.AddPlayer(ConnectedUserData.uid);
                     
@@ -433,7 +446,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     return;
                }
      });
-     Socket.on('close', async (code, reason) => {
+     Socket.on('close', async () => {
           if(!ConnectedUserData.isAuthenticated) return;
           if(!Object.keys(ws_connected_clients).includes(ConnectedUserData.uid)) return;
 
@@ -467,15 +480,14 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
           isCreativeToolsBetaProgramMember: false
      };
      const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
-     const channel_collection = db.collection("channels");
      const server_collection = db.collection("servers");
      const message_collection = db.collection("messages");
 
-     stream.on('ping', async (data) => {
+     stream.on('ping', async () => {
           stream.pong();
      })
 
-     stream.on('message', async (data, isBinary) => {
+     stream.on('message', async (data) => {
           try {
                var ParsedContent = JSON.parse(data.toString('utf-8'));
           } catch (ex) {
@@ -498,6 +510,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
                     if(ClientData.isAuthenticated) return;
                     
                     if(typeof ParsedContent.data.token !== 'string') {
+                         // eslint-disable-next-line no-redeclare
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "authentication_failed";
                          send.data = {
@@ -507,9 +520,10 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
                          return stream.close(4003, JSON.stringify(send, null, 5));
                     }
 
-                    const {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
+                    var {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
                     
                     if(!success) {
+                         // eslint-disable-next-line no-redeclare
                          var send = WebSocketV2_MessageTemplate;
                          send.code = "authentication_failed";
                          send.data = {
@@ -529,6 +543,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
                     ClientData.isDeveloper = tokenData.developer;
                     ClientData.tags = playerData.private.availableTags;
 
+                    // eslint-disable-next-line no-redeclare
                     var send = WebSocketV2_MessageTemplate;
                     send.code = "authentication_confirmed";
                     send.data = {};
@@ -662,7 +677,7 @@ const client = new MongoClient(uri, {
      useUnifiedTopology: true
 });
 
-client.connect(async (error, result) => {
+client.connect(async (error) => {
      if(error) {
           console.error(`Failed to connect to MongoDB - fatal\n` + error);
           helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
@@ -678,7 +693,7 @@ client.connect(async (error, result) => {
      const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
 
      if(typeof firebaseAuthUser.user.uid == 'undefined') {
-          auditLog('Failed to connect to Firebase - fatal');
+          helpers.auditLog('Failed to connect to Firebase - fatal');
           console.error('Failed to connect to Firebase - fatal');
           process.exit(1);
      }

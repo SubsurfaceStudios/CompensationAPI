@@ -101,27 +101,27 @@ class RoomSession {
           this.#automaticCleanupHandle = setInterval(() => this.AutomaticInstanceCleanup(), 5000);
 
           console.log(`BEGAN EVENT LOOP OF INSTANCE ${this.InstanceId}`);
-     };
+     }
      async EventLoop() {
           this.Age += 5000;
 
           // TTL
           if(typeof this.Players != 'object') this.Players = [];
           this.AgeWithoutPlayer = this.Players.length > 0 ? 0 : this.AgeWithoutPlayer + 5000;
-     };
+     }
      AddPlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in AddPlayer - Parameter 'id' must be a string.");
           if(!this.Players.includes(id)) this.Players.push(id);
 
           console.log(`ADDED PLAYER ${id} TO INSTANCE ${this.InstanceId}`);
-     };
+     }
      RemovePlayer(id) {
           if(typeof id !== 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
           var index = this.Players.indexOf(id);
           this.Players.splice(index);
 
           console.log(`REMOVED PLAYER ${id} FROM INSTANCE ${this.InstanceId}`);
-     };
+     }
      InstanceCleanup() {
           // Prevent weird behaviour with undefined instances.
           if(this.Players.length > 0) return;
@@ -145,7 +145,7 @@ class RoomSession {
           clearInterval(this.#automaticCleanupHandle);
 
           console.log(`CLEANUP OF INSTANCE ${this.InstanceId}`);
-     };
+     }
      AutomaticInstanceCleanup() {
           // damn i really messed up how TTL should work originally haha
           if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
@@ -155,7 +155,7 @@ class RoomSession {
                this.InstanceCleanup();
                console.log(`AUTOMATIC CLEANUP OF INSTANCE ${this.InstanceId}`);
           }
-     };
+     }
 
      constructor(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers, GlobalInstanceId = null) {
           this.RoomId = RoomId;
@@ -186,20 +186,6 @@ class RoomSession {
 }
 
 var SubroomInstances = Object.create(null);
-
-// please don't judge me i am very confused and don't feel like drawing this on paper
-const figuring_out_my_life = {
-     // first layer is room ids
-     "4b7d3810-be88-11ec-b306-43a037ec5b07": { // apartment
-          // second layer is global room instance ids
-          "hahahahahhahahaha i am going batshit insane": {
-               // third layer is subroom ids mapped to instance ids
-               "home": "49555110-d3a7-11ec-aee1-3f535ae7f63a"
-               // now if we try to join the 'home' subroom in the Apartment while in the apartment, we will be taken here.
-               // if the instance is full, we will create a new global room instance.
-          }
-     }
-};
 
 // this will mock the data structure above, but at runtime
 var GlobalRoomInstances = Object.create(null);

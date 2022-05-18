@@ -28,7 +28,7 @@ router.route("/item/:id/info")
 		}
 	})
 	.put(middleware.authenticateDeveloperToken, async (req, res) => {
-		id = fs.readdirSync('data/econ').length - 1;
+		var id = fs.readdirSync('data/econ').length - 1;
 		PushItem(id.toString(), req.body);
 		res.status(200).send();
 	});
@@ -128,7 +128,7 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
 	if(count < 1) return res.status(400).send("You do not own that item!");
 
 	var data = helpers.PullPlayerData(target);
-	if(data = null) return res.status(404).send("That user does not exist!");
+	if(data == null) return res.status(404).send("That user does not exist!");
 
 
 	try {
@@ -171,7 +171,7 @@ router.get("/item/all", async (req, res) => {
 	var list = {};
 	files.forEach((item) => {
 		item = item.split(".")[0];
-		data = PullItem(item);
+		var data = PullItem(item);
 		list[item] = data;
 	});
 	res.status(200).json(list);

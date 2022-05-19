@@ -1,10 +1,12 @@
 const router = require('express').Router();
-const {authenticateDeveloperToken, authenticateToken, authenticateToken_internal, authenticateToken_optional} = require('../middleware');
+const {authenticateToken, authenticateToken_optional} = require('../middleware');
 const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
 
 // Base URL: /api/rooms/...
 
+// TODO implement API endpoint to create a room.
+// eslint-disable-next-line no-unused-vars
 const roomTemplate = {
      _id: "undefined_room",
      name: "undefined_room",
@@ -138,11 +140,11 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
 
      switch(mode) {
           case "search":
-               const fuse = new Fuse(results, {
+               var fuse = new Fuse(results, {
                     includeScore: false,
                     keys: ["name"],
                });
-               const searchResults = fuse.search(query);
+               var searchResults = fuse.search(query);
 
                return res.status(200).json(searchResults.map(item => item.item));
           case "originals":

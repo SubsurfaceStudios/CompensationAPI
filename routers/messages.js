@@ -32,6 +32,9 @@ router.route("/channels/:channel_id/messages")
 			if(channel == null) return res.status(404).send({message: "channel_not_found"});
 
 			collection = db.collection("servers");
+
+			// this will be used in the future.
+			// eslint-disable-next-line no-unused-vars
 			const server = await collection.findOne({'_id': channel.server_id});
 
 			//#region handling of permissions
@@ -85,6 +88,9 @@ router.route("/channels/:channel_id/messages")
 			if(channel == null) return res.status(404).send({message: "channel_not_found"});
 	
 			collection = db.collection("servers");
+
+			// TODO implement permissions
+			// eslint-disable-next-line no-unused-vars
 			const server = await collection.findOne({'_id': channel.server_id});
 	
 			//#region handling of permissions
@@ -135,6 +141,9 @@ router.route("/channels/:channel_id/info")
 		if(channel == null) return res.status(404).send({message: "channel_not_found"});
 
 		collection = db.collection("servers");
+
+		// TODO implement permissions
+		// eslint-disable-next-line no-unused-vars
 		const server = await collection.findOne({'_id': channel.server_id});
 
 		//#region handling of permissions
@@ -170,6 +179,9 @@ router.route("/messages/:message_id")
 			if(message == null) return res.status(404).send({message: "message_not_found"});
 
 			collection = db.collection("servers");
+
+			// TODO implement permissions
+			// eslint-disable-next-line no-unused-vars
 			const server = await collection.findOne({'_id': {$exists: true, $eq: message.server}});
 
 			//#region handling of permissions
@@ -203,6 +215,9 @@ router.route("/messages/:message_id")
 			if(message == null) return res.status(404).send({message: "message_not_found"});
 
 			collection = db.collection("servers");
+
+			// TODO implement permissions
+			// eslint-disable-next-line no-unused-vars
 			const server = await collection.findOne({'_id': {$exists: true, $eq: message.server}});
 
 			//#region handling of permissions
@@ -245,6 +260,9 @@ router.route("/messages/:message_id")
 			if(message == null) return res.status(404).send({message: "message_not_found"});
 
 			collection = db.collection("servers");
+
+			// TODO implement permissions
+			// eslint-disable-next-line no-unused-vars
 			const server = await collection.findOne({'_id': {$exists: true, $eq: message.server}});
 
 			//#region handling of permissions

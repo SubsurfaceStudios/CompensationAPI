@@ -1,17 +1,11 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
 const sanitize = require('sanitize-filename');
 const express = require('express');
-const mongodb = require('mongodb');
 const firebaseStorage = require('firebase/storage');
-const path = require('node:path');
 
 const NodeCache = require('node-cache');
-
-const index = require('../index');
 
 router.use(express.text({limit: '150mb'}));
 
@@ -35,7 +29,7 @@ const imageMetadataTemplate = {
      infoPath: '/img/0/info',
      filePath: '/img/0',
      takenOn: {
-          unixTimestamp: 0000000000,
+          unixTimestamp: 0,
           humanReadable: 'Thu, 01 Jan 1970'
      },
      social: {
@@ -197,6 +191,7 @@ router.get("/:id", async (req, res) => {
                     console.log(`Request submitted for uncached image ${id}, cached.`);
                } else console.log(`Request submitted for cached image ${id}.`);
           } else {
+               // eslint-disable-next-line no-redeclare
                var ImageBuffer;
                if(!imgCache.has(id)) {
                     const storage = firebaseStorage.getStorage();

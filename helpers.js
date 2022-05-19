@@ -1,11 +1,8 @@
 require('dotenv').config();
-const express = require('express');
-const bcrypt = require('bcrypt');
 const fs = require('fs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const sanitize = require('sanitize-filename');
 const request = require('request');
+const config = require('./config.json');
 
 const notificationTemplates = {
      invite: "invite",
@@ -84,7 +81,7 @@ function ArePlayersAcquantances(player1, player2) {
      var data = PullPlayerData(player1);
      var data2 = PullPlayerData(player2);
      return data.private.acquaintances.includes(player2) ||
-          data2.private.acquaintances.includes(player1);;
+          data2.private.acquaintances.includes(player1);
 }
 
 function ArePlayersFriends(player1, player2) {

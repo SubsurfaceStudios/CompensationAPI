@@ -309,11 +309,15 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                     // leave current room
                     if(ConnectedUserData.matchmaking_InstanceId != null) {
-                         var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);
-                         instance.RemovePlayer(ConnectedUserData.uid);
-                         await MatchmakingAPI.SetInstance(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId, instance);
-                         ConnectedUserData.matchmaking_InstanceId = null;
-                         ConnectedUserData.matchmaking_RoomId = null;
+                         try {
+                              var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);
+                              instance.RemovePlayer(ConnectedUserData.uid);
+                              await MatchmakingAPI.SetInstance(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId, instance);
+                              ConnectedUserData.matchmaking_InstanceId = null;
+                              ConnectedUserData.matchmaking_RoomId = null;
+                         } catch (err) {
+                              console.error(err);
+                         }
                     }
 
                     var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
@@ -406,6 +410,20 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                     // eslint-disable-next-line no-redeclare
                     var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
+
+
+                    // leave current room
+                    if(ConnectedUserData.matchmaking_InstanceId != null) {
+                         try {
+                              var inst = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);
+                              inst.RemovePlayer(ConnectedUserData.uid);
+                              await MatchmakingAPI.SetInstance(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId, inst);
+                              ConnectedUserData.matchmaking_InstanceId = null;
+                              ConnectedUserData.matchmaking_RoomId = null;
+                         } catch (err) {
+                              console.error(err);
+                         }
+                    }
 
                     // eslint-disable-next-line no-redeclare
                     var subroom = room.subrooms[ParsedContent.data.subroomId];

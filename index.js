@@ -208,6 +208,8 @@ WebSocketServerV2.on('connection', (Socket) => {
           matchmaking_GlobalInstanceId: null
      };
 
+     Socket.ping("ARE YOU ALIVE");
+
      Socket.on('ping', async () => {
           Socket.pong();
      });
@@ -464,7 +466,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                     return;
                }
      });
-     Socket.on('close', async () => {
+     Socket.on('close', async (code, reason) => {
+          console.log(`Socket closed with code ${code} and reason ${reason}`);
           if(!ConnectedUserData.isAuthenticated) return;
           if(!Object.keys(ws_connected_clients).includes(ConnectedUserData.uid)) return;
 

@@ -1,7 +1,5 @@
 const helpers = require('./helpers');
-const fs = require('fs');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 module.exports = {
      authenticateToken: authenticateToken,
@@ -63,7 +61,7 @@ function authenticateDeveloperToken(req, res, next) {
           const data = helpers.PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
-               const element = auth.bans[index];
+               const element = data.auth.bans[index];
                
                if(element.endTS > Date.now()) return res.status(403).send({
                     message: "USER IS BANNED", 

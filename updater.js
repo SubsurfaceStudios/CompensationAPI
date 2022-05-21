@@ -15,11 +15,12 @@ const answers = [
      "1",
      "3",
      "4",
-     "5"
+     "5",
+     "6"
 ]
 
 function main() {
-     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. Legacy Updater\n2. Current Updater (UNAVAILABLE)\n3. Account Migration\n4. Room Updater - Global\n5. Update a specific room.\n\n", async (res) => {
+     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. Legacy Updater\n2. Current Updater (UNAVAILABLE)\n3. Account Migration\n4. Room Updater - Global\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n\n", async (res) => {
           if(!answers.includes(res)) {
                rl.write("Invalid or unavailable option.\n");
                main();
@@ -40,6 +41,9 @@ function main() {
                          room_updater(res);
                     });
                     return;
+               case "6":
+                    migrateItems();
+                    return
           }
      });
 }
@@ -301,6 +305,37 @@ async function updateRoom(room) {
      if(typeof room.userPermissions != 'object') room.userPermissions = {};
 
      return room;
+}
+
+function migrateItems() {
+     console.log("Connecting to MDB...\n");
+     const { MongoClient } = require('mongodb');
+     
+     const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+     const client = new MongoClient(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+     });
+
+     client.connect(async (error, client) => {
+          if(error) return console.error(error);
+          console.log("Connected.\nBeginning migration...");
+
+          const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+          const items = db.collection("items");
+
+          const files = fs.readdirSync("./data/econ");
+
+          const insert = files.filter(x => x != "ITEM_TEMPLATE.json").map(x => {
+               const file = require(`./data/econ/${x}`);
+
+               file._id = file.id; // yes this is stupid
+               return file;
+          });
+
+          console.log(await items.insertMany(insert));
+          console.log("Migration complete.");
+     });
 }
 
 main();

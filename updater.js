@@ -326,7 +326,7 @@ function migrateItems() {
 
           const files = fs.readDirSync("./data/econ");
 
-          const insert = files.map(x => {
+          const insert = files.filter(x => x != "ITEM_TEMPLATE.json").map(x => {
                const file = require(`./data/econ/${x}`);
 
                file._id = file.id; // yes this is stupid

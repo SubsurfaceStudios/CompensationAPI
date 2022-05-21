@@ -7,7 +7,9 @@ const firebaseStorage = require('firebase/storage');
 
 const NodeCache = require('node-cache');
 
-router.use(express.text({limit: '150mb'}));
+const config = require('../config.json');
+
+router.use(express.text({limit: config.max_image_size}));
 
 router.use(express.urlencoded({extended: false}));
 
@@ -43,13 +45,14 @@ const imageMetadataTemplate = {
 
 
 
-// 8 hour cache
+// 1 hour cache
 const imgCache = new NodeCache({
      "deleteOnExpire": true,
-     "stdTTL": 60 * 60 * 8
+     "stdTTL": 60 * 60
 });
 
 router.post("/upload", middleware.authenticateToken, async (req, res) => {
+     if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image upload have been disabled by the system administrator.", "code": "uploads_disabled"})
      try {
           var {others, room_id, tags} = req.query;
           if(req.headers['content-type'] != 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
@@ -169,7 +172,7 @@ router.get("/:id", async (req, res) => {
           if (typeof base64 === 'undefined' || base64 !== 'true') {
                var ImageBuffer;
 
-               if(!imgCache.has(id)) {
+               if(!imgCache.has(id) || config.disable_image_caching) {
                     const storage = firebaseStorage.getStorage();
                     const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
 
@@ -186,14 +189,14 @@ router.get("/:id", async (req, res) => {
                });
                res.end(ImageBuffer);
 
-               if(!imgCache.has(id)) {
+               if(!imgCache.has(id) && !config.disable_image_caching) {
                     imgCache.set(id, ImageBuffer);
                     console.log(`Request submitted for uncached image ${id}, cached.`);
                } else console.log(`Request submitted for cached image ${id}.`);
           } else {
                // eslint-disable-next-line no-redeclare
                var ImageBuffer;
-               if(!imgCache.has(id)) {
+               if(!imgCache.has(id) || config.disable_image_caching) {
                     const storage = firebaseStorage.getStorage();
                     const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
 
@@ -204,7 +207,7 @@ router.get("/:id", async (req, res) => {
                var ImageBase64String = Buffer.from(ImageBuffer).toString('base64');
 
                res.status(200).contentType('text/plain').send(ImageBase64String);
-               if(!imgCache.has(id)) {
+               if(!imgCache.has(id) && !config.disable_image_caching) {
                     imgCache.set(id, ImageBuffer);
                     console.log(`Request submitted for uncached image ${id}, cached.`);
                } else console.log(`Request submitted for cached image ${id}.`);

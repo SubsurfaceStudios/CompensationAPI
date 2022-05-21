@@ -166,14 +166,12 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 });
 
 router.get("/item/all", async (req, res) => {
-	var files = fs.readdirSync('data/econ');
-	files = files.filter(item => item != "ITEM_TEMPLATE.json");
-	var list = {};
-	files.forEach((item) => {
-		item = item.split(".")[0];
-		var data = PullItem(item);
-		list[item] = data;
-	});
+	const client = require('../index.js').mongoClient;
+	const list = 
+	await client.db(process.env.MONGOOSE_DATABASE_NAME)
+		.collection("items")
+		.find({})
+		.toArray();
 	res.status(200).json(list);
 });
 

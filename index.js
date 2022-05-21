@@ -208,6 +208,8 @@ WebSocketServerV2.on('connection', (Socket) => {
           matchmaking_GlobalInstanceId: null
      };
 
+     Socket.ping("ARE YOU ALIVE");
+
      Socket.on('ping', async () => {
           Socket.pong();
      });

@@ -10,7 +10,7 @@ router.route("/item/:id/info")
 		var {id} = req.params;
 		id = sanitize(id);
 
-		var data = PullItem(id);
+		var data = await PullItem(id);
 		if(data == null) return res.sendStatus(404);
 
 		return res.status(200).json(data);
@@ -20,7 +20,7 @@ router.route("/item/:id/info")
 		id = sanitize(id);
 
 		try {
-			PushItem(id, req.body);
+			await PushItem(id, req.body);
 			return res.sendStatus(200);
 		} catch (ex) {
 			console.error(ex);
@@ -29,7 +29,7 @@ router.route("/item/:id/info")
 	})
 	.put(middleware.authenticateDeveloperToken, async (req, res) => {
 		var id = fs.readdirSync('data/econ').length - 1;
-		PushItem(id.toString(), req.body);
+		await PushItem(id.toString(), req.body);
 		res.status(200).send();
 	});
 
@@ -41,17 +41,17 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
 	if(typeof item_id !== 'string') return res.status(400).send("The item ID you specified must be a string.");
 	item_id = sanitize(item_id);
 
-	var player_balance = GetPlayerCurrency(req.user.id);
+	var player_balance = await GetPlayerCurrency(req.user.id);
 
-	var item = PullItem(item_id);
+	var item = await PullItem(item_id);
 	if(item == null) return res.status(404).send("That item does not exist!");
 
 	if(!item.is_purchasable) return res.status(400).send("That item is not available for purchase.");
 	if(player_balance < item.buy_price) return res.status(400).send("You cannot afford that item!");
 
 	try {
-		GrantPlayerItem(req.user.id, item_id);
-		ModifyPlayerCurrency(req.user.id, 0 - item.buy_price);
+		await GrantPlayerItem(req.user.id, item_id);
+		await ModifyPlayerCurrency(req.user.id, 0 - item.buy_price);
 		return res.status(200).send("Successfully purchased item! Enjoy!");
 	} catch (ex) {
 		res.status(500).send("Failed to purchase item due to an internal server error. Please contact Rose932#1454 on Discord for more information.");
@@ -70,18 +70,18 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
 	var data = helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That player does not exist!");
 	
-	var item = PullItem(item_id);
+	var item = await PullItem(item_id);
 	if(item == null) return res.status(404).send("That item does not exist!");
 
 	if(!item.is_purchasable) return res.status(400).send("That item is not purchasable in any capacity.");
 	if(!item.is_giftable) return res.status(400).send("You cannot gift somebody this item.");
 
-	var balance = GetPlayerCurrency(req.user.id);
+	var balance = await GetPlayerCurrency(req.user.id);
 	if(balance < item.gift_price) return res.status(400).send("You cannot afford that item.");
 
 	try {
-		GrantPlayerItem(target, item_id);
-		ModifyPlayerCurrency(req.user.id, 0 - item.gift_price);
+		await GrantPlayerItem(target, item_id);
+		await ModifyPlayerCurrency(req.user.id, 0 - item.gift_price);
 		return res.status(200).send("Gift successfully sent! Thanks for playing Compensation VR!");
 	} catch (ex) {
 		res.status(500).send("Internal server error, failed to send gift. Contact Rose932#1454 on Discord for more information.");
@@ -95,16 +95,16 @@ router.post("/item/refund", middleware.authenticateToken, async (req, res) => {
 
 	item_id = sanitize(item_id);
 
-	var item = PullItem(item_id);
+	var item = await PullItem(item_id);
 	if(item == null) return res.status(404).send("That item does not exist!");
 	if(!item.is_refundable) return res.status(400).send("You cannot refund that item!");
 
-	var count = GetPlayerItemCount(req.user.id, item_id);
+	var count = await GetPlayerItemCount(req.user.id, item_id);
 	if(count < 1) return res.status(400).send("You do not own that item. >:(");
 
 	try {
-		ModifyPlayerCurrency(req.user.id, item.refund_price);
-		SubtractPlayerItem(req.user.id, item_id);
+		await ModifyPlayerCurrency(req.user.id, item.refund_price);
+		await SubtractPlayerItem(req.user.id, item_id);
 		return res.status(200).send("Transaction complete. Thank you for playing Compensation VR!");
 	} catch (ex) {
 		res.status(500).send("An error occurred and we failed to complete the transaction. Please contact Rose932#1454 on Discord for more information.");
@@ -120,11 +120,11 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
 	item_id = sanitize(item_id);
 	target = sanitize(target);
 
-	var item = PullItem(item_id);
+	var item = await PullItem(item_id);
 	if(item == null) return res.status(404).send("That item does not exist!");
 	if(!item.is_transferrable) return res.status(400).send("That item cannot be transferred.");
 
-	var count = GetPlayerItemCount(item_id);
+	var count = await GetPlayerItemCount(item_id);
 	if(count < 1) return res.status(400).send("You do not own that item!");
 
 	var data = helpers.PullPlayerData(target);
@@ -132,8 +132,8 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
 
 
 	try {
-		GrantPlayerItem(target, item_id);
-		SubtractPlayerItem(req.user.id, item_id);
+		await GrantPlayerItem(target, item_id);
+		await SubtractPlayerItem(req.user.id, item_id);
 		return res.status(200).send("Item transferred. Thanks for playing Compensation VR!");
 	} catch (ex) {
 		res.status(500).send("We encountered an error and the transaction could not be completed. Please contact Rose932#1454 on Discord for more information.");
@@ -152,12 +152,12 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 	var data = helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That user does not exist!");
 
-	var balance = GetPlayerCurrency(req.user.id);
+	var balance = await GetPlayerCurrency(req.user.id);
 	if(balance < amount) return res.status(400).send("You don't have enough currency to send that much!");
 
 	try {
-		ModifyPlayerCurrency(req.user.id, 0 - amount);
-		ModifyPlayerCurrency(target, amount);
+		await ModifyPlayerCurrency(req.user.id, 0 - amount);
+		await ModifyPlayerCurrency(target, amount);
 		return res.status(200).send("Currency successfully transferred! Thanks for playing Compensation VR!");
 	} catch (ex) {
 		res.status(500).send("An error occured and we couldn't transfer the currency. Please contact Rose932#1454 on Discord for more information.");
@@ -169,9 +169,9 @@ router.get("/item/all", async (req, res) => {
 	var files = fs.readdirSync('data/econ');
 	files = files.filter(item => item != "ITEM_TEMPLATE.json");
 	var list = {};
-	files.forEach((item) => {
+	files.forEach(async (item) => {
 		item = item.split(".")[0];
-		var data = PullItem(item);
+		var data = await helpers.PullItem(item);
 		list[item] = data;
 	});
 	res.status(200).json(list);
@@ -183,7 +183,7 @@ router.get("/inventory", middleware.authenticateToken, async (req, res) => {
 });
 
 router.get("/currency/balance", middleware.authenticateToken, async (req, res) => {
-	return res.status(200).send(GetPlayerCurrency(req.user.id).toString());
+	return res.status(200).send((await GetPlayerCurrency(req.user.id)).toString());
 });
 
 router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
@@ -192,11 +192,11 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
 	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item ID!");
 	item_id = sanitize(item_id);
 
-	var itemData = PullItem(item_id);
+	var itemData = await PullItem(item_id);
 	if(itemData == null) return res.status(404).send("That item does not exist!");
 	if(!itemData.equippable) return res.status(400).send("That item is not equippable!");
 
-	var count = GetPlayerItemCount(req.user.id, item_id);
+	var count = await GetPlayerItemCount(req.user.id, item_id);
 	if(count < 1) return res.status(400).send("You do not own that item!");
 
 	try {
@@ -212,29 +212,26 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
 
 //#region functions 
 
-function PullItem(id) {
-	try {
-		id = sanitize(id);
-		var file = fs.readFileSync(`data/econ/${id}.json`);
-		var object = JSON.parse(file);
-		return object;
-	} catch (ex) {
-		console.error(ex);
-		return null;
-	}
+async function PullItem(id) {
+	const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+	const item = db.collection('items').findOne({_id: {$eq: id, $exists: true}});
+	return item;
 }
 
-function PushItem(id, data) {
+async function PushItem(id, data) {
 	id = sanitize(id);
-	var file = JSON.stringify(data, null, 5);
-	fs.writeFileSync(`data/econ/${id}.json`, file);
+
+	const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+	const collection = db.collection('items');
+
+	// replace the old item with the inputted data.
+	const result = await collection.replaceOne({_id: {$eq: id, $exists: true}}, data);
+	return result;
 }
 
-function GrantPlayerItem(id, item_id) {
+async function GrantPlayerItem(id, item_id) {
 	id = sanitize(id);
 	item_id = sanitize(item_id);
-
-	if(PullItem(item_id) == null) return null;
 
 	var data = helpers.PullPlayerData(id);
 	if(data == null) return null;
@@ -245,7 +242,7 @@ function GrantPlayerItem(id, item_id) {
 	helpers.PushPlayerData(id, data);
 }
 
-function ModifyPlayerCurrency(id, amount) {
+async function ModifyPlayerCurrency(id, amount) {
 	id = sanitize(id);
 
 	var data = helpers.PullPlayerData(id);
@@ -258,7 +255,7 @@ function ModifyPlayerCurrency(id, amount) {
 	helpers.PushPlayerData(id, data);
 }
 
-function GetPlayerItemCount(id, item_id) {
+async function GetPlayerItemCount(id, item_id) {
 	id = sanitize(id);
 
 	var data = helpers.PullPlayerData(id);
@@ -268,13 +265,11 @@ function GetPlayerItemCount(id, item_id) {
 	else return data.econ.inventory[item_id];
 }
 
-function SubtractPlayerItem(id, item_id) {
+async function SubtractPlayerItem(id, item_id) {
 	id = sanitize(id);
 
 	var data = helpers.PullPlayerData(id);
-	if(data == null) return null; 
-
-	if(PullItem(item_id) == null) return null;
+	if(data == null) return null;
 
 	if(typeof data.econ.inventory[item_id] != 'number') data.econ.inventory[item_id] = 0;
 
@@ -284,7 +279,7 @@ function SubtractPlayerItem(id, item_id) {
 	helpers.PushPlayerData(id, data);
 }
 
-function GetPlayerCurrency(id) {
+async function GetPlayerCurrency(id) {
 	id = sanitize(id);
 
 	var data = helpers.PullPlayerData(id);

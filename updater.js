@@ -324,7 +324,7 @@ function migrateItems() {
           const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
           const items = db.collection("items");
 
-          const files = fs.readDirSync("./data/econ");
+          const files = fs.readdirSync("./data/econ");
 
           const insert = files.filter(x => x != "ITEM_TEMPLATE.json").map(x => {
                const file = require(`./data/econ/${x}`);

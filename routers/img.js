@@ -58,7 +58,7 @@ router.post("/upload", middleware.authenticateToken, async (req, res) => {
           if(req.headers['content-type'] != 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
           if(typeof room_id !== 'string') return res.status(400).send("Room ID not specified.");
           if(typeof others !== 'string') others = '[]';
-          if(typeof tags !== 'string') tags = '[ "photo" ]';
+          if(typeof tags !== 'string' || !(JSON.parse(tags) instanceof Array)) tags = '[ "photo" ]';
 
           var timestamp = Date.now();
           var TakenByData = helpers.PullPlayerData(req.user.id);

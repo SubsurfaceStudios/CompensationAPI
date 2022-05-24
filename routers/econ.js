@@ -168,11 +168,16 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 router.get("/item/all", async (req, res) => {
 	const client = require('../index.js').mongoClient;
 	const list = 
-	await client.db(process.env.MONGOOSE_DATABASE_NAME)
-		.collection("items")
-		.find({})
-		.toArray();
-	res.status(200).json(list);
+		await client.db(process.env.MONGOOSE_DATABASE_NAME)
+			.collection("items")
+			.find({})
+			.toArray();
+
+	let items = {};
+	for(var i = 0; i < list.length; i++) {
+		items[list[i].id] = list[i];
+	}
+	res.status(200).json(items);
 });
 
 router.get("/inventory", middleware.authenticateToken, async (req, res) => {

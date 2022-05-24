@@ -8,10 +8,21 @@ const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PullPlayerData } = require('../helpers');
+const config = require('../config.json');
+
+const {default: rateLimit} = require('express-rate-limit');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
+
+// Users can now only create 1 account per day.
+const accountCreationLimit = new rateLimit({
+     'windowMs': 86400000,
+     'max': 1,
+     'legacyHeaders': true,
+     'standardHeaders': true
+});
 
 router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
      try {
@@ -87,17 +98,45 @@ router.post("/login", (req, res) => {
 
      const externalHashed = bcrypt.hashSync(password, salt);
 
-     if(externalHashed !== HASHED_PASSWORD) return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
+     if(externalHashed !== HASHED_PASSWORD) {
+          if(typeof data.auth.logins != 'object') data.auth.logins = [];
+          const attempt = {
+               SUCCESS: false,
+               IP: req.ip,
+               TIME: Date.now(),
+               HWID: hwid,
+               TWO_FACTOR_CODE: two_factor_code
+          };
+          if(data.auth.logins.length < config.max_logged_logins) {
+               data.auth.logins.push(attempt);
+               helpers.PushPlayerData(userID, data);
+          }
+          return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
+     }
 
      for (let index = 0; index < data.auth.bans.length; index++) {
           const element = data.auth.bans[index];
           
-          if(element.endTS > Date.now()) return res.status(403).send({
-               message: "USER IS BANNED", 
-               endTimeStamp: element.endTS, 
-               reason: element.reason,
-               failureCode: "7"
-          });
+          if(element.endTS > Date.now()) {
+               if(typeof data.auth.logins != 'object') data.auth.logins = [];
+               const attempt = {
+                    SUCCESS: false,
+                    IP: req.ip,
+                    TIME: Date.now(),
+                    HWID: hwid,
+                    TWO_FACTOR_CODE: two_factor_code
+               };
+               if(data.auth.logins.length < config.max_logged_logins) {
+                    data.auth.logins.push(attempt);
+                    helpers.PushPlayerData(userID, data);
+               }
+               return res.status(403).send({
+                    message: "USER IS BANNED", 
+                    endTimeStamp: element.endTS, 
+                    reason: element.reason,
+                    failureCode: "7"
+               });
+          }
      }
      
      //User is authenticated, generate and send token.
@@ -111,11 +150,36 @@ router.post("/login", (req, res) => {
      if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
 
      if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled == 'unverified') {
+          if(typeof data.auth.logins != 'object') data.auth.logins = [];
+          const attempt = {
+               SUCCESS: true,
+               IP: req.ip,
+               TIME: Date.now(),
+               HWID: hwid,
+               TWO_FACTOR_CODE: two_factor_code,
+               INAVLID_PASSWORD: password
+          };
+          if(data.auth.logins.length < config.max_logged_logins) {
+               data.auth.logins.push(attempt);
+               helpers.PushPlayerData(userID, data);
+          }
           if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken});
           else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
      }
 
      if(typeof two_factor_code !== 'string') {
+          if(typeof data.auth.logins != 'object') data.auth.logins = [];
+          const attempt = {
+               SUCCESS: false,
+               IP: req.ip,
+               TIME: Date.now(),
+               HWID: hwid,
+               TWO_FACTOR_CODE: two_factor_code
+          };
+          if(data.auth.logins.length < config.max_logged_logins) {
+               data.auth.logins.push(attempt);
+               helpers.PushPlayerData(userID, data);
+          }
           if(typeof hwid !== 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
           if(data.auth.multi_factor_authenticated_logins.length < 1) return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
@@ -176,7 +240,7 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 });
 
 //Call to create an account from a set of credentials.
-router.post("/create", async (req, res) => {
+router.post("/create", accountCreationLimit, async (req, res) => {
      var { username, nickname, password } = req.body;
      const id = helpers.getAccountCount() + 1;
 

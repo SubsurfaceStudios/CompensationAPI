@@ -8,6 +8,7 @@ const firebaseStorage = require('firebase/storage');
 const NodeCache = require('node-cache');
 
 const config = require('../config.json');
+const { default: rateLimit } = require('express-rate-limit');
 
 router.use(express.text({limit: config.max_image_size}));
 
@@ -43,7 +44,12 @@ const imageMetadataTemplate = {
      }
 }
 
-
+const uploadRateLimit = new rateLimit({
+     'windowMs': 3600000,
+     'max': 10,
+     'legacyHeaders': true,
+     'standardHeaders': true
+});
 
 // 1 hour cache
 const imgCache = new NodeCache({
@@ -51,14 +57,14 @@ const imgCache = new NodeCache({
      "stdTTL": 60 * 60
 });
 
-router.post("/upload", middleware.authenticateToken, async (req, res) => {
+router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {
      if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image upload have been disabled by the system administrator.", "code": "uploads_disabled"})
      try {
           var {others, room_id, tags} = req.query;
           if(req.headers['content-type'] != 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
           if(typeof room_id !== 'string') return res.status(400).send("Room ID not specified.");
           if(typeof others !== 'string') others = '[]';
-          if(typeof tags !== 'string') tags = '[ "photo" ]';
+          if(typeof tags !== 'string' || !(JSON.parse(tags) instanceof Array)) tags = '[ "photo" ]';
 
           var timestamp = Date.now();
           var TakenByData = helpers.PullPlayerData(req.user.id);
@@ -115,7 +121,65 @@ router.post("/upload", middleware.authenticateToken, async (req, res) => {
      }
 });
 
+router.get('/:id/embed', (req, res) => {
+     // copied from /:id endpoint
+     let {id} = req.params;
+     if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
+     id = sanitize(id);
+     try {
+          id = parseInt(id);
+          if(id < 1) return res.status(400).send("Image ID is never below 0.");
+     } catch {
+          return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
+     }
+
+     // template for embed page
+     let html = `<!DOCTYPE html>
+     <html lang="en">
+     <head>
+     <meta charset="UTF-8">
+     <meta content="Compensation VR" property="og:title">
+     <meta content="###img###" property="og:image">
+     <meta content="Taken by ###nick### (@###user###) on ###time### ###tags###" property="og:description">
+     <meta name="theme-color" content="#9702f4">
+     <meta content="summary_large_image" name="twitter:card">
+     <meta http-equiv="refresh" content="0; URL=https://api.compensationvr.tk/img/${id}">
+     </head>
+     </html>`;
+
+     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     var collection = db.collection("images");
+
+     collection.findOne({_id: id}).then(doc => {
+          if (!doc) return res.status(404).send("There's no image with this ID") 
+
+          // this is kind of ugly but still much better than what i had previously
+          for (let [match, replacement] of Object.entries({
+               '###nick###': doc.takenBy.nickname,
+               '###user###': doc.takenBy.username,
+               '###time###': doc.takenOn.humanReadable,
+               '###tags###': doc.social.tags.map(e => '#' + e).join(' '),
+               '###img###': 'https://api.compensationvr.tk/img/' + id
+          })) {
+               // escape html to prevent xss
+               replacement = replacement.replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;"); // html 4 doesn't support &apos; which is why we use &39; instead
+               
+               html = html.replace(match, replacement);
+          }
+
+          return res.status(200).send(html);
+     }, err => {
+          console.error(err);
+          return res.status(500).send("Failed to retrieve image data.");
+     })
+});
+
 router.get("/:id/info", async (req, res) => {
+     if(config.disable_image_fetch && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
      var {id} = req.params;
      if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
      id = sanitize(id);
@@ -140,6 +204,7 @@ router.get("/:id/info", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
      try {
+          if(config.disable_image_fetch && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
           // Setup of parameters
           var {id} = req.params;
           var {base64} = req.query;

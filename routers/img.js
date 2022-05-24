@@ -44,7 +44,7 @@ const imageMetadataTemplate = {
      }
 }
 
-const uploadRateLimit = new rateLimit({
+const uploadRateLimit = rateLimit({
      'windowMs': 3600000,
      'max': 10,
      'legacyHeaders': true,

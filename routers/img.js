@@ -115,6 +115,62 @@ router.post("/upload", middleware.authenticateToken, async (req, res) => {
      }
 });
 
+router.get('/:id/embed', (req, res) => {
+     // template for embed page
+     let html = `<!DOCTYPE html>
+     <html lang="en">
+     <head>
+     <meta charset="UTF-8">
+     <meta content="Compensation VR" property="og:title">
+     <meta content="###img###" property="og:image">
+     <meta content="Taken by ###nick### (@###user###) on ###time### ###tags###" property="og:description">
+     <meta name="theme-color" content="#9702f4">
+     <meta content="summary_large_image" name="twitter:card">
+     </head>
+     </html>`;
+
+     // copied from /:id endpoint
+     let {id} = req.params;
+     if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
+     id = sanitize(id);
+     try {
+          id = parseInt(id);
+          if(id < 1) return res.status(400).send("Image ID is never below 0.");
+     } catch {
+          return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
+     }
+
+     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     var collection = db.collection("images");
+
+     collection.findOne({_id: id}).then(doc => {
+          if (!doc) return res.status(404).send("There's no image with this ID") 
+
+          // this is kind of ugly but still much better than what i had previously
+          for (let [match, replacement] of Object.entries({
+               '###nick###': doc.takenBy.nickname,
+               '###user###': doc.takenBy.username,
+               '###time###': doc.takenOn.humanReadable,
+               '###tags###': doc.social.tags.map(e => '#' + e).join(' '),
+               '###img###': 'https://api.compensationvr.tk/img/' + id
+          })) {
+               // escape html to prevent xss
+               replacement = replacement.replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;"); // html 4 doesn't support &apos; which is why we use &39; instead
+               
+               html = html.replace(match, replacement);
+          }
+
+          return res.status(200).send(html);
+     }, err => {
+          console.error(err);
+          return res.status(500).send("Failed to retrieve image data.");
+     })
+});
+
 router.get("/:id/info", async (req, res) => {
      var {id} = req.params;
      if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");

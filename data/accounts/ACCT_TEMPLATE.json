@@ -46,6 +46,9 @@
           "mfa_enabled": false,
           "mfa_factor_sid": "undefined",
           "multi_factor_authenticated_logins": [
+          ],
+          "logins": [
+               
           ]
      },
      "notifications": [

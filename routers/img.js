@@ -8,6 +8,7 @@ const firebaseStorage = require('firebase/storage');
 const NodeCache = require('node-cache');
 
 const config = require('../config.json');
+const { default: rateLimit } = require('express-rate-limit');
 
 router.use(express.text({limit: config.max_image_size}));
 
@@ -43,7 +44,12 @@ const imageMetadataTemplate = {
      }
 }
 
-
+const uploadRateLimit = new rateLimit({
+     'windowMs': 3600000,
+     'max': 10,
+     'legacyHeaders': true,
+     'standardHeaders': true
+});
 
 // 1 hour cache
 const imgCache = new NodeCache({
@@ -51,7 +57,7 @@ const imgCache = new NodeCache({
      "stdTTL": 60 * 60
 });
 
-router.post("/upload", middleware.authenticateToken, async (req, res) => {
+router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {
      if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image upload have been disabled by the system administrator.", "code": "uploads_disabled"})
      try {
           var {others, room_id, tags} = req.query;
@@ -173,6 +179,7 @@ router.get('/:id/embed', (req, res) => {
 });
 
 router.get("/:id/info", async (req, res) => {
+     if(config.disable_image_fetch && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
      var {id} = req.params;
      if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
      id = sanitize(id);
@@ -197,6 +204,7 @@ router.get("/:id/info", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
      try {
+          if(config.disable_image_fetch && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
           // Setup of parameters
           var {id} = req.params;
           var {base64} = req.query;

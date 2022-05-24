@@ -17,7 +17,7 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 
 // Users can now only create 1 account per day.
-const accountCreationLimit = new rateLimit({
+const accountCreationLimit = rateLimit({
      'windowMs': 86400000,
      'max': 1,
      'legacyHeaders': true,

@@ -208,9 +208,6 @@ WebSocketServerV2.on('connection', (Socket) => {
           matchmaking_GlobalInstanceId: null
      };
 
-     // this is for debugging i swear
-     Socket.send("DO YOU ARE HAVE EXIST???????????????");
-
      Socket.on('ping', async () => {
           Socket.pong();
      });

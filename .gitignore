@@ -11,3 +11,4 @@ data/images
 data/rooms
 data/videos
 env.js
+nginx.conf

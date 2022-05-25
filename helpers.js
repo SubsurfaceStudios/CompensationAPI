@@ -33,26 +33,20 @@ module.exports = {
      onPlayerReportedCallback: onPlayerReportedCallback
 };
 
-function PullPlayerData(id) {
-     try {
-          let id_clean = sanitize(id.toString());
-          var data = JSON.parse(fs.readFileSync(`./data/accounts/${id_clean}.json`));
-          return data;
-     } catch (exception) {
-          console.error(exception);
-          return null;
-     }
+async function PullPlayerData(id) {
+     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     const account = await db.collection('accounts').findOne({_id: {$eq: id, $exists: true}});
+     return account
 }
 
-function PushPlayerData(id, data) {
-     data = JSON.stringify(data, null, "     ");
-     let id_clean = sanitize(id.toString());
-     fs.writeFileSync(`./data/accounts/${id_clean}.json`, data);
+async function PushPlayerData(id, data) {
+     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     await db.collection('accounts').replaceOne({_id: {$eq: id, $exists: true}}, data, {upsert: true});
 }
 
-function NotifyPlayer(id, template, params) {
+async function NotifyPlayer(id, template, params) {
      if(!(Object.values(notificationTemplates).includes(template))) return false;
-     var data = PullPlayerData(id);
+     var data = await PullPlayerData(id);
      if(data == null) return false;
 
      const notification = {
@@ -61,14 +55,14 @@ function NotifyPlayer(id, template, params) {
      }
      data.notifications.push(notification);
 
-     PushPlayerData(id, data);
+     await PushPlayerData(id, data);
      require('./index').sendStringToClient(id, "NOTIFICATION RECIEVED");
      return true;
 }
 
-function ArePlayersAnyFriendType(player1, player2) {
-     var data = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function ArePlayersAnyFriendType(player1, player2) {
+     var data = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
      return data.private.acquaintances.includes(player2) || 
           data.private.friends.includes(player2) || 
           data.private.favoriteFriends.includes(player2) ||
@@ -77,30 +71,30 @@ function ArePlayersAnyFriendType(player1, player2) {
           data2.private.favoriteFriends.includes(player1);
 }
 
-function ArePlayersAcquantances(player1, player2) {
-     var data = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function ArePlayersAcquantances(player1, player2) {
+     var data = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
      return data.private.acquaintances.includes(player2) ||
           data2.private.acquaintances.includes(player1);
 }
 
-function ArePlayersFriends(player1, player2) {
-     var data = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function ArePlayersFriends(player1, player2) {
+     var data = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
      return data.private.friends.includes(player2) ||
           data2.private.friends.includes(player1);
 }
 
-function ArePlayersFavoriteFriends(player1, player2) {
-     var data = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function ArePlayersFavoriteFriends(player1, player2) {
+     var data = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
      return data.private.favoriteFriends.includes(player2) ||
           data2.private.favoriteFriends.includes(player1);
 }
 
-function RemoveAcquaintance(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function RemoveAcquaintance(player1, player2, both) {
+     var data1 = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
 
      var index1 = data1.private.acquaintances.findIndex(item => item == player2);
      if(index1 >= 0) data1.private.acquaintances.splice(index1);
@@ -108,13 +102,13 @@ function RemoveAcquaintance(player1, player2, both) {
      var index2 = data2.private.acquaintances.findIndex(item => item == player1);
      if(index2 >= 0 && both) data2.private.acquaintances.splice(index2);
 
-     PushPlayerData(player1, data1);
-     PushPlayerData(player2, data2);
+     await PushPlayerData(player1, data1);
+     await PushPlayerData(player2, data2);
 }
 
-function RemoveFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function RemoveFriend(player1, player2, both) {
+     var data1 = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
 
      var index1 = data1.private.friends.findIndex(item => item == player2);
      if(index1 >= 0) data1.private.friends.splice(index1);
@@ -122,13 +116,13 @@ function RemoveFriend(player1, player2, both) {
      var index2 = data2.private.friends.findIndex(item => item == player1);
      if(index2 >= 0 && both) data2.private.friends.splice(index2);
 
-     PushPlayerData(player1, data1);
-     PushPlayerData(player2, data2);
+     await PushPlayerData(player1, data1);
+     await PushPlayerData(player2, data2);
 }
 
-function RemoveFavoriteFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function RemoveFavoriteFriend(player1, player2, both) {
+     var data1 = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
 
      var index1 = data1.private.favoriteFriends.findIndex(item => item == player2);
      if(index1 >= 0) data1.private.favoriteFriends.splice(index1);
@@ -136,57 +130,57 @@ function RemoveFavoriteFriend(player1, player2, both) {
      var index2 = data2.private.favoriteFriends.findIndex(item => item == player1);
      if(index2 >= 0 && both) data2.private.favoriteFriends.splice(index2);
 
-     PushPlayerData(player1, data1);
-     PushPlayerData(player2, data2);
+     await PushPlayerData(player1, data1);
+     await PushPlayerData(player2, data2);
 }
 
-function AddAcquaintance(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function AddAcquaintance(player1, player2, both) {
+     var data1 = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
 
      if(!data1.private.acquaintances.includes(player2)) 
      {
           data1.private.acquaintances.push(player2);
-          PushPlayerData(player1, data1);
+          await PushPlayerData(player1, data1);
      }
      if(!data2.private.acquaintances.includes(player1) && both) {
           data2.private.acquaintances.push(player1);
-          PushPlayerData(player2, data2);
+          await PushPlayerData(player2, data2);
      }
 }
 
-function AddFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function AddFriend(player1, player2, both) {
+     var data1 = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
 
      if(!data1.private.friends.includes(player2)) 
      {
           data1.private.friends.push(player2);
-          PushPlayerData(player1, data1);
+          await PushPlayerData(player1, data1);
      }
      if(!data2.private.friends.includes(player1) && both) {
           data2.private.friends.push(player1);
-          PushPlayerData(player2, data2);
+          await PushPlayerData(player2, data2);
      }
 }
 
-function AddFavoriteFriend(player1, player2, both) {
-     var data1 = PullPlayerData(player1);
-     var data2 = PullPlayerData(player2);
+async function AddFavoriteFriend(player1, player2, both) {
+     var data1 = await PullPlayerData(player1);
+     var data2 = await PullPlayerData(player2);
 
      if(!data1.private.favoriteFriends.includes(player2)) 
      {
           data1.private.favoriteFriends.push(player2);
-          PushPlayerData(player1, data1);
+          await PushPlayerData(player1, data1);
      }
      if(!data2.private.favoriteFriends.includes(player1) && both) {
           data2.private.favoriteFriends.push(player1);
-          PushPlayerData(player2, data2);
+          await PushPlayerData(player2, data2);
      }
 }
 
-function ClearPlayerNotification(id, IndexOrData) {
-     var data = PullPlayerData(id);
+async function ClearPlayerNotification(id, IndexOrData) {
+     var data = await PullPlayerData(id);
 
 
      var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
@@ -203,30 +197,20 @@ function ClearPlayerNotification(id, IndexOrData) {
           }
      }
 
-     PushPlayerData(id, data);
+     await PushPlayerData(id, data);
 }
 
-function getUserID(username) {
-     const files = fs.readdirSync('./data/accounts/');
-
-     var id = null;
-     for (let index = 0; index < files.length; index++) {
-          const element = files[index];
-          
-          const data = JSON.parse(fs.readFileSync(`./data/accounts/${element}`, 'utf8'));
-
-          const username2 = data.auth.username.toLowerCase();
-          if(username2 == username.toLowerCase()) {
-               id = element.split(".")[0];
-               break; 
-          }
-     }
-     return id;
+async function getUserID(username) {
+     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     const account = await db.collection('accounts').findOne({username: {$eq: username, $exists: true}});
+     if(account == null) return null;
+     else return account._id;
 }
 
-function getAccountCount() {
-     const files = fs.readdirSync('./data/accounts/');
-     return files.length - 1;
+async function getAccountCount() {
+     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     const count = await db.collection('accounts').countDocuments();
+     return count - 1;
 }
 
 
@@ -254,9 +238,9 @@ function MergeArraysWithoutDuplication(array1, array2) {
      return array1.concat(array2.filter((item) => array1.indexOf(item) < 0));
 }
 
-function onPlayerReportedCallback(reportData) {
-     var reportedData = PullPlayerData(reportData.reportedUser);
-     var reportingData = PullPlayerData(reportData.reportingUser);
+async function onPlayerReportedCallback(reportData) {
+     var reportedData = await PullPlayerData(reportData.reportedUser);
+     var reportingData = await PullPlayerData(reportData.reportingUser);
 
      if(
           reportingData.private.availableTags.includes("Community Support") ||
@@ -265,25 +249,25 @@ function onPlayerReportedCallback(reportData) {
           reportingData.private.availableTags.includes("Moderator") ||
           reportingData.private.availableTags.includes("Founder")
      ) {
-          BanPlayer(reportData.reportedUser, reportData.reason, 1, reportData.reportingUser);
+          await BanPlayer(reportData.reportedUser, reportData.reason, 1, reportData.reportingUser);
           auditLog(`!! MODERATOR ACTION !!   Moderator ${reportingData.nickname} (@${reportingData.username}) reported user ${reportedData.nickname} (@${reportedData.username}) for the reason of ${reportData.reason}, resulting in them being automatically timed out for 1 hour.`);
           
           var index = reportingData.auth.reportedUsers.findIndex(item => item == reportData.reportedUser);
           if(index >= 0) {
                reportingData.auth.reportedUsers.splice(index);
-               PushPlayerData(reportData.reportingUser, reportingData);
+               await PushPlayerData(reportData.reportingUser, reportingData);
           }
      } else if (reportedData.auth.recievedReports.length >= config.timeout_at_report_count) {
-          BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.timeout_at_report_count} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
+          await BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.timeout_at_report_count} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
           auditLog(`!! MODERATION ACTION !! User ${reportingData.nickname} (@${reportedData.username}) was timed out for 6 hours for recieving ${config.timeout_at_report_count} reports. Please investigate!`);
      }
 }
 
-function BanPlayer(id, reason, duration, moderator) {
-     let id_clean = sanitize(id.toString());
-     let data = PullPlayerData(id_clean);
+async function BanPlayer(id, reason, duration, moderator) {
+     let id_clean = sanitize(`${id}`);
+     let data = await PullPlayerData(id_clean);
 
-     const endTS = Date.now() + (duration * 1000 * 60) //convert duration from hours to a unix timestamp
+     const endTS = Date.now() + (duration * 60) //convert duration from hours to a unix timestamp
      
      const ban = {
           reason: reason,
@@ -293,5 +277,5 @@ function BanPlayer(id, reason, duration, moderator) {
 
      data.auth.bans.push(ban);
      require('./index').sendStringToClient(id_clean, "BANNED");
-     PushPlayerData(id_clean, data);
+     await PushPlayerData(id_clean, data);
 }

@@ -7,7 +7,7 @@ const middleware = require('../middleware');
 router.get("/get/", middleware.authenticateToken, async (req, res) => {
      const id = req.user.id;
 
-     const data = helpers.PullPlayerData(id);
+     const data = await helpers.PullPlayerData(id);
 
      if(data.notifications == null) return res.status(200).send("[]");
 

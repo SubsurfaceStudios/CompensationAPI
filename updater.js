@@ -12,40 +12,45 @@ var template;
 var depth = 0;
 
 const answers = [
-     "1",
+     "2",
      "3",
      "4",
      "5",
-     "6"
+     "6",
+     "q"
 ]
 
 function main() {
-     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. Legacy Updater\n2. Current Updater (UNAVAILABLE)\n3. Account Migration\n4. Room Updater - Global\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n\n", async (res) => {
-          if(!answers.includes(res)) {
-               rl.write("Invalid or unavailable option.\n");
-               main();
-          }
-
-          switch(res) {
-               case "1":
-                    legacy_updater();
-                    return;
-               case "3":
-                    MigrateAllAccounts();
-                    return;
-               case "4":
-                    room_updater(null);
-                    return;
-               case "5":
-                    rl.question("Enter the ID of the room you want to update.\n\n", async (res) => {
-                         room_updater(res);
-                    });
-                    return;
-               case "6":
-                    migrateItems();
-                    return
-          }
-     });
+     let exit = true;
+     while(exit) {
+          rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n\nQ to quit.\n\n", async (res) => {
+               if(!answers.includes(res)) {
+                    rl.write("Invalid or unavailable option.\n");
+               } else 
+                    switch(res.toLowerCase()) {
+                         case "2": 
+                              currentAccountUpdater().then(() => console.log("DONE"), r => console.log(r));
+                              break;
+                         case "3":
+                              MigrateAllAccounts();
+                              break;
+                         case "4":
+                              room_updater(null);
+                              break;
+                         case "5":
+                              rl.question("Enter the ID of the room you want to update.\n\n", async (res) => {
+                                   room_updater(res);
+                              });
+                              break;
+                         case "6":
+                              migrateItems();
+                              break;
+                         case "q":
+                              exit = false;
+                              break;
+                    }
+          });
+     }
 }
 
 function MigrateAllAccounts() {
@@ -81,12 +86,7 @@ function MigrateAllAccounts() {
 
                rl.write("Read and prepared account " + item._id + "\n\n");
 
-
-               if(await accounts_collection.findOne({_id: {$eq: item._id, $exists: true}}) == null) {
-                    await accounts_collection.insertOne(item);
-               } else {
-                    await accounts_collection.replaceOne({_id: {$eq: item._id}}, item);
-               }
+               await accounts_collection.replaceOne({_id: {$eq: item._id}}, item, {upsert: true});
 
                rl.write("Successfully pushed account " + item._id + "\n\n");
           }
@@ -97,69 +97,117 @@ function MigrateAllAccounts() {
      return;
 }
 
-function legacy_updater() {
-     rl.write("Connecting to MDB.\n");
-
-
+async function currentAccountUpdater() {
      const { MongoClient } = require('mongodb');
      
-     const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+     const uri = `mongodb+srv://CVRAPI%2DDIRECT:${
+          process.env.MONGOOSE_ACCOUNT_PASSWORD
+     }@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
      const client = new MongoClient(uri, {
           useNewUrlParser: true,
           useUnifiedTopology: true
      });
 
      client.connect(async (error, client) => {
-          if(error) {
-               console.log("Failed to connect to MongoDB.");
-               console.error(error);
-               process.exit(1);
-          }
+          if(error) return rl.write("Failed to connct to Mongo DB");
 
           const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+          var accounts = await db.collection("accounts").find({_id: {$ne: "ACCT_TEMPLATE"}}).toArray();
+          template = await db.collection('accounts').findOne({_id: "ACCT_TEMPLATE"});
           const servers = db.collection("servers");
 
           var server = await servers.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
-
           if(server == null) return rl.write("Failed to read official server.");
 
-          rl.question("Please enter the directory you want to read data from.\n", async (response) => {
-               var files = fs.readdirSync(response);
-               
-               rl.question("Please enter the name of the template file. Name is in the read directory.\n\n", async (response_2) => {
-                    files = files.filter(item => item != 'ACCT_TEMPLATE.json');
           
-                    template = fs.readFileSync(`${response}/${response_2}`);
-               
-                    template = JSON.parse(template);
-               
-                    for (let index = 0; index < files.length; index++) {
-                         const element = files[index];
-                         
-                         var file = fs.readFileSync(`${response}/${element}`);
-                         file = JSON.parse(file);
-               
-                         file = recursiveCheck(file, template);
+          for(let i = 0; i < accounts.length; i++) {
+               var element = accounts[i];
 
-                         if(!file.private.messaging_servers.includes("a8ec2c20-a4c7-11ec-896d-419328454766"))
-                              file.private.messaging_servers.push("a8ec2c20-a4c7-11ec-896d-419328454766");
-               
-                         file = JSON.stringify(file, null, 4);
-               
-                         fs.writeFileSync(`${response}/${element}`, file);
+               element = recursiveCheck(element, template);
 
-                         if(!Object.keys(server.users).includes(element.split(".")[0])) {
-                              server.users[element.split(".")[0]] = {};
-                         }
-                    }
+               accounts[i] = element;
 
-                    console.log(await servers.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
+               if(!element.private.messaging_servers.includes("a8ec2c20-a4c7-11ec-896d-419328454766"))
+                    element.private.messaging_servers.push("a8ec2c20-a4c7-11ec-896d-419328454766");
+
+               db.collection('accounts').replaceOne({_id: {$eq: element._id}}, element, {upsert: true});
                
-                    process.exit(0);
-               });
-          });
+               if(!Object.keys(server.users).includes(element._id)) {
+                    server.users[element._id] = {};
+               }
+          }
+
+          console.log(await servers.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
      });
 }
+
+// #region DEPRECATED OLD ACCOUNT UPDATER (LEGACY)
+
+// function legacy_updater() {
+//      rl.write("Connecting to MDB.\n");
+
+
+//      const { MongoClient } = require('mongodb');
+     
+//      const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+//      const client = new MongoClient(uri, {
+//           useNewUrlParser: true,
+//           useUnifiedTopology: true
+//      });
+
+//      client.connect(async (error, client) => {
+//           if(error) {
+//                console.log("Failed to connect to MongoDB.");
+//                console.error(error);
+//                process.exit(1);
+//           }
+
+//           const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+//           const servers = db.collection("servers");
+
+//           var server = await servers.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
+
+//           if(server == null) return rl.write("Failed to read official server.");
+
+//           rl.question("Please enter the directory you want to read data from.\n", async (response) => {
+//                var files = fs.readdirSync(response);
+               
+//                rl.question("Please enter the name of the template file. Name is in the read directory.\n\n", async (response_2) => {
+//                     files = files.filter(item => item != 'ACCT_TEMPLATE.json');
+          
+//                     template = fs.readFileSync(`${response}/${response_2}`);
+               
+//                     template = JSON.parse(template);
+               
+//                     for (let index = 0; index < files.length; index++) {
+//                          const element = files[index];
+                         
+//                          var file = fs.readFileSync(`${response}/${element}`);
+//                          file = JSON.parse(file);
+               
+//                          file = recursiveCheck(file, template);
+
+//                          if(!file.private.messaging_servers.includes("a8ec2c20-a4c7-11ec-896d-419328454766"))
+//                               file.private.messaging_servers.push("a8ec2c20-a4c7-11ec-896d-419328454766");
+               
+//                          file = JSON.stringify(file, null, 4);
+               
+//                          fs.writeFileSync(`${response}/${element}`, file);
+
+//                          if(!Object.keys(server.users).includes(element.split(".")[0])) {
+//                               server.users[element.split(".")[0]] = {};
+//                          }
+//                     }
+
+//                     console.log(await servers.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
+               
+//                     process.exit(0);
+//                });
+//           });
+//      });
+// }
+
+// #endregion
 
 function recursiveCheck(object, _template) {
      depth++;
@@ -181,7 +229,7 @@ function recursiveCheck(object, _template) {
           var templateKeys = Object.keys(_template);
 
           //If the object is empty, return without mutating.
-          if(templateKeys == null || typeof(templateKeys) == 'undefined' || templateKeys.length < 1) {
+          if(templateKeys == null || typeof(templateKeys) == 'undefined' || templateKeys?.length < 1) {
                console.log("Template for object is empty, returning without mutation.");
                depth--;
                console.log('\x1b[36m%s\x1b[0m', `Returning to layer of depth ${depth}.`);

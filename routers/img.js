@@ -67,7 +67,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
           if(typeof tags !== 'string') tags = '[ "photo" ]';
 
           var timestamp = Date.now();
-          var TakenByData = helpers.PullPlayerData(req.user.id);
+          var TakenByData = await helpers.PullPlayerData(req.user.id);
 
           const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
           var collection = db.collection("configuration");

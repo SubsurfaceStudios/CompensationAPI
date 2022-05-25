@@ -202,9 +202,12 @@ async function ClearPlayerNotification(id, IndexOrData) {
 
 async function getUserID(username) {
      const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
-     const account = await db.collection('accounts').findOne({"public.username": {$eq: username, $exists: true}});
-     if(account == null) return null;
-     else return account._id;
+     const all = await db.collection('accounts').find({}).toArray();
+     username = username.toLowerCase();
+     for(const item of all) {
+          if(item.public.username.toLowerCase() == username.toLowerCase()) return item._id;
+     }
+     return null;
 }
 
 async function getAccountCount() {

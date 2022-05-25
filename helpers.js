@@ -202,7 +202,7 @@ async function ClearPlayerNotification(id, IndexOrData) {
 
 async function getUserID(username) {
      const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
-     const account = await db.collection('accounts').findOne({username: {$eq: username, $exists: true}});
+     const account = await db.collection('accounts').findOne({"public.username": {$eq: username, $exists: true}});
      if(account == null) return null;
      else return account._id;
 }

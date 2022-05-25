@@ -269,8 +269,9 @@ router.post("/create", accountCreationLimit, async (req, res) => {
 
      data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
      data.auth.salt = salt;
+     data._id = id;
 
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "    "));
+     helpers.PushPlayerData(id, data);
      res.sendStatus(200);
 
      const client = require('../index').mongoClient;

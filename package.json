@@ -1,16 +1,18 @@
 {
-  "name": "website",
-  "version": "1.0.0",
-  "description": "",
+  "name": "compensation-api",
+  "version": "1.1.0",
+  "description": "The Compensation VR API.",
   "main": "index.js",
   "scripts": {
     "lint": "eslint ./",
     "start": "forever index.js",
-    "updater": "node updater.js"
+    "admin": "node administrator_dashboard.js",
+    "pull": "git pull && npm install",
+    "test": "node ."
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "SubsurfaceStudios",
+  "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.0.1",
     "dotenv": "^16.0.0",

@@ -21,39 +21,42 @@ const answers = [
 ]
 
 function main() {
-     let exit = true;
-     while(exit) {
-          rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n\nQ to quit.\n\n", async (res) => {
-               if(!answers.includes(res)) {
-                    rl.write("Invalid or unavailable option.\n");
-               } else 
-                    switch(res.toLowerCase()) {
-                         case "2": 
-                              currentAccountUpdater().then(() => console.log("DONE"), r => console.log(r));
-                              break;
-                         case "3":
-                              MigrateAllAccounts();
-                              break;
-                         case "4":
-                              room_updater(null);
-                              break;
-                         case "5":
-                              rl.question("Enter the ID of the room you want to update.\n\n", async (res) => {
-                                   room_updater(res);
-                              });
-                              break;
-                         case "6":
-                              migrateItems();
-                              break;
-                         case "q":
-                              exit = false;
-                              break;
-                    }
-          });
-     }
+     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n\nQ to quit.\n\n", async (res) => {
+          if(!answers.includes(res)) {
+               rl.write("Invalid or unavailable option.\n");
+          } else {
+               switch(res.toLowerCase()) {
+                    case "2": 
+                         currentAccountUpdater().then(() => console.log("DONE"), r => console.log(r));
+                         break;
+                    case "3":
+                         MigrateAllAccounts();
+                         break;
+                    case "4":
+                         room_updater(null);
+                         break;
+                    case "5":
+                         rl.question("Enter the ID of the room you want to update.\n\n", async (res) => {
+                              room_updater(res);
+                         });
+                         break;
+                    case "6":
+                         migrateItems();
+                         break;
+                    case "q":
+                         process.exit(0);
+               }
+          }
+     });
 }
 
 function MigrateAllAccounts() {
+     if(!fs.existsSync("./data/accounts")) {
+          console.log("No local account data to migrate - you are all clean!");
+          main();
+          return;
+     }
+
      const { MongoClient } = require('mongodb');
      
      const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -92,9 +95,13 @@ function MigrateAllAccounts() {
           }
 
           rl.write("Pushed all accounts to database successfully.\n");
-          return;
+          rl.write("Deleting local account data.\n");
+
+          fs.rmSync('./data/accounts/', { recursive: true });
+
+          rl.write("Done!");
+          main();
      });
-     return;
 }
 
 async function currentAccountUpdater() {
@@ -138,6 +145,7 @@ async function currentAccountUpdater() {
           }
 
           console.log(await servers.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
+          main();
      });
 }
 
@@ -275,6 +283,7 @@ function room_updater(id) {
                console.log("Failed to connect to MongoDB.");
                console.error(error);
                process.exit(1);
+               return;
           }
           
           const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
@@ -306,6 +315,8 @@ function room_updater(id) {
           for(let index = 0; index < rooms_array.length; index++) {
                console.log(await rooms.updateOne({_id: {$eq: rooms_array[index]._id, $exists: true}}, {$set: rooms_array[index]}, {upsert: true}));
           }
+
+          main();
      });
 }
 
@@ -356,6 +367,12 @@ async function updateRoom(room) {
 }
 
 function migrateItems() {
+     if(!fs.existsSync("./data/econ/")) {
+          console.log("No economy data - you are all clean!");
+          main();
+          return;
+     }
+
      console.log("Connecting to MDB...\n");
      const { MongoClient } = require('mongodb');
      
@@ -383,6 +400,12 @@ function migrateItems() {
 
           console.log(await items.insertMany(insert));
           console.log("Migration complete.");
+
+          console.log("Cleaning up old data...");
+          fs.rmSync("./data/econ", {recursive: true});
+          console.log("Old data deleted.");
+
+          main();
      });
 }
 

@@ -17,11 +17,12 @@ const answers = [
      "4",
      "5",
      "6",
+     "ban",
      "q"
 ]
 
 function main() {
-     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n\nQ to quit.\n\n", async (res) => {
+     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\nBan : Ban a player using their id and a duration.\n\n\nQ to quit.\n\n", async (res) => {
           if(!answers.includes(res)) {
                rl.write("Invalid or unavailable option.\n");
           } else {
@@ -42,6 +43,15 @@ function main() {
                          break;
                     case "6":
                          migrateItems();
+                         break;
+                    case "ban":
+                         rl.question("Enter the ID of the player you want to ban.\n\n", async (id) => {
+                              rl.question("Enter the duration of the ban in days.\n\n", async (duration) => {
+                                   rl.question("Enter the reason for the ban.\n\n", async (reason) => {
+                                        await BanPlayer(id, reason, duration);
+                                   });
+                              });
+                         });
                          break;
                     case "q":
                          process.exit(0);
@@ -407,6 +417,46 @@ function migrateItems() {
 
           main();
      });
+}
+
+async function BanPlayer(id, reason, duration) {
+
+     const { MongoClient } = require('mongodb');
+
+     const uri = `mongodb+srv://CVRAPI%2DDIRECT:${
+          process.env.MONGOOSE_ACCOUNT_PASSWORD
+     }@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+
+     const client = new MongoClient(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+     });
+
+     client.connect(async (error, client) => {
+          if(error) return console.error(error);
+
+          const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+          const data = await db.collection("accounts").findOne({_id: {$eq: id, $exists: true}});
+          if(data == null) {
+               console.log("FAILED - Account does not exist.");
+               main();
+               return;
+          }
+
+          const endTS = Date.now() + (duration * 60 * 24) //convert duration from days to a unix timestamp
+          
+          const ban = {
+               reason: reason,
+               endTS: endTS
+          };
+     
+          data.auth.bans.push(ban);
+
+          await db.collection('accounts').replaceOne({_id: {$eq: id, $exists: true}}, data, {upsert: true});
+
+          main();
+     });
+
 }
 
 main();

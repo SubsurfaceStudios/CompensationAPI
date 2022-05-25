@@ -67,7 +67,7 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
 	item_id = sanitize(item_id);
 	target = sanitize(target);
 
-	var data = helpers.PullPlayerData(target);
+	var data = await helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That player does not exist!");
 	
 	var item = await PullItem(item_id);
@@ -127,7 +127,7 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
 	var count = await GetPlayerItemCount(item_id);
 	if(count < 1) return res.status(400).send("You do not own that item!");
 
-	var data = helpers.PullPlayerData(target);
+	var data = await helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That user does not exist!");
 
 
@@ -149,7 +149,7 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 
 	target = sanitize(target);
 
-	var data = helpers.PullPlayerData(target);
+	var data = await helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That user does not exist!");
 
 	var balance = await GetPlayerCurrency(req.user.id);
@@ -181,7 +181,7 @@ router.get("/item/all", async (req, res) => {
 });
 
 router.get("/inventory", middleware.authenticateToken, async (req, res) => {
-	var data = helpers.PullPlayerData(req.user.id);
+	var data = await helpers.PullPlayerData(req.user.id);
 	return res.status(200).json(data.econ.inventory);
 });
 
@@ -203,9 +203,9 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
 	if(count < 1) return res.status(400).send("You do not own that item!");
 
 	try {
-		var playerData = helpers.PullPlayerData(req.user.id);
+		var playerData = await helpers.PullPlayerData(req.user.id);
 		playerData.public.outfit[itemData.use_slot] = item_id;
-		helpers.PushPlayerData(req.user.id, playerData);
+		await helpers.PushPlayerData(req.user.id, playerData);
 
 		return res.sendStatus(200);
 	} catch {
@@ -236,32 +236,32 @@ async function GrantPlayerItem(id, item_id) {
 	id = sanitize(id);
 	item_id = sanitize(item_id);
 
-	var data = helpers.PullPlayerData(id);
+	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
 	if(typeof data.econ.inventory[item_id] == 'undefined') data.econ.inventory[item_id] = 1;
 	else data.econ.inventory[item_id] += 1;
 
-	helpers.PushPlayerData(id, data);
+	await helpers.PushPlayerData(id, data);
 }
 
 async function ModifyPlayerCurrency(id, amount) {
 	id = sanitize(id);
 
-	var data = helpers.PullPlayerData(id);
+	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
 	data.econ.currency += amount;
 
 	if(data.econ.currency < 0) data.econ.currency = 0;
 
-	helpers.PushPlayerData(id, data);
+	await helpers.PushPlayerData(id, data);
 }
 
 async function GetPlayerItemCount(id, item_id) {
 	id = sanitize(id);
 
-	var data = helpers.PullPlayerData(id);
+	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
 	if(typeof data.econ.inventory[item_id] == 'undefined') return 0;
@@ -271,7 +271,7 @@ async function GetPlayerItemCount(id, item_id) {
 async function SubtractPlayerItem(id, item_id) {
 	id = sanitize(id);
 
-	var data = helpers.PullPlayerData(id);
+	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
 	if(typeof data.econ.inventory[item_id] != 'number') data.econ.inventory[item_id] = 0;
@@ -279,13 +279,13 @@ async function SubtractPlayerItem(id, item_id) {
 	if(data.econ.inventory[item_id] >= 1) data.econ.inventory[item_id]--;
 	else data.econ.inventory[item_id] = 0;
 
-	helpers.PushPlayerData(id, data);
+	await helpers.PushPlayerData(id, data);
 }
 
 async function GetPlayerCurrency(id) {
 	id = sanitize(id);
 
-	var data = helpers.PullPlayerData(id);
+	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 	else return data.econ.currency;
 }

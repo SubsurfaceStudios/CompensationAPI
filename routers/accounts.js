@@ -31,12 +31,11 @@ router.get("/:id/private", middleware.authenticateToken, async (req, res) => {
 
      if(req.user.id !== id) return res.status(403).send("Token user does not have access to the specified user's private data!");
 
-     if (fs.existsSync(`data/accounts/${id_clean}.json`)) {
-          const data = await helpers.PullPlayerData(id_clean);
-          return res.status(200).send(data.private);
-     } else {
+     const data = await helpers.PullPlayerData(id_clean);
+     if(data == null)
           return res.status(404).send(`Account with ID of ${id} not found. Please check your request for typos.`);
-     }
+
+     return res.status(200).send(data.private);
 });
 
 //Call to get the first account with the specified username in the database, and return its ID.

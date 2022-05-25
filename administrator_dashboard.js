@@ -17,12 +17,13 @@ const answers = [
      "4",
      "5",
      "6",
+     "7",
      "ban",
      "q"
 ]
 
 function main() {
-     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\nBan : Ban a player using their id and a duration.\n\n\nQ to quit.\n\n", async (res) => {
+     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n7. Purge audit logs.\nBan : Ban a player using their id and a duration.\n\n\nQ to quit.\n\n", async (res) => {
           if(!answers.includes(res)) {
                rl.write("Invalid or unavailable option.\n");
           } else {
@@ -43,6 +44,10 @@ function main() {
                          break;
                     case "6":
                          migrateItems();
+                         break;
+                    case "7":
+                         fs.writeFileSync('./data/audit.json', "[]");
+                         main();
                          break;
                     case "ban":
                          rl.question("Enter the ID of the player you want to ban.\n\n", async (id) => {

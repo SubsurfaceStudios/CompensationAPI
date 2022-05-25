@@ -8,7 +8,7 @@ module.exports = {
      authenticateToken_optional: authenticateToken_optional
 };
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
      const authHeader = req.headers['authorization'];
      const token = authHeader && authHeader.split(" ")[1];
 
@@ -20,7 +20,7 @@ function authenticateToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = helpers.PullPlayerData(tokenData.id);
+          const data = await helpers.PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
                const element = data.auth.bans[index];
@@ -46,7 +46,7 @@ async function authenticateToken_optional(req, res, next) {
      return authenticateToken(req, res, next);
 }
 
-function authenticateDeveloperToken(req, res, next) {
+async function authenticateDeveloperToken(req, res, next) {
      const authHeader = req.headers['authorization'];
      const token = authHeader && authHeader.split(" ")[1];
 
@@ -58,7 +58,7 @@ function authenticateDeveloperToken(req, res, next) {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
           req.user = tokenData;
 
-          const data = helpers.PullPlayerData(tokenData.id);
+          const data = await helpers.PullPlayerData(tokenData.id);
 
           for (let index = 0; index < data.auth.bans.length; index++) {
                const element = data.auth.bans[index];
@@ -81,7 +81,7 @@ function authenticateDeveloperToken(req, res, next) {
      }
 }
 
-function authenticateToken_internal(token) {
+async function authenticateToken_internal(token) {
      if(typeof token !== 'string') return {success: false, tokenData: null, playerData: null, reason: "no_token"};
 
      //then we need to authenticate that token in this middleware and return a user
@@ -89,7 +89,7 @@ function authenticateToken_internal(token) {
      {
           const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-          const playerData = helpers.PullPlayerData(tokenData.id);
+          const playerData = await helpers.PullPlayerData(tokenData.id);
           if(playerData == null) return {success: false, tokenData: tokenData, playerData: null, reason: "player_not_found"};
 
           for (let index = 0; index < playerData.auth.bans.length; index++) {

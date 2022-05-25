@@ -2,13 +2,6 @@ node_modules
 .env
 config.json
 src
-data/audit.json
-data/cache
-data/catalog
-data/config
-data/global
-data/images
-data/rooms
-data/videos
 env.js
 nginx.conf
+data

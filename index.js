@@ -109,7 +109,7 @@ wss_v1.on('connection', async (ws) => {
                try {
                     tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-                    const playerData = helpers.PullPlayerData(tokenData.id);
+                    const playerData = await helpers.PullPlayerData(tokenData.id);
 
                     for (let index = 0; index < playerData.auth.bans.length; index++) {
                          const element = playerData.auth.bans[index];
@@ -143,14 +143,14 @@ wss_v1.on('connection', async (ws) => {
                };
                console.log(`User ${tokenData.id} has authenticated and is now connected.`);
 
-               var presenceData = helpers.PullPlayerData(tokenData.id);
+               var presenceData = await helpers.PullPlayerData(tokenData.id);
                presenceData.presence.status = "online";
                if(presenceData.econ.previous_daily_redeemed < (Date.now() - 86400000)) {
                     // Daily login rewards.
                     presenceData.econ.currency += 100;
                     presenceData.econ.previous_daily_redeemed = Date.now();
                }
-               helpers.PushPlayerData(tokenData.id, presenceData);
+               await helpers.PushPlayerData(tokenData.id, presenceData);
                ws.send("AUTHORIZED");
 
           } else if (typeof tokenData !== 'undefined') {
@@ -182,9 +182,9 @@ wss_v1.on('connection', async (ws) => {
 
      ws.on('close', async () => {
           if(!ignore_connection_closed && typeof tokenData !== 'undefined') {
-               var player_data = helpers.PullPlayerData(tokenData.id);
+               var player_data = await helpers.PullPlayerData(tokenData.id);
                player_data.presence.status = "offline";
-               helpers.PushPlayerData(tokenData.id, player_data);
+               await helpers.PushPlayerData(tokenData.id, player_data);
                delete ws_connected_clients[tokenData.id];
                console.log(`User ${tokenData.id} disconnected.`);
           } else if (typeof tokenData !== 'undefined') {
@@ -246,7 +246,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                          return Socket.close(4003, JSON.stringify(send, null, 5));
                     }
 
-                    var {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
+                    var {success, tokenData, playerData, reason} = await middleware.authenticateToken_internal(ParsedContent.data.token);
 
                     
                     if(!success) {
@@ -539,7 +539,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
                          return stream.close(4003, JSON.stringify(send, null, 5));
                     }
 
-                    var {success, tokenData, playerData, reason} = middleware.authenticateToken_internal(ParsedContent.data.token);
+                    var {success, tokenData, playerData, reason} = await middleware.authenticateToken_internal(ParsedContent.data.token);
                     
                     if(!success) {
                          // eslint-disable-next-line no-redeclare

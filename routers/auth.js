@@ -2,8 +2,7 @@ require('dotenv').config();
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const fs = require('fs');
-const BadWordList = JSON.parse(fs.readFileSync('./data/external/badwords-master/array.json'));
+const BadWordList = require('../data/badwords/array');
 const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -26,7 +25,7 @@ const accountCreationLimit = rateLimit({
 
 router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
      try {
-          const data = helpers.PullPlayerData(req.user.id);
+          const data = await helpers.PullPlayerData(req.user.id);
           if(data.auth.mfa_enabled || data.auth.mfa_enabled == "unverified") return res.status(400).send("Two factor authentication is already enabled on this account!");
 
           client.verify.services(process.env.TWILIO_SERVICE_SID)
@@ -36,11 +35,11 @@ router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
                          friendlyName: `${data.public.username}`,
                          factorType: 'totp'
                     })
-                    .then(new_factor => {
+                    .then(async new_factor => {
                          res.status(200).send(new_factor.binding);
                          data.auth.mfa_enabled = "unverified";
                          data.auth.mfa_factor_sid = new_factor.sid;
-                         helpers.PushPlayerData(req.user.id, data);
+                         await helpers.PushPlayerData(req.user.id, data);
                     });
      }
      catch (ex) {
@@ -53,14 +52,14 @@ router.post('/verify-2fa', middleware.authenticateToken, async (req, res) => {
      var {code} = req.body;
      if(typeof code !== 'string') return res.status(400).send("Your 2FA code is undefined or is not a string. Check your Content-Type header and request body.");
 
-     var _data = PullPlayerData(req.user.id);
+     var _data = await PullPlayerData(req.user.id);
      if(_data.auth.mfa_enabled !== 'unverified') return res.status(400).send("Your account is not currently awaiting verification.");
 
-     Verify2faUser(req.user.id, code, success => {
+     Verify2faUser(req.user.id, code, async success => {
           if(success) {
-               var data = helpers.PullPlayerData(req.user.id);
+               var data = await helpers.PullPlayerData(req.user.id);
                data.auth.mfa_enabled = true;
-               helpers.PushPlayerData(req.user.id, data);
+               await helpers.PushPlayerData(req.user.id, data);
 
                return res.sendStatus(200);
           }
@@ -69,29 +68,29 @@ router.post('/verify-2fa', middleware.authenticateToken, async (req, res) => {
 });
 
 router.post('/remove-2fa', middleware.authenticateToken, async (req, res) => {
-     var data = PullPlayerData(req.user.id);
+     var data = await PullPlayerData(req.user.id);
 
      if(!data.auth.mfa_enabled) return res.status(400).send("Your account does not have 2FA enabled or pending.");
 
      data.auth.mfa_enabled = false;
      data.auth.mfa_factor_sid = "undefined";
 
-     helpers.PushPlayerData(req.user.id, data);
+     await helpers.PushPlayerData(req.user.id, data);
      res.sendStatus(200);
 });
 
 //Call to get a token from user account credentials.
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
      //so first things first we need to check the username and password
      //and if those are correct we generate a token
 
      const { username, password, two_factor_code, hwid} = req.body;
 
-     const userID = helpers.getUserID(username);
+     const userID = await helpers.getUserID(username);
      if(userID == null) return res.status(404).send({message: "User not found!", failureCode: "5"});
 
      //now we read the correct user file for the authorization data
-     const data = helpers.PullPlayerData(userID);
+     const data = await helpers.PullPlayerData(userID);
 
 
      const { HASHED_PASSWORD, salt } = data.auth;
@@ -109,7 +108,7 @@ router.post("/login", (req, res) => {
           };
           if(data.auth.logins.length < config.max_logged_logins) {
                data.auth.logins.push(attempt);
-               helpers.PushPlayerData(userID, data);
+               await helpers.PushPlayerData(userID, data);
           }
           return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
      }
@@ -128,7 +127,7 @@ router.post("/login", (req, res) => {
                };
                if(data.auth.logins.length < config.max_logged_logins) {
                     data.auth.logins.push(attempt);
-                    helpers.PushPlayerData(userID, data);
+                    await helpers.PushPlayerData(userID, data);
                }
                return res.status(403).send({
                     message: "USER IS BANNED", 
@@ -161,7 +160,7 @@ router.post("/login", (req, res) => {
           };
           if(data.auth.logins.length < config.max_logged_logins) {
                data.auth.logins.push(attempt);
-               helpers.PushPlayerData(userID, data);
+               await helpers.PushPlayerData(userID, data);
           }
           if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken});
           else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
@@ -178,7 +177,7 @@ router.post("/login", (req, res) => {
           };
           if(data.auth.logins.length < config.max_logged_logins) {
                data.auth.logins.push(attempt);
-               helpers.PushPlayerData(userID, data);
+               await helpers.PushPlayerData(userID, data);
           }
           if(typeof hwid !== 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
@@ -195,7 +194,7 @@ router.post("/login", (req, res) => {
           return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
      }
 
-     Verify2faCode(userID, two_factor_code, status => {
+     Verify2faCode(userID, two_factor_code, async status => {
           switch(status) {
                case 'approved':
                     if(typeof hwid !== 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
@@ -205,7 +204,7 @@ router.post("/login", (req, res) => {
                          timestamp: Date.now()
                     }
                     data.auth.multi_factor_authenticated_logins.push(login);
-                    helpers.PushPlayerData(userID, data);
+                    await helpers.PushPlayerData(userID, data);
                     return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
                case 'denied':
                     return res.status(401).send({message: "2FA Denied.", failureCode: "2"});
@@ -218,7 +217,7 @@ router.post("/login", (req, res) => {
 });
 
 router.post("/refresh", middleware.authenticateToken, async (req, res) => {
-     const data = helpers.PullPlayerData(req.user.id);
+     const data = await helpers.PullPlayerData(req.user.id);
 
      for (let index = 0; index < data.auth.bans.length; index++) {
           const element = data.auth.bans[index];
@@ -242,16 +241,16 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 //Call to create an account from a set of credentials.
 router.post("/create", accountCreationLimit, async (req, res) => {
      var { username, nickname, password } = req.body;
-     const id = helpers.getAccountCount() + 1;
+     const id = await helpers.getAccountCount() + 1;
 
      if(username == null || password == null) return res.status(400).send("Username or password empty or null.")
      if(nickname == null) nickname = username;
 
-     const check = helpers.getUserID(username);
+     const check = await helpers.getUserID(username);
 
      if(check != null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
 
-     const data = helpers.PullPlayerData("ACCT_TEMPLATE");
+     const data = await helpers.PullPlayerData("ACCT_TEMPLATE");
 
      BadWordList.forEach(element => {
           if(username.toLowerCase().includes(element)) return res.status(400).send("Your username contains profanity or foul language. Change it to continue.");
@@ -269,8 +268,9 @@ router.post("/create", accountCreationLimit, async (req, res) => {
 
      data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
      data.auth.salt = salt;
+     data._id = id;
 
-     fs.writeFileSync(`./data/accounts/${id}.json`, JSON.stringify(data, null, "    "));
+     helpers.PushPlayerData(id, data);
      res.sendStatus(200);
 
      const client = require('../index').mongoClient;
@@ -292,13 +292,13 @@ router.post("/check", middleware.authenticateToken, async (req, res) => {
 });
 
 router.get("/mfa-enabled", middleware.authenticateToken, async (req, res) => {
-     const data = helpers.PullPlayerData(req.user.id);
+     const data = await helpers.PullPlayerData(req.user.id);
      return res.status(200).send(`${data.auth.mfa_enabled}`);
 });
 
-function Verify2faUser(user_id, code, callback) {
+async function Verify2faUser(user_id, code, callback) {
      user_id = sanitize(user_id);
-     var data = helpers.PullPlayerData(user_id);
+     var data = await helpers.PullPlayerData(user_id);
      client.verify.services(process.env.TWILIO_SERVICE_SID)
                .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
                .factors(data.auth.mfa_factor_sid)
@@ -308,9 +308,9 @@ function Verify2faUser(user_id, code, callback) {
                });
 }
 
-function Verify2faCode(user_id, code, callback) {
+async function Verify2faCode(user_id, code, callback) {
      user_id = sanitize(user_id);
-     var data = helpers.PullPlayerData(user_id);
+     var data = await helpers.PullPlayerData(user_id);
      client.verify.services(process.env.TWILIO_SERVICE_SID)
                .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
                .challenges

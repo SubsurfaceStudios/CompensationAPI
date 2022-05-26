@@ -146,7 +146,21 @@ router.post("/login", async (req, res) => {
 
      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
 
-     if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+     if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) {
+          const attempt = {
+               SUCCESS: true,
+               IP: req.ip,
+               TIME: Date.now(),
+               HWID: hwid,
+               TWO_FACTOR_CODE: two_factor_code
+          }
+          if(data.auth.logins.length < config.max_logged_logins) {
+               data.auth.logins.push(attempt);
+               await helpers.PushPlayerData(userID, data);
+          }
+
+          return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+     }
 
      if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled == 'unverified') {
           if(typeof data.auth.logins != 'object') data.auth.logins = [];

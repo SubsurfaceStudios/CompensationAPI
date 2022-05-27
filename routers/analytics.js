@@ -1,11 +1,12 @@
 const router = require('express').Router();
-const fs = require('fs');
 const { GetInstances } = require('./matchmaking');
 
 
 router.get("/account-count", async (req, res) => {
-     var files = fs.readdirSync("./data/accounts");
-     res.status(200).send(`${files.length - 1}`);
+     const {mongoClient} = require('../index');
+     const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+     const size = await db.countDocuments({});
+     res.status(200).send(`${size}`);
 });
 
 router.get("/online-count", async (req, res) => {

@@ -5,7 +5,7 @@ const { GetInstances } = require('./matchmaking');
 router.get("/account-count", async (req, res) => {
      const {mongoClient} = require('../index');
      const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
-     const size = await db.countDocuments({});
+     const size = await db.collection("accounts").countDocuments({});
      res.status(200).send(`${size}`);
 });
 

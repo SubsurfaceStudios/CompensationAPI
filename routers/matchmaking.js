@@ -237,7 +237,7 @@ async function SetInstance(RoomId, InstanceId, Instance) {
 async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
      if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
-     const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
+     const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, true, MaxPlayers);
      SubroomInstances[RoomId].push(room);
 
      console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);

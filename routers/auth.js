@@ -176,8 +176,8 @@ router.post("/login", async (req, res) => {
                data.auth.logins.push(attempt);
                await helpers.PushPlayerData(userID, data);
           }
-          if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken});
-          else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+          if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken, developer: true});
+          else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: false});
      }
 
      if(typeof two_factor_code !== 'string') {
@@ -203,7 +203,7 @@ router.post("/login", async (req, res) => {
           });
 
 
-          if(MatchingLogins.length > 0) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+          if(MatchingLogins.length > 0) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
 
           return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
      }
@@ -211,7 +211,7 @@ router.post("/login", async (req, res) => {
      Verify2faCode(userID, two_factor_code, async status => {
           switch(status) {
                case 'approved':
-                    if(typeof hwid !== 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+                    if(typeof hwid !== 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
                     var login = {
                          ips: req.ips,
                          hwid: hwid,
@@ -219,7 +219,7 @@ router.post("/login", async (req, res) => {
                     }
                     data.auth.multi_factor_authenticated_logins.push(login);
                     await helpers.PushPlayerData(userID, data);
-                    return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+                    return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
                case 'denied':
                     return res.status(401).send({message: "2FA Denied.", failureCode: "2"});
                case 'expired':

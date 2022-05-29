@@ -159,7 +159,7 @@ router.post("/login", async (req, res) => {
                await helpers.PushPlayerData(userID, data);
           }
 
-          return res.status(200).json({ userID: userID, username: username, accessToken: accessToken});
+          return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
      }
 
      if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled == 'unverified') {
@@ -176,8 +176,8 @@ router.post("/login", async (req, res) => {
                data.auth.logins.push(attempt);
                await helpers.PushPlayerData(userID, data);
           }
-          if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken, developer: true});
-          else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: false});
+          if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken, developer: developer});
+          else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
      }
 
      if(typeof two_factor_code !== 'string') {

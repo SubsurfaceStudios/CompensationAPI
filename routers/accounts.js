@@ -261,7 +261,7 @@ router.get("/search", async (req, res) => {
      return res.status(200).json(finalResults);
 });
 
-router.route("/:id/tags/tag").
+router.route("/:id/tags/:tag").
      put(middleware.authenticateDeveloperToken, async (req, res) => {
           try {
                const { id, tag} = req.params;

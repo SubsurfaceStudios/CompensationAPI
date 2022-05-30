@@ -164,14 +164,18 @@ router.post("/report", middleware.authenticateToken, async (req, res) => {
 
 //Ban a user's account
 router.post("/:id/ban", middleware.authenticateDeveloperToken, async (req, res) => {
-     const { id } = req.params;
-     const { reason, duration } = req.body;
-     const moderator = req.user;
-
-     await helpers.BanPlayer(id, reason, duration);
-
-     helpers.auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${moderator.username}.`, false)
-     res.status(200).send();
+     try {
+          const { id } = req.params;
+          const { reason, duration } = req.body;
+          
+          await helpers.BanPlayer(id, reason, duration, req.user.id);
+          
+          helpers.auditLog(`!DEVELOPER ACTION! User ${id} was banned for ${duration} hours by moderator ${req.user.username}.`, false)
+          res.sendStatus(200);
+     } catch (ex) {
+          res.sendStatus(500);
+          throw ex;
+     }
 });
 
 //Set a user's currency balance.

@@ -275,7 +275,7 @@ async function BanPlayer(id, reason, duration, moderator) {
      const ban = {
           reason: reason,
           endTS: endTS,
-          moderator: moderator.id
+          moderator: moderator
      };
 
      data.auth.bans.push(ban);

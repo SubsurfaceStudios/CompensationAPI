@@ -289,7 +289,7 @@ router.route("/:id/tags/:tag").
                if(account == null) return res.status(404).send({code: "user_not_found", message: "A user with that ID does not exist in our records."});
 
                if(account.private.availableTags.includes(tag)) {
-                    account.private.availableTags.splice(tag);
+                    account.private.availableTags.splice(account.private.availableTags.indexOf(tag));
                     await helpers.PushPlayerData(id, account);
                }
 

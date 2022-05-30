@@ -261,4 +261,44 @@ router.get("/search", async (req, res) => {
      return res.status(200).json(finalResults);
 });
 
+router.route("/:id/tags/tag").
+     put(middleware.authenticateDeveloperToken, async (req, res) => {
+          try {
+               const { id, tag} = req.params;
+
+               const account = await helpers.PullPlayerData(id);
+               if(account == null) return res.status(404).send({code: "user_not_found", message: "A user with that ID does not exist in our records."});
+
+               if(!account.private.availableTags.includes(tag)) {
+                    account.private.availableTags.push(tag);
+                    await helpers.PushPlayerData(id, account);
+               }
+
+               helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} added tag ${tag} to user ${id}.`, false);
+               res.sendStatus(200);
+          } catch (ex) {
+               res.sendStatus(500);
+               throw ex;
+          }
+     })
+     .delete(middleware.authenticateDeveloperToken, async (req, res) => {
+          try {
+               const { id, tag} = req.params;
+
+               const account = await helpers.PullPlayerData(id);
+               if(account == null) return res.status(404).send({code: "user_not_found", message: "A user with that ID does not exist in our records."});
+
+               if(account.private.availableTags.includes(tag)) {
+                    account.private.availableTags.splice(tag);
+                    await helpers.PushPlayerData(id, account);
+               }
+
+               helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} removed tag ${tag} from user ${id}.`, false);
+               res.sendStatus(200);
+          } catch (ex) {
+               res.sendStatus(500);
+               throw ex;
+          }
+     });
+
 module.exports = router;

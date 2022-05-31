@@ -8,6 +8,7 @@ const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
+const { getClients } = require('../index');
 
 router.use(express.urlencoded({extended: false}));
 
@@ -300,5 +301,48 @@ router.route("/:id/tags/:tag").
                throw ex;
           }
      });
+
+router.post('/invite', middleware.authenticateToken, async (req, res) => {
+     var { id, expiresAfter } = req.params;
+
+     if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+     if(typeof expiresAfter != 'string') expiresAfter = 300000;
+     else {
+          expiresAfter = parseInt(expiresAfter);
+          if(isNaN(expiresAfter)) expiresAfter = 300000; // not gonna bother responding with an error, just default the value
+     }
+
+     const self = await helpers.PullPlayerData(req.user.id);
+
+     const clients = getClients();
+     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
+     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
+     const data = await helpers.PullPlayerData(id);
+     if(data == null) return res.status(404).send({code: "player_not_found", message: "That player does not exist."});
+     if(data.presence.status != 'online') return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
+
+     // the joinCode to allow the client to join the room is privellaged information,
+     // and should NEVER be sent unless we want the client to join a room.
+     const now = Date.now();
+     const expiresAt = now + expiresAfter;
+     const notification = {
+          template: "invite",
+          parameters: {
+               sending_id: req.user.id,
+               sending_data: self.public,
+               expiresAt: expiresAt,
+               expiresAfter: expiresAfter,
+               issued: now
+          }
+     }
+
+     if(data.notifications.findIndex(item => item.template == 'invite' && item.parameters.sending_id == req.user.id) == -1) {
+          data.notifications.push(notification);
+          helpers.PushPlayerData(id, data);
+          return res.sendStatus(200);
+     }
+
+     return res.status(400).send({code: "denied", message: "You can only send a player ONE invite until they accept or decline it. After that you may send them ONE more, and the process repeats."});
+});
 
 module.exports = router;

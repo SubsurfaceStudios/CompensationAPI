@@ -290,7 +290,11 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ws_connected_clients[ConnectedUserData.uid] = {
                          socket: Socket,
                          version: 2,
-                         instanceId: null
+                         instanceId: null,
+                         roomId: null,
+                         subroomId: null,
+                         globalInstanceId: null,
+                         joinCode: null
                     };
 
                     console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has connected.`);
@@ -346,6 +350,12 @@ WebSocketServerV2.on('connection', (Socket) => {
                          ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
                          ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
                          ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+
+                         ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                         ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                         ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                         ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                         ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                          return;
                     }
 
@@ -393,6 +403,12 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_InstanceId = final_selection.InstanceId;
                     ConnectedUserData.matchmaking_RoomId = final_selection.RoomId;
                     ConnectedUserData.matchmaking_GlobalInstanceId = final_selection.GlobalInstanceId;
+
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = final_selection.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = final_selection.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = final_selection.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = final_selection.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = final_selection.JoinCode;
                     return;
                case "create_public_matchmaking_instance":
                     if(!ConnectedUserData.isAuthenticated) return;
@@ -447,8 +463,13 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_RoomId = ParsedContent.data.roomId;
                     ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                     return;
-               case "matchmaking_reconnection_verify":
+               case "matchmaking_reconnection_verify": 
                     if(!ConnectedUserData.isAuthenticated) return;
                     if(typeof ParsedContent.data.room_id !== 'string' || typeof ParsedContent.data.join_code !== 'string') return;
 
@@ -461,6 +482,12 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
                     ConnectedUserData.matchmaking_RoomId = instance.RoomId;
                     ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                     return;
                }
      });

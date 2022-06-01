@@ -489,6 +489,78 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
                     ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                     return;
+               case "join_player_invite":
+                    if(!ConnectedUserData.isAuthenticated) return;
+                    if(typeof ParsedContent.data.user_id !== 'string') return;
+
+                    var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
+                    var inviteIndex = currentData.notifications.findIndex(x => x.type == "invite" && x.parameters.sending_id == ParsedContent.data.user_id);
+
+                    if(inviteIndex == -1) return;
+
+                    var invite = currentData.notifications[inviteIndex];
+                    if(invite.expiresAt < Date.now()) {
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    // The invite itself is valid, now validate the player's location.
+
+                    if(ws_connected_clients[ParsedContent.data.user_id] == null) {
+                         // If the player is offline, revoke the invite & fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    if(typeof ws_connected_clients[ParsedContent.data.user_id].joinCode != 'string') {
+                         // If the player is online, but doesn't have a join code, revoke the invite & fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    if(ws_connected_clients[ParsedContent.data.user_id].joinCode == ws_connected_clients[ConnectedUserData.uid].joinCode) {
+                         // The player is already in the same room, fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    // The invite & player sending it are valid, process the request.
+
+                    // eslint-disable-next-line no-redeclare
+                    var instance = await MatchmakingAPI.GetInstanceByJoinCode(ws_connected_clients[ParsedContent.data.user_id].roomId, ws_connected_clients[ParsedContent.data.user_id].joinCode);
+
+                    if(instance == null) {
+                         // Instance is invalid for some reason, fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    if(instance.Players.length >= instance.MaxPlayers) {
+                         // Instance is full, fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    instance.AddPlayer(ConnectedUserData.uid);
+                    
+                    await MatchmakingAPI.SetInstance(instance.RoomId, instance.InstanceId, instance);
+
+                    ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+                    ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+                    ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
+                    return;
                }
      });
      Socket.on('close', async (code, reason) => {

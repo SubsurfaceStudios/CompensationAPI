@@ -560,6 +560,20 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
                     ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
                     ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
+
+                    // eslint-disable-next-line no-redeclare
+                    var room = await collection.findOne({_id: {$eq: ConnectedUserData.matchmaking_RoomId, $exists: true}});
+                    
+                    // eslint-disable-next-line no-redeclare
+                    var send = WebSocketV2_MessageTemplate;
+                    send.type = "join_or_create_photon_room";
+                    send.data = {
+                         name: instance.JoinCode,
+                         baseSceneId: room.subrooms[instance.subroomId].versions[room.subrooms[instance.subroomId].publicVersionId].baseSceneId,
+                         spawn: room.subrooms[instance.subroomId].versions[room.subrooms[instance.subroomId].publicVersionId].spawn,
+                    };
+
+                    Socket.send(JSON.stringify(send, null, 5));
                     return;
                }
      });

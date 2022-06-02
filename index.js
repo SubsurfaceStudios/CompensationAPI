@@ -405,8 +405,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_GlobalInstanceId = final_selection.GlobalInstanceId;
 
                     ws_connected_clients[ConnectedUserData.uid].instanceId = final_selection.InstanceId;
-                    ws_connected_clients[ConnectedUserData.uid].roomId = final_selection.roomid;
-                    ws_connected_clients[ConnectedUserData.uid].subroomId = final_selection.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = final_selection.RoomId;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = final_selection.SubroomId;
                     ws_connected_clients[ConnectedUserData.uid].globalInstanceId = final_selection.GlobalInstanceId;
                     ws_connected_clients[ConnectedUserData.uid].joinCode = final_selection.JoinCode;
                     return;

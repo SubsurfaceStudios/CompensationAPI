@@ -290,7 +290,11 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ws_connected_clients[ConnectedUserData.uid] = {
                          socket: Socket,
                          version: 2,
-                         instanceId: null
+                         instanceId: null,
+                         roomId: null,
+                         subroomId: null,
+                         globalInstanceId: null,
+                         joinCode: null
                     };
 
                     console.log(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has connected.`);
@@ -346,6 +350,12 @@ WebSocketServerV2.on('connection', (Socket) => {
                          ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
                          ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
                          ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+
+                         ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                         ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                         ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                         ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                         ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                          return;
                     }
 
@@ -393,6 +403,12 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_InstanceId = final_selection.InstanceId;
                     ConnectedUserData.matchmaking_RoomId = final_selection.RoomId;
                     ConnectedUserData.matchmaking_GlobalInstanceId = final_selection.GlobalInstanceId;
+
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = final_selection.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = final_selection.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = final_selection.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = final_selection.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = final_selection.JoinCode;
                     return;
                case "create_public_matchmaking_instance":
                     if(!ConnectedUserData.isAuthenticated) return;
@@ -447,8 +463,13 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_RoomId = ParsedContent.data.roomId;
                     ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                     return;
-               case "matchmaking_reconnection_verify":
+               case "matchmaking_reconnection_verify": 
                     if(!ConnectedUserData.isAuthenticated) return;
                     if(typeof ParsedContent.data.room_id !== 'string' || typeof ParsedContent.data.join_code !== 'string') return;
 
@@ -461,6 +482,127 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
                     ConnectedUserData.matchmaking_RoomId = instance.RoomId;
                     ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
+                    return;
+               case "join_player_invite":
+                    if(!ConnectedUserData.isAuthenticated) return;
+                    if(typeof ParsedContent.data.user_id !== 'string') return;
+
+                    var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
+                    var inviteIndex = currentData.notifications.findIndex(x => x.type == "invite" && x.parameters.sending_id == ParsedContent.data.user_id);
+
+                    if(inviteIndex == -1) return;
+
+                    var invite = currentData.notifications[inviteIndex];
+                    if(invite.expiresAt < Date.now()) {
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    // The invite itself is valid, now validate the player's location.
+
+                    if(ws_connected_clients[ParsedContent.data.user_id] == null) {
+                         // If the player is offline, revoke the invite & fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    if(typeof ws_connected_clients[ParsedContent.data.user_id].joinCode != 'string') {
+                         // If the player is online, but doesn't have a join code, revoke the invite & fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    if(ws_connected_clients[ParsedContent.data.user_id].joinCode == ws_connected_clients[ConnectedUserData.uid].joinCode) {
+                         // The player is already in the same room, fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    // The invite & player sending it are valid, process the request.
+
+                    // eslint-disable-next-line no-redeclare
+                    var instance = await MatchmakingAPI.GetInstanceByJoinCode(ws_connected_clients[ParsedContent.data.user_id].roomId, ws_connected_clients[ParsedContent.data.user_id].joinCode);
+
+                    if(instance == null) {
+                         // Instance is invalid for some reason, fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    if(instance.Players.length >= instance.MaxPlayers) {
+                         // Instance is full, fail.
+                         currentData.notifications.splice(inviteIndex);
+                         await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+                         return;
+                    }
+
+                    instance.AddPlayer(ConnectedUserData.uid);
+                    
+                    await MatchmakingAPI.SetInstance(instance.RoomId, instance.InstanceId, instance);
+
+                    ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+                    ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+                    ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+
+                    ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+                    ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
+
+                    // eslint-disable-next-line no-redeclare
+                    var room = await collection.findOne({_id: {$eq: ConnectedUserData.matchmaking_RoomId, $exists: true}});
+                    
+                    // eslint-disable-next-line no-redeclare
+                    var send = WebSocketV2_MessageTemplate;
+                    send.type = "join_or_create_photon_room";
+                    send.data = {
+                         name: instance.JoinCode,
+                         baseSceneId: room.subrooms[instance.subroomId].versions[room.subrooms[instance.subroomId].publicVersionId].baseSceneId,
+                         spawn: room.subrooms[instance.subroomId].versions[room.subrooms[instance.subroomId].publicVersionId].spawn,
+                    };
+
+                    Socket.send(JSON.stringify(send, null, 5));
+                    return;
+               case "decline_player_invite":
+                    if(!ConnectedUserData.isAuthenticated) return;
+                    if(typeof ParsedContent.data.user_id !== 'string') return;
+
+                    // eslint-disable-next-line no-redeclare
+                    var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
+                    // eslint-disable-next-line no-redeclare
+                    var inviteIndex = currentData.notifications.findIndex(x => x.type == "invite" && x.parameters.sending_id == ParsedContent.data.user_id);
+                    
+                    if(inviteIndex == -1) return;
+                    
+                    currentData.notifications.splice(inviteIndex);
+                    await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+
+                    // eslint-disable-next-line no-redeclare
+                    var otherData = await helpers.PullPlayerData(currentData.notifications[inviteIndex].parameters.sending_id);
+
+                    var notif = {
+                         template: "invite_declined",
+                         parameters: {
+                              sending_id: ConnectedUserData.uid,
+                              sending_data: currentData.public,
+                              issued: Date.now()
+                         }
+                    }
+
+                    otherData.notifications.push(notif);
+                    await helpers.PushPlayerData(currentData.notifications[inviteIndex].parameters.sending_id, otherData);
                     return;
                }
      });

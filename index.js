@@ -575,6 +575,35 @@ WebSocketServerV2.on('connection', (Socket) => {
 
                     Socket.send(JSON.stringify(send, null, 5));
                     return;
+               case "decline_player_invite":
+                    if(!ConnectedUserData.isAuthenticated) return;
+                    if(typeof ParsedContent.data.user_id !== 'string') return;
+
+                    // eslint-disable-next-line no-redeclare
+                    var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
+                    // eslint-disable-next-line no-redeclare
+                    var inviteIndex = currentData.notifications.findIndex(x => x.type == "invite" && x.parameters.sending_id == ParsedContent.data.user_id);
+                    
+                    if(inviteIndex == -1) return;
+                    
+                    currentData.notifications.splice(inviteIndex);
+                    await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
+
+                    // eslint-disable-next-line no-redeclare
+                    var otherData = await helpers.PullPlayerData(currentData.notifications[inviteIndex].parameters.sending_id);
+
+                    var notif = {
+                         template: "invite_declined",
+                         parameters: {
+                              sending_id: ConnectedUserData.uid,
+                              sending_data: currentData.public,
+                              issued: Date.now()
+                         }
+                    }
+
+                    otherData.notifications.push(notif);
+                    await helpers.PushPlayerData(currentData.notifications[inviteIndex].parameters.sending_id, otherData);
+                    return;
                }
      });
      Socket.on('close', async (code, reason) => {

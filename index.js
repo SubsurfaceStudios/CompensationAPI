@@ -405,8 +405,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                     ConnectedUserData.matchmaking_GlobalInstanceId = final_selection.GlobalInstanceId;
 
                     ws_connected_clients[ConnectedUserData.uid].instanceId = final_selection.InstanceId;
-                    ws_connected_clients[ConnectedUserData.uid].roomId = final_selection.roomid;
-                    ws_connected_clients[ConnectedUserData.uid].subroomId = final_selection.subroomId;
+                    ws_connected_clients[ConnectedUserData.uid].roomId = final_selection.RoomId;
+                    ws_connected_clients[ConnectedUserData.uid].subroomId = final_selection.SubroomId;
                     ws_connected_clients[ConnectedUserData.uid].globalInstanceId = final_selection.GlobalInstanceId;
                     ws_connected_clients[ConnectedUserData.uid].joinCode = final_selection.JoinCode;
                     return;
@@ -605,6 +605,40 @@ WebSocketServerV2.on('connection', (Socket) => {
                     await helpers.PushPlayerData(currentData.notifications[inviteIndex].parameters.sending_id, otherData);
                     return;
                }
+     });
+     Socket.on('force-pull', async (roomId, joinCode) => {
+          if(!ConnectedUserData.isAuthenticated) return;
+          var instance = await MatchmakingAPI.GetInstanceByJoinCode(roomId, joinCode);
+          var roomData = await require('./index')
+               .mongoClient
+               .db(process.env.MONGOOSE_DATABASE_NAME)
+               .collection('rooms')
+               .findOne({_id: {$eq: roomId, $exists: true}});
+          instance.AddPlayer(ConnectedUserData.uid);
+          await MatchmakingAPI.SetInstance(instance.RoomId, instance.InstanceId, instance);
+
+          ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+          ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+          ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+
+          ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+          ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
+          ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+          ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+          ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
+
+          // eslint-disable-next-line no-redeclare
+          var send = WebSocketV2_MessageTemplate;
+          send.code = "join_or_create_photon_room";
+          send.data = {
+               name: instance.JoinCode,
+               // we will never speak of this again
+               baseSceneId: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].baseSceneId,
+               // or thisa3
+               spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn,
+               issued: Date.now()
+          }
+          Socket.send(JSON.stringify(send));
      });
      Socket.on('close', async (code, reason) => {
           console.log(`Socket closed with code ${code} and reason ${reason}`);

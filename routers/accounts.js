@@ -345,4 +345,22 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
      return res.status(400).send({code: "denied", message: "You can only send a player ONE invite until they accept or decline it. After that you may send them ONE more, and the process repeats."});
 });
 
+router.post('/force-pull', middleware.authenticateToken, async (req, res) => {
+     var { id } = req.params;
+
+     if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+
+     const clients = getClients();
+     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
+     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
+     const data = await helpers.PullPlayerData(id);
+     if(data == null) return res.status(404).send({code: "player_not_found", message: "That player does not exist."});
+
+     // Developers can force pull any player, even those appearing offline.
+     // if(data.presence.status != 'online') return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
+     // Nobody is safe.
+
+     var selfClient = clients[req.user.id];
+     clients[id].Socket.emit('force-pull', selfClient.roomId, selfClient.joinCode);
+});
 module.exports = router;

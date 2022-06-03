@@ -328,11 +328,15 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
      const notification = {
           template: "invite",
           parameters: {
-               sending_id: req.user.id,
+               sendingPlayer: req.user.id,
                sending_data: self.public,
                expiresAt: expiresAt,
                expiresAfter: expiresAfter,
-               issued: now
+               issued: now,
+               headerText: "Invite Recieved",
+               bodyText: `@${self.public.username} has invited you to play with them!`,
+               cancelText: "Decline",
+               continueText: "Accept"
           }
      }
 

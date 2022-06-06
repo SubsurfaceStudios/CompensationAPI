@@ -595,9 +595,13 @@ WebSocketServerV2.on('connection', (Socket) => {
                     var notif = {
                          template: "invite_declined",
                          parameters: {
-                              sending_id: ConnectedUserData.uid,
+                              sendingPlayer: ConnectedUserData.uid,
                               sending_data: currentData.public,
-                              issued: Date.now()
+                              issued: Date.now(),
+                              headerText: "Invite Declined",
+                              bodyText: `@${currentData.public.username} has declined your invite.`,
+                              cancelText: "",
+                              continueText: ""
                          }
                     }
 

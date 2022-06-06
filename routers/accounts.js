@@ -3,7 +3,6 @@ const helpers = require('../helpers');
 const middleware = require('../middleware');
 const fs = require('fs');
 const BadWordList = require('../data/badwords/array');
-const sanitize = require('sanitize-filename');
 const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData } = require('../helpers');
 const express = require('express');
@@ -15,24 +14,36 @@ router.use(express.urlencoded({extended: false}));
 //Call to get the public account data of a user.
 router.get("/:id/public", async (req, res) => {
      const { id } = req.params;
-     let id_clean = sanitize(id);
-     
-     let data = await helpers.PullPlayerData(id_clean);
+     let data = await helpers.PullPlayerData(id);
      if (data != null) {
-          return res.status(200).send(data.public);
+          var send = data.public;
+          const clients = getClients();
+          if(clients[id] == null) {
+               send.presence = {
+                    online: false,
+                    roomId: null
+               }
+               return res.status(200).send(send);
+          }
+
+          send.presence = {
+               online: true,
+               roomId: clients[id].roomId
+          }
+
+          return res.status(200).send(send);
      } else {
-          return res.status(404).send(`Account with ID of ${id_clean} not found. Please check your request for errors.`);
+          return res.status(404).send(`Account with ID of ${id} not found. Please check your request for errors.`);
      }
 });
 
 //(Authorized) Call to get the private account data of a user.
 router.get("/:id/private", middleware.authenticateToken, async (req, res) => {
      const { id } = req.params;
-     let id_clean = sanitize(id);
 
      if(req.user.id !== id) return res.status(403).send("Token user does not have access to the specified user's private data!");
 
-     const data = await helpers.PullPlayerData(id_clean);
+     const data = await helpers.PullPlayerData(id);
      if(data == null)
           return res.status(404).send(`Account with ID of ${id} not found. Please check your request for typos.`);
 
@@ -51,8 +62,6 @@ router.get("/:username/ID", async (req, res) => {
 
 router.get("/:id/edit", authenticateDeveloperToken, async (req, res) => {
      var {id} = req.params;
-     id = sanitize(id);
-
      var data = await PullPlayerData(id);
      if(data == null) return res.status(404).send("Account not found.");
      else return res.status(200).json(data);
@@ -60,7 +69,6 @@ router.get("/:id/edit", authenticateDeveloperToken, async (req, res) => {
 
 router.post("/:id/edit", authenticateDeveloperToken, async (req, res) => {
      var {id} = req.params;
-     id = sanitize(id);
 
      try {
           await PushPlayerData(id, req.body);
@@ -121,7 +129,7 @@ router.post("/tag", middleware.authenticateToken, async (req, res) => {
 
 router.post("/pronouns", middleware.authenticateToken, async (req, res) => {
      const {pronouns} = req.body;
-     if(!pronouns) return res.status(400).send("You did not specify a pronoun to use.");
+     if(typeof pronouns != 'number') return res.status(400).send("You did not specify a pronoun to use.");
 
      var data = await helpers.PullPlayerData(req.user.id);
      const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
@@ -182,19 +190,18 @@ router.post("/:id/ban", middleware.authenticateDeveloperToken, async (req, res) 
 //Set a user's currency balance.
 router.post("/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
-     let id_clean = sanitize(id);
      const { amount } = req.body;
 
-     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
+     const exists = fs.existsSync(`./data/accounts/${id}.json`);
      if(!exists) return res.status(404).send("User not found!");
 
-     let data = await helpers.PullPlayerData(id_clean);
+     let data = await helpers.PullPlayerData(id);
 
      if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
 
      data.private.currency = amount;
 
-     await helpers.PushPlayerData(id_clean, data);
+     await helpers.PushPlayerData(id, data);
 
      helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} set user ${id}'s currency to ${amount}.`, false);
 
@@ -204,19 +211,16 @@ router.post("/:id/currency/set", middleware.authenticateDeveloperToken, async (r
 //Modify a user's currency balance.
 router.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
-     let id_clean = sanitize(id);
      const { amount } = req.body;
-
-     const exists = fs.existsSync(`./data/accounts/${id_clean}.json`);
-     if(!exists) return res.status(404).send("User not found!");
-
-     let data = await helpers.PullPlayerData(id_clean);
+     
+     let data = await helpers.PullPlayerData(id);
+     if(data == null) return res.status(404).send("User not found!");
 
      if(!(data.private.currency + amount >= 0)) return res.status(400).send("Final currency amount cannot be less than 0.");
 
      data.private.currency += amount;
 
-     await helpers.PushPlayerData(id_clean, data)
+     await helpers.PushPlayerData(id, data)
 
      helpers.auditLog(`!DEVELOPER ACTION! User ${req.user.username} with ID ${req.user.id} modified user ${id}'s currency balance by ${amount}, with a final balance of ${data.private.currency}.`, false);
 
@@ -328,11 +332,15 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
      const notification = {
           template: "invite",
           parameters: {
-               sending_id: req.user.id,
+               sendingPlayer: req.user.id,
                sending_data: self.public,
                expiresAt: expiresAt,
                expiresAfter: expiresAfter,
-               issued: now
+               issued: now,
+               headerText: "Invite Recieved",
+               bodyText: `@${self.public.username} has invited you to play with them!`,
+               cancelText: "Decline",
+               continueText: "Accept"
           }
      }
 

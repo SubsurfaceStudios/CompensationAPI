@@ -2,10 +2,9 @@ require('dotenv').config();
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const BadWordList = require('../data/badwords/array');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PullPlayerData } = require('../helpers');
+const { PullPlayerData, check} = require('../helpers');
 const config = require('../config.json');
 
 const {default: rateLimit} = require('express-rate-limit');
@@ -256,19 +255,22 @@ router.post("/create", accountCreationLimit, async (req, res) => {
     var { username, nickname, password } = req.body;
     const id = `${await helpers.getAccountCount() + 1}`;
 
-    if(username === null || password === null) return res.status(400).send("Username or password empty or null.");
-    if(nickname === null) nickname = username;
+    if(typeof username !== 'string' || typeof password !== 'string') return res.status(400).send("Username or password empty or null.");
+    if(typeof nickname !== 'string') nickname = username;
 
-    const check = await helpers.getUserID(username);
+    const dupe = await helpers.getUserID(username);
 
-    if(check !== null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
+    if(dupe !== null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
 
     const data = await helpers.PullPlayerData("ACCT_TEMPLATE");
 
-    BadWordList.forEach(element => {
-        if(username.toLowerCase().includes(element)) return res.status(400).send("Your username contains profanity or foul language. Change it to continue.");
-        if(nickname.toLowerCase().includes(element)) return res.status(400).send("Your nickname contains profanity or foul language. Change it to continue.");
-    });
+    if(check(nickname)) {
+        helpers.auditLog(`Suspicious nickname on account creation: ${nickname} with ID ${id}. Request continued, please verify.`);
+    }
+    if(check(nickname)) {
+        helpers.auditLog(`Suspicious username on account creation: ${username} with ID ${id}. Request continued, please verify.`);
+    }
+    
 
     data.public.nickname = nickname;
     data.public.username = username;
@@ -297,7 +299,7 @@ router.post("/create", accountCreationLimit, async (req, res) => {
 
     console.log(await collection.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
 
-    helpers.auditLog(`Created account ${username}`, false);
+    helpers.auditLog(`Created account ${username} with id ${id}.`, false);
 });
 
 router.post("/check", middleware.authenticateToken, async (req, res) => {

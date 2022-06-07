@@ -139,7 +139,7 @@ async function currentAccountUpdater() {
         const servers = db.collection("servers");
 
         var server = await servers.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
-        if(server === null) return rl.write("Failed to read official server.");
+        if(typeof server !== 'object') return rl.write("Failed to read official server.");
 
           
         for(let i = 0; i < accounts.length; i++) {
@@ -252,7 +252,7 @@ function recursiveCheck(object, _template) {
         var templateKeys = Object.keys(_template);
 
         //If the object is empty, return without mutating.
-        if(templateKeys === null || typeof(templateKeys) === 'undefined' || templateKeys?.length < 1) {
+        if(typeof templateKeys !== 'object' || templateKeys?.length < 1) {
             console.log("Template for object is empty, returning without mutation.");
             depth--;
             console.log('\x1b[36m%s\x1b[0m', `Returning to layer of depth ${depth}.`);

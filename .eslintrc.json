@@ -16,6 +16,7 @@
         "no-console": "off",
         "no-invalid-this": "error",
         "semi-style": "error",
-        "semi-spacing": "error"
+        "semi-spacing": "error",
+        "no-useless-escape": "off"
     }
 }

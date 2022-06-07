@@ -275,7 +275,7 @@ router.post("/decline-request", middleware.authenticateToken, async (req, res) =
 
     if(await helpers.ArePlayersAnyFriendType(sender, target)) return res.status(400).send("You are already acquaintances, friends, or favorite friends with this player!");
 
-    var sendingData = helpers.PullPlayerData(target);
+    var sendingData = await helpers.PullPlayerData(target);
     if(sendingData === null) return res.status(404).send("That user does not exist!");
 
     var recievingData = await helpers.PullPlayerData(sender);

@@ -29,7 +29,8 @@ module.exports = {
     auditLog: auditLog,
     MergeArraysWithoutDuplication: MergeArraysWithoutDuplication,
     BanPlayer: BanPlayer,
-    onPlayerReportedCallback: onPlayerReportedCallback
+    onPlayerReportedCallback: onPlayerReportedCallback,
+    check: check
 };
 
 async function PullPlayerData(id) {
@@ -279,4 +280,14 @@ async function BanPlayer(id, reason, duration, moderator) {
     data.auth.bans.push(ban);
     require('./index').sendStringToClient(id, "BANNED");
     await PushPlayerData(id, data);
+}
+
+function check(string) {
+    const words = require('./data/badwords/array');
+    const tlc = string.toLowerCase();
+
+    for(const word of words) {
+        if(tlc.includes(word)) return true;
+    }
+    return false;
 }

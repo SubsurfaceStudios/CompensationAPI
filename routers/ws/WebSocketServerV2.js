@@ -396,7 +396,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             }
 
             // The invite itself is valid, now validate the player's location.
-            if (ws_connected_clients[ParsedContent.data.user_id] === null) {
+            if (typeof ws_connected_clients[ParsedContent.data.user_id] !== 'object') {
                 // If the player is offline, revoke the invite & fail.
                 currentData.notifications.splice(inviteIndex);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
@@ -421,7 +421,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             // eslint-disable-next-line no-redeclare
             var instance = await MatchmakingAPI.GetInstanceByJoinCode(ws_connected_clients[ParsedContent.data.user_id].roomId, ws_connected_clients[ParsedContent.data.user_id].joinCode);
 
-            if (instance === null) {
+            if (typeof instance !== 'object') {
                 // Instance is invalid for some reason, fail.
                 currentData.notifications.splice(inviteIndex);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);

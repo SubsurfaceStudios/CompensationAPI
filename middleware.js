@@ -12,7 +12,7 @@ async function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
 
-    if(token === null) return res.sendStatus(401);
+    if(typeof token !== 'string') return res.sendStatus(401);
 
     //then we need to authenticate that token in this middleware and return a user
     try
@@ -50,7 +50,7 @@ async function authenticateDeveloperToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
 
-    if(token === null) return res.sendStatus(401);
+    if(typeof token !== 'string') return res.sendStatus(401);
 
     //then we need to authenticate that token in this middleware and return a user
     try

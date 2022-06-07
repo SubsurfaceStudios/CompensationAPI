@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const BadWordList = require('../data/badwords/array');
+const regex = require('../data/badwords/regexp');
 const { authenticateDeveloperToken } = require('../middleware');
-const { PullPlayerData, PushPlayerData } = require('../helpers');
+const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
 const { getClients } = require('../index');
@@ -17,7 +17,7 @@ router.get("/:id/public", async (req, res) => {
     if (data !== null) {
         var send = data.public;
         const clients = getClients();
-        if(clients[id] === null) {
+        if(typeof clients[id] !== 'object') {
             send.presence = {
                 online: false,
                 roomId: null
@@ -82,9 +82,9 @@ router.post("/nickname", middleware.authenticateToken, async (req, res) => {
     var data = await helpers.PullPlayerData(req.user.id);
 
     //Filter nickname
-    BadWordList.forEach(element => {
-        if(nickname.toLowerCase().includes(element)) return res.status(403).send("Your nickname contains profanity or inappropriate language. You must change it before you can continue.");
-    });
+    if(check(nickname)) {
+        helpers.auditLog(`Suspicious nickname change! ${req.user.id} attempted to change nickname to ${nickname}. Request permitted, but please review it.`);
+    }
     data.public.nickname = nickname;
 
     await helpers.PushPlayerData(req.user.id, data);
@@ -98,8 +98,8 @@ router.post("/bio", middleware.authenticateToken, async (req, res) => {
 
     var data = await helpers.PullPlayerData(req.user.id);
 
-    for (let index = 0; index < BadWordList.length; index++) {
-        if(bio.toLowerCase().includes(BadWordList[index])) return res.status(403).send("Your bio contains profanity or inappropriate language. You must change it before you can continue.");
+    if(regex.test(bio)) {
+        helpers.auditLog(`Suspicious nickname change! ${req.user.id} attempted to change nickname to ${bio}. Request permitted, but please review it.`);
     }
 
     if(bio.length > 3000) return res.status(400).send("Bio is too long!");

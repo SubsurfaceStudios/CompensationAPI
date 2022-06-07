@@ -23,7 +23,7 @@
     "firebase": "^9.8.2",
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.3.1",
+    "mongodb": "^4.7.0",
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
     "twilio": "^3.77.2",

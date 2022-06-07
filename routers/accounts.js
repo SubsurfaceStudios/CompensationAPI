@@ -350,7 +350,7 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
     return res.status(400).send({code: "denied", message: "You can only send a player ONE invite until they accept or decline it. After that you may send them ONE more, and the process repeats."});
 });
 
-router.post('/force-pull', middleware.authenticateToken, async (req, res) => {
+router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, res) => {
     var { id } = req.params;
 
     if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});

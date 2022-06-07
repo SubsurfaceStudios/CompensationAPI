@@ -428,9 +428,7 @@ async function BanPlayer(id, reason, duration) {
 
     const { MongoClient } = require('mongodb');
 
-    const uri = `mongodb+srv://CVRAPI%2DDIRECT:${
-        process.env.MONGOOSE_ACCOUNT_PASSWORD
-    }@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+    const uri = process.env.MONGOOSE_CONNECTION_STRING;
 
     const client = new MongoClient(uri, {
         useNewUrlParser: true,

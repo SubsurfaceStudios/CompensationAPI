@@ -125,7 +125,7 @@ const { WebSocketServerV2 } = require("./routers/ws/WebSocketServerV2");
 const { MessagingGatewayServerV1 } = require("./routers/ws/MessagingGatewayServerV1");
 const { wss_v1 } = require("./routers/ws/WebSocketServerLegacy");
 
-const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri = process.env.MONGOOSE_CONNECTION_STRING;
 const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true

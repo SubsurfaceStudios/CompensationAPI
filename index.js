@@ -92,38 +92,7 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 var ws_connected_clients = {};
 exports.ws_connected_clients = ws_connected_clients;
 
-server.on("upgrade", (request, socket, head) => {
-    console.log(`WebSocket request made to ${request.url}, handling.`);
-
-    switch(request.url) {
-    case "/ws":
-        wss_v1.handleUpgrade(request, socket, head, (ws) => {
-            wss_v1.emit('connection', ws, request);
-        });
-        return;
-    case "/ws-v2":
-        WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
-            WebSocketServerV2.emit('connection', ws, request);
-        });
-        return;
-    case "/messaging-gateway":
-        MessagingGatewayServerV1.handleUpgrade(request, socket, head, (ws) => {
-            MessagingGatewayServerV1.emit('connection', ws, request);
-        });
-        return;
-    default:
-        socket.destroy();
-        return;
-    }
-});
-
-console.log("Initialized WebSockets v1 and v2.");
-
-
 const { MongoClient } = require('mongodb');
-const { WebSocketServerV2 } = require("./routers/ws/WebSocketServerV2");
-const { MessagingGatewayServerV1 } = require("./routers/ws/MessagingGatewayServerV1");
-const { wss_v1 } = require("./routers/ws/WebSocketServerLegacy");
 
 const uri = process.env.MONGOOSE_CONNECTION_STRING;
 const client = new MongoClient(uri, {
@@ -137,47 +106,79 @@ client.connect(async (error) => {
         helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
         process.exit(1);
     }
-
+    
     console.log("MongoDB Connection Established.");
-
+    
     require('firebase/app').initializeApp(require('./env').firebaseConfig);
-
+    
     const auth = firebaseAuth.getAuth();
-
+    
     const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
-
+    
     if(typeof firebaseAuthUser.user.uid === 'undefined') {
         helpers.auditLog('Failed to connect to Firebase - fatal');
         console.error('Failed to connect to Firebase - fatal');
         process.exit(1);
     }
-
+    
     console.log('Firebase Connection Established.');
-
+    server.on("upgrade", (request, socket, head) => {
+        console.log(`WebSocket request made to ${request.url}, handling.`);
+        
+        switch(request.url) {
+            case "/ws":
+                wss_v1.handleUpgrade(request, socket, head, (ws) => {
+                    wss_v1.emit('connection', ws, request);
+                });
+                return;
+            case "/ws-v2":
+                WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
+                    WebSocketServerV2.emit('connection', ws, request);
+                });
+                return;
+            case "/messaging-gateway":
+                MessagingGatewayServerV1.handleUpgrade(request, socket, head, (ws) => {
+                    MessagingGatewayServerV1.emit('connection', ws, request);
+                });
+                return;
+            default:
+                socket.destroy();
+                return;
+            }
+    });
+    console.log('WebSockets initialized.');
+    
     module.exports = {
-        mongoClient: client,
-        MessagingGatewayServerV1: MessagingGatewayServerV1
+        mongoClient: client
     };
-     
+
+    const { WebSocketServerV2 } = require("./routers/ws/WebSocketServerV2");
+    const { MessagingGatewayServerV1 } = require("./routers/ws/MessagingGatewayServerV1");
+    const { wss_v1 } = require("./routers/ws/WebSocketServerLegacy");
+
+    exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
+    exports.WebSocketServerV2 = WebSocketServerV2;
+    exports.wss_v1 = wss_v1;
+    
     process.on('beforeExit', () => {
         helpers.auditLog("Server exit.", false);
     });
-     
+                    
     process.on('uncaughtException', (exception) => {
         helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``, false);
         console.error(exception);
     });
-     
+
     process.on('SIGINT', () => {
         var Instances = matchmaking.GetInstances("*");
-
+        
         if(Instances.length > 1) { // Maximum length of ONE because of the default instance for intellisense testing.
             console.log("Server kill command rejected - there are players online with instances active.\nWait for the instances to close or use SIGKILL / SIGTERM");
             return;
         }
-
+        
         helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)", false);
-     
+        
         setTimeout(() => process.exit(), 250);
     });
 });

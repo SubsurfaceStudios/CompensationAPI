@@ -35,6 +35,10 @@ const config = require('./config.json');
 
 //#region routers
 
+var ws_connected_clients = {};
+exports.ws_connected_clients = ws_connected_clients;
+exports.getClients = () => ws_connected_clients;
+
 // /api/accounts/*
 app.use("/api/accounts", require("./routers/accounts"));
 // /api/auth/*
@@ -89,8 +93,6 @@ const server = app.listen(config.PORT, '0.0.0.0');
 helpers.auditLog("Server Init", false);
 console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 
-var ws_connected_clients = {};
-exports.ws_connected_clients = ws_connected_clients;
 
 const { MongoClient } = require('mongodb');
 

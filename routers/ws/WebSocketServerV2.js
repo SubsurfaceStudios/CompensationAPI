@@ -4,7 +4,7 @@ const middleware = require('../../middleware');
 const WebSocket = require('ws');
 const { MatchmakingModes } = require('../matchmaking');
 const { WebSocketV2_MessageTemplate } = require("../../index");
-var ws_connected_clients = require('../../index');
+var ws_connected_clients = require('../../index').ws_connected_clients;
 
 const WebSocketServerV2 = new WebSocket.Server({ noServer: true });
 exports.WebSocketServerV2 = WebSocketServerV2;

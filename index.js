@@ -149,7 +149,8 @@ client.connect(async (error) => {
     console.log('WebSockets initialized.');
     
     module.exports = {
-        mongoClient: client
+        mongoClient: client,
+        WebSocketV2_MessageTemplate: WebSocketV2_MessageTemplate
     };
 
     const { WebSocketServerV2 } = require("./routers/ws/WebSocketServerV2");

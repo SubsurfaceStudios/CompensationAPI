@@ -6,8 +6,8 @@ const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
 
 const WebSocketV2_MessageTemplate = {
-     code: "string",
-     data: {}
+    code: "string",
+    data: {}
 };
 exports.WebSocketV2_MessageTemplate = WebSocketV2_MessageTemplate;
 
@@ -15,20 +15,20 @@ const app = express();
 app.set('trust proxy', 1);
 
 var GlobalLimiter = RateLimit({
-     windowMs: 1*60*1000,
-     max: 100,
-     standardHeaders: true,
-     legacyHeaders: false
+    windowMs: 1*60*1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
 });
 
 app.use(GlobalLimiter);
 
 app.use(express.json({
-     limit: '50mb'
+    limit: '50mb'
 }));
 app.use(fileUpload({
-     createParentPath: true,
-     limit: '50mb'
+    createParentPath: true,
+    limit: '50mb'
 }));
 
 const config = require('./config.json');
@@ -55,7 +55,7 @@ app.use("/api/social", require('./routers/social'));
 const econ = require('./routers/econ');
 app.use("/api/econ", econ.router);
 // /api/matchmaking/*
-const matchmaking = require('./routers/matchmaking')
+const matchmaking = require('./routers/matchmaking');
 app.use("/api/matchmaking", matchmaking.router);
 // /api/rooms/*
 const RoomsAPI = require('./routers/rooms');
@@ -71,13 +71,13 @@ app.use("/api/messaging", messaging.router);
 
 //Server test call
 app.get("/", async (req, res) => {
-     return res.status(200).send("Pong!");
+    return res.status(200).send("Pong!");
 });
 
 //Joke
 app.get("/api/dingus", async(req, res) => {
-     return res.status(200).send("You have ascended");
-     //hmm
+    return res.status(200).send("You have ascended");
+    //hmm
 });
 
 //#endregion
@@ -93,28 +93,28 @@ var ws_connected_clients = {};
 exports.ws_connected_clients = ws_connected_clients;
 
 server.on("upgrade", (request, socket, head) => {
-     console.log(`WebSocket request made to ${request.url}, handling.`);
+    console.log(`WebSocket request made to ${request.url}, handling.`);
 
-     switch(request.url) {
-          case "/ws":
-               wss_v1.handleUpgrade(request, socket, head, (ws) => {
-                    wss_v1.emit('connection', ws, request);
-               });
-               return;
-          case "/ws-v2":
-               WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
-                    WebSocketServerV2.emit('connection', ws, request);
-               });
-               return;
-          case "/messaging-gateway":
-               MessagingGatewayServerV1.handleUpgrade(request, socket, head, (ws) => {
-                    MessagingGatewayServerV1.emit('connection', ws, request);
-               });
-               return;
-          default:
-               socket.destroy();
-               return;
-     }
+    switch(request.url) {
+    case "/ws":
+        wss_v1.handleUpgrade(request, socket, head, (ws) => {
+            wss_v1.emit('connection', ws, request);
+        });
+        return;
+    case "/ws-v2":
+        WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
+            WebSocketServerV2.emit('connection', ws, request);
+        });
+        return;
+    case "/messaging-gateway":
+        MessagingGatewayServerV1.handleUpgrade(request, socket, head, (ws) => {
+            MessagingGatewayServerV1.emit('connection', ws, request);
+        });
+        return;
+    default:
+        socket.destroy();
+        return;
+    }
 });
 
 console.log("Initialized WebSockets v1 and v2.");
@@ -127,57 +127,57 @@ const { wss_v1 } = require("./routers/ws/WebSocketServerLegacy");
 
 const uri = `mongodb+srv://CVRAPI%2DDIRECT:${process.env.MONGOOSE_ACCOUNT_PASSWORD}@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
-     useNewUrlParser: true,
-     useUnifiedTopology: true
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 });
 
 client.connect(async (error) => {
-     if(error) {
-          console.error(`Failed to connect to MongoDB - fatal\n` + error);
-          helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
-          process.exit(1);
-     }
+    if(error) {
+        console.error(`Failed to connect to MongoDB - fatal\n` + error);
+        helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
+        process.exit(1);
+    }
 
-     console.log("MongoDB Connection Established.");
+    console.log("MongoDB Connection Established.");
 
-     require('firebase/app').initializeApp(require('./env').firebaseConfig);
+    require('firebase/app').initializeApp(require('./env').firebaseConfig);
 
-     const auth = firebaseAuth.getAuth();
+    const auth = firebaseAuth.getAuth();
 
-     const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
+    const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
 
-     if(typeof firebaseAuthUser.user.uid == 'undefined') {
-          helpers.auditLog('Failed to connect to Firebase - fatal');
-          console.error('Failed to connect to Firebase - fatal');
-          process.exit(1);
-     }
+    if(typeof firebaseAuthUser.user.uid === 'undefined') {
+        helpers.auditLog('Failed to connect to Firebase - fatal');
+        console.error('Failed to connect to Firebase - fatal');
+        process.exit(1);
+    }
 
-     console.log('Firebase Connection Established.');
+    console.log('Firebase Connection Established.');
 
-     module.exports = {
-          mongoClient: client,
-          MessagingGatewayServerV1: MessagingGatewayServerV1
-     };
+    module.exports = {
+        mongoClient: client,
+        MessagingGatewayServerV1: MessagingGatewayServerV1
+    };
      
-     process.on('beforeExit', function () {
-          helpers.auditLog("Server exit.", false);
-     });
+    process.on('beforeExit', () => {
+        helpers.auditLog("Server exit.", false);
+    });
      
-     process.on('uncaughtException', function (exception) {
-          helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``, false);
-          console.error(exception);
-     });
+    process.on('uncaughtException', (exception) => {
+        helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``, false);
+        console.error(exception);
+    });
      
-     process.on('SIGINT', function () {
-          var Instances = matchmaking.GetInstances("*");
+    process.on('SIGINT', () => {
+        var Instances = matchmaking.GetInstances("*");
 
-          if(Instances.length > 1) { // Maximum length of ONE because of the default instance for intellisense testing.
-               console.log("Server kill command rejected - there are players online with instances active.\nWait for the instances to close or use SIGKILL / SIGTERM");
-               return;
-          }
+        if(Instances.length > 1) { // Maximum length of ONE because of the default instance for intellisense testing.
+            console.log("Server kill command rejected - there are players online with instances active.\nWait for the instances to close or use SIGKILL / SIGTERM");
+            return;
+        }
 
-          helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)", false)
+        helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)", false);
      
-          setTimeout(() => process.exit(), 250);
-     });
+        setTimeout(() => process.exit(), 250);
+    });
 });

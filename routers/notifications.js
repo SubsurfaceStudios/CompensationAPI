@@ -5,13 +5,13 @@ const middleware = require('../middleware');
 
 
 router.get("/get/", middleware.authenticateToken, async (req, res) => {
-     const id = req.user.id;
+    const id = req.user.id;
 
-     const data = await helpers.PullPlayerData(id);
+    const data = await helpers.PullPlayerData(id);
 
-     if(data.notifications == null) return res.status(200).send("[]");
+    if(data.notifications === null) return res.status(200).send("[]");
 
-     res.status(200).json(data.notifications);
+    res.status(200).json(data.notifications);
 });
 
 module.exports = router;

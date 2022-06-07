@@ -35,7 +35,7 @@ const config = require('./config.json');
 
 //#region routers
 
-var ws_connected_clients = {};
+var ws_connected_clients = Object.create(null);
 exports.ws_connected_clients = ws_connected_clients;
 exports.getClients = () => ws_connected_clients;
 

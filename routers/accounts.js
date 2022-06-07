@@ -258,7 +258,7 @@ router.get("/search", async (req, res) => {
      
     var finalResults = [];
     fuseResult.map((item) => {
-        finalResults.push(item.item.auth.id);
+        finalResults.push(item.item._id);
     });
     return res.status(200).json(finalResults);
 });

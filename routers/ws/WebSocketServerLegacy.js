@@ -3,9 +3,9 @@ const jwt = require('jsonwebtoken');
 const WebSocket = require('ws');
 const { ws_connected_clients} = require("../../index");
 
-const wss_v1 = new WebSocket.Server({ noServer: true });
-exports.wss_v1 = wss_v1;
-wss_v1.on('connection', async (ws) => {
+const WebSocketsLegacy = new WebSocket.Server({ noServer: true });
+exports.wss_v1 = WebSocketsLegacy;
+WebSocketsLegacy.on('connection', async (ws) => {
      var ignore_connection_closed = false;
      var tokenData;
 

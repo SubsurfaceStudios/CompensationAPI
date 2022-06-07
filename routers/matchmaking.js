@@ -106,17 +106,17 @@ class RoomSession {
         this.Age += 5000;
 
         // TTL
-        if(typeof this.Players !== 'object') this.Players = [];
+        if(typeof this.Players != 'object') this.Players = [];
         this.AgeWithoutPlayer = this.Players.length > 0 ? 0 : this.AgeWithoutPlayer + 5000;
     }
     AddPlayer(id) {
-        if(typeof id !== 'string') throw new TypeError("Invalid User ID input in AddPlayer - Parameter 'id' must be a string.");
+        if(typeof id != 'string') throw new TypeError("Invalid User ID input in AddPlayer - Parameter 'id' must be a string.");
         if(!this.Players.includes(id)) this.Players.push(id);
 
         console.log(`ADDED PLAYER ${id} TO INSTANCE ${this.InstanceId}`);
     }
     RemovePlayer(id) {
-        if(typeof id !== 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
+        if(typeof id != 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
         var index = this.Players.indexOf(id);
         this.Players.splice(index);
 
@@ -130,8 +130,8 @@ class RoomSession {
         this.MatchmakingMode = MatchmakingModes.Locked;
         this.FlaggedForRemoval = true;
 
-        if(typeof GlobalRoomInstances[this.RoomId] !== 'object') return;
-        if(typeof GlobalRoomInstances[this.RoomId][this.GlobalInstanceId] !== 'object') return;
+        if(typeof GlobalRoomInstances[this.RoomId] != 'object') return;
+        if(typeof GlobalRoomInstances[this.RoomId][this.GlobalInstanceId] != 'object') return;
 
         // this is a monstrosity but ah well
         delete GlobalRoomInstances[this.RoomId][this.GlobalInstanceId][this.SubroomId];
@@ -150,7 +150,7 @@ class RoomSession {
         // damn i really messed up how TTL should work originally haha
         if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
 
-        if(typeof this.Players !== 'object') this.Players = [];
+        if(typeof this.Players != 'object') this.Players = [];
         if(this.Players.length < 1) {
             this.InstanceCleanup();
             console.log(`AUTOMATIC CLEANUP OF INSTANCE ${this.InstanceId}`);
@@ -174,9 +174,9 @@ class RoomSession {
         // global instance handling
         this.GlobalInstanceId = GlobalInstanceId === null ? uuid.v1() : GlobalInstanceId;
 
-        if(typeof GlobalRoomInstances[RoomId] !== 'object') GlobalRoomInstances[RoomId] = {};
+        if(typeof GlobalRoomInstances[RoomId] != 'object') GlobalRoomInstances[RoomId] = {};
 
-        if(typeof GlobalRoomInstances[RoomId][this.GlobalInstanceId] !== 'object') 
+        if(typeof GlobalRoomInstances[RoomId][this.GlobalInstanceId] != 'object') 
             GlobalRoomInstances[RoomId][this.GlobalInstanceId] = {SubroomId: this.InstanceId};
         else 
             GlobalRoomInstances[RoomId][this.GlobalInstanceId][SubroomId] = this.InstanceId;

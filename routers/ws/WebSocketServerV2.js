@@ -40,7 +40,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             throw ex;
         }
 
-        if (typeof ParsedContent.code !== 'string' || typeof ParsedContent.data !== 'object')
+        if (typeof ParsedContent.code != 'string' || typeof ParsedContent.data != 'object')
             return;
 
         // begin parsing data
@@ -49,7 +49,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             if (ConnectedUserData.isAuthenticated)
                 return;
 
-            if (typeof ParsedContent.data.token !== 'string') {
+            if (typeof ParsedContent.data.token != 'string') {
 
                 // eslint-disable-next-line no-redeclare
                 var send = WebSocketV2_MessageTemplate;
@@ -116,7 +116,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         case "join_or_create_matchmaking_instance":
             if (!ConnectedUserData.isAuthenticated)
                 return;
-            if (typeof ParsedContent.data.roomId !== 'string' || typeof ParsedContent.data.subroomId !== 'string')
+            if (typeof ParsedContent.data.roomId != 'string' || typeof ParsedContent.data.subroomId != 'string')
                 return;
 
             var db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
@@ -231,7 +231,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         case "create_public_matchmaking_instance":
             if (!ConnectedUserData.isAuthenticated)
                 return;
-            if (typeof ParsedContent.data.roomId !== 'string' || typeof ParsedContent.data.subroomId !== 'string')
+            if (typeof ParsedContent.data.roomId != 'string' || typeof ParsedContent.data.subroomId != 'string')
                 return;
 
             // eslint-disable-next-line no-redeclare
@@ -294,7 +294,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         case "create_private_matchmaking_instance":
             if (!ConnectedUserData.isAuthenticated)
                 return;
-            if (typeof ParsedContent.data.roomId !== 'string' || typeof ParsedContent.data.subroomId !== 'string')
+            if (typeof ParsedContent.data.roomId != 'string' || typeof ParsedContent.data.subroomId != 'string')
                 return;
 
             // eslint-disable-next-line no-redeclare
@@ -358,7 +358,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         case "matchmaking_reconnection_verify":
             if (!ConnectedUserData.isAuthenticated)
                 return;
-            if (typeof ParsedContent.data.room_id !== 'string' || typeof ParsedContent.data.join_code !== 'string')
+            if (typeof ParsedContent.data.room_id != 'string' || typeof ParsedContent.data.join_code != 'string')
                 return;
 
             // eslint-disable-next-line no-redeclare
@@ -380,7 +380,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         case "join_player_invite":
             if (!ConnectedUserData.isAuthenticated)
                 return;
-            if (typeof ParsedContent.data.user_id !== 'string')
+            if (typeof ParsedContent.data.user_id != 'string')
                 return;
 
             var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
@@ -397,14 +397,14 @@ WebSocketServerV2.on('connection', (Socket) => {
             }
 
             // The invite itself is valid, now validate the player's location.
-            if (typeof ws_connected_clients[ParsedContent.data.user_id] !== 'object') {
+            if (typeof ws_connected_clients[ParsedContent.data.user_id] != 'object') {
                 // If the player is offline, revoke the invite & fail.
                 currentData.notifications.splice(inviteIndex);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
                 return;
             }
 
-            if (typeof ws_connected_clients[ParsedContent.data.user_id].joinCode !== 'string') {
+            if (typeof ws_connected_clients[ParsedContent.data.user_id].joinCode != 'string') {
                 // If the player is online, but doesn't have a join code, revoke the invite & fail.
                 currentData.notifications.splice(inviteIndex);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
@@ -422,7 +422,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             // eslint-disable-next-line no-redeclare
             var instance = await MatchmakingAPI.GetInstanceByJoinCode(ws_connected_clients[ParsedContent.data.user_id].roomId, ws_connected_clients[ParsedContent.data.user_id].joinCode);
 
-            if (typeof instance !== 'object') {
+            if (typeof instance != 'object') {
                 // Instance is invalid for some reason, fail.
                 currentData.notifications.splice(inviteIndex);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
@@ -467,7 +467,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         case "decline_player_invite":
             if (!ConnectedUserData.isAuthenticated)
                 return;
-            if (typeof ParsedContent.data.user_id !== 'string')
+            if (typeof ParsedContent.data.user_id != 'string')
                 return;
 
             // eslint-disable-next-line no-redeclare

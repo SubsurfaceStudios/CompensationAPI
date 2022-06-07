@@ -60,10 +60,10 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
     if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image upload have been disabled by the system administrator.", "code": "uploads_disabled"});
     try {
         var {others, room_id, tags} = req.query;
-        if(req.headers['content-type'] !== 'text/plain' || typeof req.body === 'undefined') return res.status(400).send("You did not send encoded photo data.");
-        if(typeof room_id !== 'string') return res.status(400).send("Room ID not specified.");
-        if(typeof others !== 'string') others = '[]';
-        if(typeof tags !== 'string' || !(JSON.parse(tags) instanceof Array)) tags = '[ "photo" ]';
+        if(req.headers['content-type'] !== 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
+        if(typeof room_id != 'string') return res.status(400).send("Room ID not specified.");
+        if(typeof others != 'string') others = '[]';
+        if(typeof tags != 'string' || !(JSON.parse(tags) instanceof Array)) tags = '[ "photo" ]';
 
         var timestamp = Date.now();
         var TakenByData = await helpers.PullPlayerData(req.user.id);
@@ -123,7 +123,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
 router.get('/:id/embed', (req, res) => {
     // copied from /:id endpoint
     let {id} = req.params;
-    if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
+    if(typeof id != 'string') return res.status(400).send("You did not specify an image ID.");
     try {
         id = parseInt(id);
         if(id < 1) return res.status(400).send("Image ID is never below 0.");
@@ -179,7 +179,7 @@ router.get('/:id/embed', (req, res) => {
 router.get("/:id/info", async (req, res) => {
     if(config.disable_image_fetch && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
     var {id} = req.params;
-    if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
+    if(typeof id != 'string') return res.status(400).send("You did not specify an image ID.");
     try {
         id = parseInt(id);
         if(id < 1) return res.status(400).send("Image ID is never below 0.");
@@ -208,7 +208,7 @@ router.get("/:id", async (req, res) => {
         var {base64} = req.query;
 
         // Guard Clauses
-        if(typeof id !== 'string') return res.status(400).send({message:"You did not specify an image ID."});
+        if(typeof id != 'string') return res.status(400).send({message:"You did not specify an image ID."});
         else try {
             id = parseInt(id);
 
@@ -232,7 +232,7 @@ router.get("/:id", async (req, res) => {
 
         var ImageInfo = await collection.findOne({_id: id});
 
-        if (typeof base64 === 'undefined' || base64 !== 'true') {
+        if (typeof base64 == 'undefined' || base64 !== 'true') {
             var ImageBuffer;
 
             if(!imgCache.has(id) || config.disable_image_caching) {

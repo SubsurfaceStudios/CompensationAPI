@@ -14,7 +14,7 @@ WebSocketsLegacy.on('connection', async (ws) => {
     ws.on('message', async (data) => {
         data = data.toString('utf-8');
         console.log(data);
-        if (data.slice(0, 7) === "Bearer " && typeof tokenData === 'undefined') {
+        if (data.slice(0, 7) === "Bearer " && typeof tokenData == 'undefined') {
             var token = data.slice(7);
             try {
                 tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -67,13 +67,13 @@ WebSocketsLegacy.on('connection', async (ws) => {
     });
 
     ws.on('close', async () => {
-        if (!ignore_connection_closed && typeof tokenData !== 'undefined') {
+        if (!ignore_connection_closed && typeof tokenData != 'undefined') {
             var player_data = await helpers.PullPlayerData(tokenData.id);
             player_data.presence.status = "offline";
             await helpers.PushPlayerData(tokenData.id, player_data);
             delete ws_connected_clients[tokenData.id];
             console.log(`User ${tokenData.id} disconnected.`);
-        } else if (typeof tokenData !== 'undefined') {
+        } else if (typeof tokenData != 'undefined') {
             // Handle leaving room in session
         }
     });

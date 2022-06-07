@@ -17,7 +17,7 @@ router.get("/:id/public", async (req, res) => {
     if (data !== null) {
         var send = data.public;
         const clients = getClients();
-        if(typeof clients[id] !== 'object') {
+        if(typeof clients[id] != 'object') {
             send.presence = {
                 online: false,
                 roomId: null
@@ -128,7 +128,7 @@ router.post("/tag", middleware.authenticateToken, async (req, res) => {
 
 router.post("/pronouns", middleware.authenticateToken, async (req, res) => {
     const {pronouns} = req.body;
-    if(typeof pronouns !== 'number') return res.status(400).send("You did not specify a pronoun to use.");
+    if(typeof pronouns != 'number') return res.status(400).send("You did not specify a pronoun to use.");
 
     var data = await helpers.PullPlayerData(req.user.id);
     const array = ["He/Him", "She/Her", "They/Them", "He/they", "She/they", "He/she", "He/she/they", "Ask me"];
@@ -226,9 +226,9 @@ router.post("/:id/currency/modify", middleware.authenticateDeveloperToken, async
 
 router.get("/search", async (req, res) => {
     var {type, query, case_sensitive} = req.query;
-    if(typeof query !== 'string') return res.status(400).send("No query specified!");
-    if(typeof type !== 'string') type = 'username';
-    if(typeof case_sensitive !== 'string') case_sensitive = false;
+    if(typeof query != 'string') return res.status(400).send("No query specified!");
+    if(typeof type != 'string') type = 'username';
+    if(typeof case_sensitive != 'string') case_sensitive = false;
     else case_sensitive = case_sensitive === 'true' ? true : false;
 
     const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
@@ -306,8 +306,8 @@ router.route("/:id/tags/:tag").
 router.post('/invite', middleware.authenticateToken, async (req, res) => {
     var { id, expiresAfter } = req.params;
 
-    if(typeof id !== 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
-    if(typeof expiresAfter !== 'string') expiresAfter = 300000;
+    if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+    if(typeof expiresAfter != 'string') expiresAfter = 300000;
     else {
         expiresAfter = parseInt(expiresAfter);
         if(isNaN(expiresAfter)) expiresAfter = 300000; // not gonna bother responding with an error, just default the value
@@ -353,7 +353,7 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 router.post('/force-pull', middleware.authenticateToken, async (req, res) => {
     var { id } = req.params;
 
-    if(typeof id !== 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+    if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
 
     const clients = getClients();
     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});

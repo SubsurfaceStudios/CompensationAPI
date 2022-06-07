@@ -37,8 +37,8 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
     //i should have been doing this before tbh
     //type confusion is a pain
     var {item_id} = req.body;
-    if(typeof item_id === 'undefined') return res.status(400).send("You did not specify an item.");
-    if(typeof item_id !== 'string') return res.status(400).send("The item ID you specified must be a string.");
+    if(typeof item_id == 'undefined') return res.status(400).send("You did not specify an item.");
+    if(typeof item_id != 'string') return res.status(400).send("The item ID you specified must be a string.");
 
     var player_balance = await GetPlayerCurrency(req.user.id);
 
@@ -60,8 +60,8 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
 
 router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
     var {item_id, target} = req.body;
-    if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item.");
-    if(typeof target !== 'string') return res.status(400).send("You did not specify a user to gift this item.");
+    if(typeof item_id != 'string') return res.status(400).send("You did not specify an item.");
+    if(typeof target != 'string') return res.status(400).send("You did not specify a user to gift this item.");
 
     var data = await helpers.PullPlayerData(target);
     if(data === null) return res.status(404).send("That player does not exist!");
@@ -87,7 +87,7 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
 
 router.post("/item/refund", middleware.authenticateToken, async (req, res) => {
     var {item_id} = req.body;
-    if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item.");
+    if(typeof item_id != 'string') return res.status(400).send("You did not specify an item.");
 
     var item = await PullItem(item_id);
     if(item === null) return res.status(404).send("That item does not exist!");
@@ -108,8 +108,8 @@ router.post("/item/refund", middleware.authenticateToken, async (req, res) => {
 
 router.post("/item/transfer", middleware.authenticateToken, async (req, res) => {
     var {item_id, target} = req.body;
-    if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item.");
-    if(typeof target !== 'string') return res.status(400).send("You did not specify a user.");
+    if(typeof item_id != 'string') return res.status(400).send("You did not specify an item.");
+    if(typeof target != 'string') return res.status(400).send("You did not specify a user.");
 
     var item = await PullItem(item_id);
     if(item === null) return res.status(404).send("That item does not exist!");
@@ -134,8 +134,8 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
 
 router.post("/currency/transfer", middleware.authenticateToken, async (req, res) => {
     var {amount, target} = req.body;
-    if(typeof amount !== 'number') return res.status(400).send("Amount must be an integer!");
-    if(typeof target !== 'string') return res.status(400).send("You did not specify a user!");
+    if(typeof amount != 'number') return res.status(400).send("Amount must be an integer!");
+    if(typeof target != 'string') return res.status(400).send("You did not specify a user!");
     if(amount < 1) return res.status(400).send("You can't take money from somebody! That's illegal!");
 
     var data = await helpers.PullPlayerData(target);
@@ -181,7 +181,7 @@ router.get("/currency/balance", middleware.authenticateToken, async (req, res) =
 router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
     var {item_id} = req.body;
 	
-    if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item ID!");
+    if(typeof item_id != 'string') return res.status(400).send("You did not specify an item ID!");
 
     var itemData = await PullItem(item_id);
     if(itemData === null) return res.status(404).send("That item does not exist!");
@@ -222,7 +222,7 @@ async function GrantPlayerItem(id, item_id) {
     var data = await helpers.PullPlayerData(id);
     if(data === null) return null;
 
-    if(typeof data.econ.inventory[item_id] === 'undefined') data.econ.inventory[item_id] = 1;
+    if(typeof data.econ.inventory[item_id] == 'undefined') data.econ.inventory[item_id] = 1;
     else data.econ.inventory[item_id] += 1;
 
     await helpers.PushPlayerData(id, data);
@@ -243,7 +243,7 @@ async function GetPlayerItemCount(id, item_id) {
     var data = await helpers.PullPlayerData(id);
     if(data === null) return null;
 
-    if(typeof data.econ.inventory[item_id] === 'undefined') return 0;
+    if(typeof data.econ.inventory[item_id] == 'undefined') return 0;
     else return data.econ.inventory[item_id];
 }
 
@@ -251,7 +251,7 @@ async function SubtractPlayerItem(id, item_id) {
     var data = await helpers.PullPlayerData(id);
     if(data === null) return null;
 
-    if(typeof data.econ.inventory[item_id] !== 'number') data.econ.inventory[item_id] = 0;
+    if(typeof data.econ.inventory[item_id] != 'number') data.econ.inventory[item_id] = 0;
 
     if(data.econ.inventory[item_id] >= 1) data.econ.inventory[item_id]--;
     else data.econ.inventory[item_id] = 0;

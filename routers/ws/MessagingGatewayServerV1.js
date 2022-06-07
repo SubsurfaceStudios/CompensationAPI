@@ -36,7 +36,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
             throw ex;
         }
 
-        if (typeof ParsedContent.code !== 'string' || typeof ParsedContent.data !== 'object')
+        if (typeof ParsedContent.code != 'string' || typeof ParsedContent.data != 'object')
             return;
 
         // begin parsing data
@@ -45,7 +45,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
             if (ClientData.isAuthenticated)
                 return;
 
-            if (typeof ParsedContent.data.token !== 'string') {
+            if (typeof ParsedContent.data.token != 'string') {
                 // eslint-disable-next-line no-redeclare
                 var send = WebSocketV2_MessageTemplate;
                 send.code = "authentication_failed";

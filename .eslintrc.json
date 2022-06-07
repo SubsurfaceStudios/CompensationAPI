@@ -11,7 +11,6 @@
     "rules": {
         "no-redeclare": "off", // no-redeclare is a pain with all the switch statements tbh
         "semi": "error",
-        "eqeqeq": "warn",
         "func-names": "warn",
         "no-console": "off",
         "no-invalid-this": "error",

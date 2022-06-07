@@ -183,7 +183,7 @@ async function ClearPlayerNotification(id, IndexOrData) {
     var data = await PullPlayerData(id);
 
 
-    var mode = ( typeof(IndexOrData) === 'number' ) ? "id" : "data";
+    var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
 
     if(mode === "id") {
         data.notifications = data.notifications.splice(IndexOrData);

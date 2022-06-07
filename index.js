@@ -117,7 +117,7 @@ client.connect(async (error) => {
     
     const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
     
-    if(typeof firebaseAuthUser.user.uid === 'undefined') {
+    if(typeof firebaseAuthUser.user.uid == 'undefined') {
         helpers.auditLog('Failed to connect to Firebase - fatal');
         console.error('Failed to connect to Firebase - fatal');
         process.exit(1);

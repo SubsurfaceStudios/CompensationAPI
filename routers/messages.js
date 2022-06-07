@@ -19,9 +19,9 @@ router.route("/channels/:channel_id/messages")
 
             var {count, offset} = req.query;
             count = parseInt(count);
-            if(typeof count !== 'number' || count > 50 || isNaN(count)) count = 50;
+            if(typeof count != 'number' || count > 50 || isNaN(count)) count = 50;
             offset = parseInt(offset);
-            if(typeof offset !== 'number' || isNaN(offset)) offset = 0;
+            if(typeof offset != 'number' || isNaN(offset)) offset = 0;
 
             const {channel_id} = req.params;
 
@@ -78,7 +78,7 @@ router.route("/channels/:channel_id/messages")
             const client = require('../index').mongoClient;
 	
             const {content} = req.body;
-            if(typeof content !== 'string') return res.status(400).send({message: "invalid_message_content"});
+            if(typeof content != 'string') return res.status(400).send({message: "invalid_message_content"});
             const {channel_id} = req.params;
 	
             const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
@@ -204,7 +204,7 @@ router.route("/messages/:message_id")
             const client = require('../index').mongoClient;
 
             const {content} = req.body;
-            if(typeof content !== 'string') return res.status(400).send({message: "invalid_message_content"});
+            if(typeof content != 'string') return res.status(400).send({message: "invalid_message_content"});
 
             const {message_id} = req.params;
 

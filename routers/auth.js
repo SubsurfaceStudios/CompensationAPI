@@ -48,10 +48,10 @@ router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
 
 router.post('/verify-2fa', middleware.authenticateToken, async (req, res) => {
     var {code} = req.body;
-    if(typeof code !== 'string') return res.status(400).send("Your 2FA code is undefined or is not a string. Check your Content-Type header and request body.");
+    if(typeof code != 'string') return res.status(400).send("Your 2FA code is undefined or is not a string. Check your Content-Type header and request body.");
 
     var _data = await PullPlayerData(req.user.id);
-    if(_data.auth.mfa_enabled !== 'unverified') return res.status(400).send("Your account is not currently awaiting verification.");
+    if(_data.auth.mfa_enabled != 'unverified') return res.status(400).send("Your account is not currently awaiting verification.");
 
     Verify2faUser(req.user.id, code, async success => {
         if(success) {
@@ -95,8 +95,8 @@ router.post("/login", async (req, res) => {
 
     const externalHashed = bcrypt.hashSync(password, salt);
 
-    if(externalHashed !== HASHED_PASSWORD) {
-        if(typeof data.auth.logins !== 'object') data.auth.logins = [];
+    if(externalHashed != HASHED_PASSWORD) {
+        if(typeof data.auth.logins != 'object') data.auth.logins = [];
         const attempt = {
             SUCCESS: false,
             IP: req.ip,
@@ -115,7 +115,7 @@ router.post("/login", async (req, res) => {
         const element = data.auth.bans[index];
           
         if(element.endTS > Date.now()) {
-            if(typeof data.auth.logins !== 'object') data.auth.logins = [];
+            if(typeof data.auth.logins != 'object') data.auth.logins = [];
             const attempt = {
                 SUCCESS: false,
                 IP: req.ip,
@@ -144,7 +144,7 @@ router.post("/login", async (req, res) => {
 
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
 
-    if(typeof data.auth.mfa_enabled === 'boolean' && !data.auth.mfa_enabled) {
+    if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) {
         const attempt = {
             SUCCESS: true,
             IP: req.ip,
@@ -160,8 +160,8 @@ router.post("/login", async (req, res) => {
         return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
     }
 
-    if(typeof data.auth.mfa_enabled === 'string' && data.auth.mfa_enabled === 'unverified') {
-        if(typeof data.auth.logins !== 'object') data.auth.logins = [];
+    if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled === 'unverified') {
+        if(typeof data.auth.logins != 'object') data.auth.logins = [];
         const attempt = {
             SUCCESS: true,
             IP: req.ip,
@@ -178,8 +178,8 @@ router.post("/login", async (req, res) => {
         else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
     }
 
-    if(typeof two_factor_code !== 'string') {
-        if(typeof data.auth.logins !== 'object') data.auth.logins = [];
+    if(typeof two_factor_code != 'string') {
+        if(typeof data.auth.logins != 'object') data.auth.logins = [];
         const attempt = {
             SUCCESS: false,
             IP: req.ip,
@@ -191,7 +191,7 @@ router.post("/login", async (req, res) => {
             data.auth.logins.push(attempt);
             await helpers.PushPlayerData(userID, data);
         }
-        if(typeof hwid !== 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
+        if(typeof hwid != 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
         if(data.auth.multi_factor_authenticated_logins.length < 1) return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
@@ -209,7 +209,7 @@ router.post("/login", async (req, res) => {
     Verify2faCode(userID, two_factor_code, async status => {
         switch(status) {
         case 'approved':
-            if(typeof hwid !== 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
+            if(typeof hwid != 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
             var login = {
                 ips: req.ips,
                 hwid: hwid,
@@ -255,8 +255,8 @@ router.post("/create", accountCreationLimit, async (req, res) => {
     var { username, nickname, password } = req.body;
     const id = `${await helpers.getAccountCount() + 1}`;
 
-    if(typeof username !== 'string' || typeof password !== 'string') return res.status(400).send("Username or password empty or null.");
-    if(typeof nickname !== 'string') nickname = username;
+    if(typeof username != 'string' || typeof password != 'string') return res.status(400).send("Username or password empty or null.");
+    if(typeof nickname != 'string') nickname = username;
 
     const dupe = await helpers.getUserID(username);
 

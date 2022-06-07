@@ -40,7 +40,7 @@ router.route("/room/:room_id/info")
             const userPermissions = room.userPermissions;
             const rolePermissions = room.rolePermissions;
 
-            if(typeof req.user !== 'undefined') {
+            if(typeof req.user != 'undefined') {
                 const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
                 const permissions = rolePermissions[role];
 
@@ -115,7 +115,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
         const userPermissions = item.userPermissions;
         const rolePermissions = item.rolePermissions;
 
-        if(typeof req.user !== 'undefined') {
+        if(typeof req.user != 'undefined') {
             const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
             const permissions = rolePermissions[role];
             return permissions.viewAndJoin;

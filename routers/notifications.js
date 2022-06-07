@@ -9,7 +9,7 @@ router.get("/get/", middleware.authenticateToken, async (req, res) => {
 
     const data = await helpers.PullPlayerData(id);
 
-    if(typeof data.notifications !== 'object') return res.status(200).send("[]");
+    if(typeof data.notifications != 'object') return res.status(200).send("[]");
 
     res.status(200).json(data.notifications);
 });

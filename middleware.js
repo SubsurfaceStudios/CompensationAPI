@@ -12,7 +12,7 @@ async function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
 
-    if(typeof token !== 'string') return res.sendStatus(401);
+    if(typeof token != 'string') return res.sendStatus(401);
 
     //then we need to authenticate that token in this middleware and return a user
     try
@@ -42,7 +42,7 @@ async function authenticateToken(req, res, next) {
 async function authenticateToken_optional(req, res, next) {
     const authHeader = req.headers['authorization'];
 
-    if(typeof authHeader !== 'string') return next();
+    if(typeof authHeader != 'string') return next();
     return authenticateToken(req, res, next);
 }
 
@@ -50,7 +50,7 @@ async function authenticateDeveloperToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(" ")[1];
 
-    if(typeof token !== 'string') return res.sendStatus(401);
+    if(typeof token != 'string') return res.sendStatus(401);
 
     //then we need to authenticate that token in this middleware and return a user
     try
@@ -82,7 +82,7 @@ async function authenticateDeveloperToken(req, res, next) {
 }
 
 async function authenticateToken_internal(token) {
-    if(typeof token !== 'string') return {success: false, tokenData: null, playerData: null, reason: "no_token"};
+    if(typeof token != 'string') return {success: false, tokenData: null, playerData: null, reason: "no_token"};
 
     //then we need to authenticate that token in this middleware and return a user
     try

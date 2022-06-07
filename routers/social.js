@@ -37,7 +37,7 @@ router.get("/imgfeed", async (req, res) => {
         if(image_count < (count + offset)) count = (image_count - offset) - 1;
 
         var feed = [];
-        if(typeof reverse !== 'undefined' && reverse !== "false") {
+        if(typeof reverse != 'undefined' && reverse != "false") {
             for(let i = 1; i < count + 1; i++) 
                 feed.push(all_images[(image_count - offset) - i]);
         } else {
@@ -57,17 +57,17 @@ router.get("/takenby", async (req, res) => {
         var {target, count, offset} = req.query;
 
         // Guard Clauses
-        if(typeof target !== 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
+        if(typeof target != 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
 
         // Parameter validation
-        if(typeof count !== 'string') count = 50;
+        if(typeof count != 'string') count = 50;
         else try {
             count = parseInt(count);
         } catch {
             count = 50;
         }
 
-        if(typeof offset !== 'string') offset = 0;
+        if(typeof offset != 'string') offset = 0;
         else try {
             offset = parseInt(offset);
             if(offset < 0) offset = 0;
@@ -110,17 +110,17 @@ router.get("/takenwith", async (req, res) => {
         var {target, count, offset} = req.query;
 
         // Guard Clauses
-        if(typeof target !== 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
+        if(typeof target != 'string') return res.status(400).send({message: "Search target not specified in URL-Encoded parameter `target`"});
 
         // Parameter validation
-        if(typeof count !== 'string') count = 50;
+        if(typeof count != 'string') count = 50;
         else try {
             count = parseInt(count);
         } catch {
             count = 50;
         }
 
-        if(typeof offset !== 'string') offset = 0;
+        if(typeof offset != 'string') offset = 0;
         else try {
             offset = parseInt(offset);
             if(offset < 0) offset = 0;
@@ -178,7 +178,7 @@ router.post("/friend-request", middleware.authenticateToken, async (req, res) =>
 
 router.post("/accept-request", middleware.authenticateToken, async (req, res) => {
     var {target} = req.body;
-    if(typeof target !== 'string') return res.status(400).send("No target specified.");
+    if(typeof target != 'string') return res.status(400).send("No target specified.");
 
     var recievingData = await helpers.PullPlayerData(req.user.id);
     var sendingData = await helpers.PullPlayerData(target);

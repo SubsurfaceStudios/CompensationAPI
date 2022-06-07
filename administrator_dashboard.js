@@ -139,7 +139,7 @@ async function currentAccountUpdater() {
         const servers = db.collection("servers");
 
         var server = await servers.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
-        if(typeof server !== 'object') return rl.write("Failed to read official server.");
+        if(typeof server != 'object') return rl.write("Failed to read official server.");
 
           
         for(let i = 0; i < accounts.length; i++) {
@@ -239,7 +239,7 @@ function recursiveCheck(object, _template) {
     console.log("Checking if object is an array.");
     if(
         Array.isArray(object) || !(
-            typeof(object) === 'object'
+            typeof(object) == 'object'
         )
     ) {
         console.log("Object is a value or array, returning without mutation.");
@@ -252,7 +252,7 @@ function recursiveCheck(object, _template) {
         var templateKeys = Object.keys(_template);
 
         //If the object is empty, return without mutating.
-        if(typeof templateKeys !== 'object' || templateKeys?.length < 1) {
+        if(typeof templateKeys != 'object' || templateKeys?.length < 1) {
             console.log("Template for object is empty, returning without mutation.");
             depth--;
             console.log('\x1b[36m%s\x1b[0m', `Returning to layer of depth ${depth}.`);
@@ -338,13 +338,13 @@ function room_updater(id) {
 async function updateRoom(room) {
     console.log(`Updating room - _id = \`${room._id}\`.`);
 
-    if(typeof room.name !== 'string') room.name = "undefinedRoom";
-    if(typeof room.description !== 'string') room.description = "Automatically generated room description during room update.";
-    if(typeof room.creator_id !== 'string') room.creator_id = "0";
-    if(typeof room.tags !== 'object') room.tags = [];
-    if(typeof room.created_at !== 'number') room.created_at = Date.now();
-    if(typeof room.visits !== 'number') room.visits = 0;
-    if(typeof room.subrooms !== 'object') room.subrooms = {
+    if(typeof room.name != 'string') room.name = "undefinedRoom";
+    if(typeof room.description != 'string') room.description = "Automatically generated room description during room update.";
+    if(typeof room.creator_id != 'string') room.creator_id = "0";
+    if(typeof room.tags != 'object') room.tags = [];
+    if(typeof room.created_at != 'number') room.created_at = Date.now();
+    if(typeof room.visits != 'number') room.visits = 0;
+    if(typeof room.subrooms != 'object') room.subrooms = {
         "home": {
             "publicVersionId": 0,
             "maxPlayers": 20,
@@ -359,8 +359,8 @@ async function updateRoom(room) {
             ]
         }
     };
-    if(typeof room.homeSubroomId !== 'string') room.homeSubroomId = "home";
-    if(typeof room.rolePermissions !== 'object') {
+    if(typeof room.homeSubroomId != 'string') room.homeSubroomId = "home";
+    if(typeof room.rolePermissions != 'object') {
         room.rolePermissions = {
             "everyone": {
                 "viewAndJoin": true
@@ -371,12 +371,12 @@ async function updateRoom(room) {
             const key = Object.keys(room.rolePermissions)[i];
             var value = room.rolePermissions[key];
 
-            if(typeof value.viewAndJoin !== 'boolean') value.viewAndJoin = true;
+            if(typeof value.viewAndJoin != 'boolean') value.viewAndJoin = true;
 
             room.rolePermissions[key] = value;
         }
     }
-    if(typeof room.userPermissions !== 'object') room.userPermissions = {};
+    if(typeof room.userPermissions != 'object') room.userPermissions = {};
 
     return room;
 }

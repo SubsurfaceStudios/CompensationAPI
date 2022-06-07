@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const fs = require('fs');
 const BadWordList = require('../data/badwords/array');
 const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData } = require('../helpers');
@@ -33,7 +32,7 @@ router.get("/:id/public", async (req, res) => {
 
           return res.status(200).send(send);
      } else {
-          return res.status(404).send(`Account with ID of ${id} not found. Please check your request for errors.`);
+          return res.status(404).send({message: `Account with ID of ${id} not found. Please check your request for errors.`, code: "account_not_found"});
      }
 });
 
@@ -191,11 +190,9 @@ router.post("/:id/ban", middleware.authenticateDeveloperToken, async (req, res) 
 router.post("/:id/currency/set", middleware.authenticateDeveloperToken, async (req, res) => {
      const { id } = req.params;
      const { amount } = req.body;
-
-     const exists = fs.existsSync(`./data/accounts/${id}.json`);
-     if(!exists) return res.status(404).send("User not found!");
-
+     
      let data = await helpers.PullPlayerData(id);
+     if(data == null) return res.status(404).send("User not found!");
 
      if(amount < 0) return res.status(400).send("Final currency amount cannot be less than 0.");
 

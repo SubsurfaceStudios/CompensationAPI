@@ -26,7 +26,6 @@
     "mongodb": "^4.3.1",
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
-    "sanitize-filename": "^1.6.3",
     "twilio": "^3.77.2",
     "uuid": "^8.3.2",
     "ws": "^8.7.0"

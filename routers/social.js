@@ -1,9 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const sanitize = require('sanitize-filename');
-//minor change for commit test
-// whoopty do another fake commit
 const notificationTemplates = {
      invite: "invite",
      friendRequest: "friendRequest",
@@ -182,7 +179,6 @@ router.post("/friend-request", middleware.authenticateToken, async (req, res) =>
 router.post("/accept-request", middleware.authenticateToken, async (req, res) => {
      var {target} = req.body;
      if(typeof target !== 'string') return res.status(400).send("No target specified.");
-     target = sanitize(target);
 
      var recievingData = await helpers.PullPlayerData(req.user.id);
      var sendingData = await helpers.PullPlayerData(target);

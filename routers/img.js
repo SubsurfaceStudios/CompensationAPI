@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const sanitize = require('sanitize-filename');
 const express = require('express');
 const firebaseStorage = require('firebase/storage');
 
@@ -125,7 +124,6 @@ router.get('/:id/embed', (req, res) => {
      // copied from /:id endpoint
      let {id} = req.params;
      if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
-     id = sanitize(id);
      try {
           id = parseInt(id);
           if(id < 1) return res.status(400).send("Image ID is never below 0.");
@@ -182,10 +180,10 @@ router.get("/:id/info", async (req, res) => {
      if(config.disable_image_fetch && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
      var {id} = req.params;
      if(typeof id !== 'string') return res.status(400).send("You did not specify an image ID.");
-     id = sanitize(id);
      try {
           id = parseInt(id);
           if(id < 1) return res.status(400).send("Image ID is never below 0.");
+          if(isNaN(id))return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
      } catch {
           return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
      }

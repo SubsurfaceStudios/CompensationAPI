@@ -1,14 +1,11 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const fs = require('fs');
-const sanitize = require('sanitize-filename');
 
 router.route("/item/:id/info")
 	.get(async (req, res) => {
 		// Learned my lesson on this one thanks CodeQL
 		var {id} = req.params;
-		id = sanitize(id);
 
 		var data = await PullItem(id);
 		if(data == null) return res.sendStatus(404);
@@ -17,7 +14,6 @@ router.route("/item/:id/info")
 	})
 	.post(middleware.authenticateDeveloperToken, async (req, res) => {
 		var {id} = req.params;
-		id = sanitize(id);
 
 		try {
 			await PushItem(id, req.body);
@@ -28,7 +24,11 @@ router.route("/item/:id/info")
 		}
 	})
 	.put(middleware.authenticateDeveloperToken, async (req, res) => {
-		var id = fs.readdirSync('data/econ').length - 1;
+		var id = await require('../index')
+			.mongoClient
+			.db(process.env.MONGOOSE_DATABASE_NAME)
+			.collection('items')
+			.countDocuments({});
 		await PushItem(id.toString(), req.body);
 		res.status(200).send();
 	});
@@ -39,7 +39,6 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
 	var {item_id} = req.body;
 	if(typeof item_id == 'undefined') return res.status(400).send("You did not specify an item.");
 	if(typeof item_id !== 'string') return res.status(400).send("The item ID you specified must be a string.");
-	item_id = sanitize(item_id);
 
 	var player_balance = await GetPlayerCurrency(req.user.id);
 
@@ -63,9 +62,6 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
 	var {item_id, target} = req.body;
 	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item.");
 	if(typeof target !== 'string') return res.status(400).send("You did not specify a user to gift this item.");
-
-	item_id = sanitize(item_id);
-	target = sanitize(target);
 
 	var data = await helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That player does not exist!");
@@ -93,8 +89,6 @@ router.post("/item/refund", middleware.authenticateToken, async (req, res) => {
 	var {item_id} = req.body;
 	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item.");
 
-	item_id = sanitize(item_id);
-
 	var item = await PullItem(item_id);
 	if(item == null) return res.status(404).send("That item does not exist!");
 	if(!item.is_refundable) return res.status(400).send("You cannot refund that item!");
@@ -116,9 +110,6 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
 	var {item_id, target} = req.body;
 	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item.");
 	if(typeof target !== 'string') return res.status(400).send("You did not specify a user.");
-
-	item_id = sanitize(item_id);
-	target = sanitize(target);
 
 	var item = await PullItem(item_id);
 	if(item == null) return res.status(404).send("That item does not exist!");
@@ -146,8 +137,6 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 	if(typeof amount !== 'number') return res.status(400).send("Amount must be an integer!");
 	if(typeof target !== 'string') return res.status(400).send("You did not specify a user!");
 	if(amount < 1) return res.status(400).send("You can't take money from somebody! That's illegal!");
-
-	target = sanitize(target);
 
 	var data = await helpers.PullPlayerData(target);
 	if(data == null) return res.status(404).send("That user does not exist!");
@@ -193,7 +182,6 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
 	var {item_id} = req.body;
 	
 	if(typeof item_id !== 'string') return res.status(400).send("You did not specify an item ID!");
-	item_id = sanitize(item_id);
 
 	var itemData = await PullItem(item_id);
 	if(itemData == null) return res.status(404).send("That item does not exist!");
@@ -222,8 +210,6 @@ async function PullItem(id) {
 }
 
 async function PushItem(id, data) {
-	id = sanitize(id);
-
 	const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
 	const collection = db.collection('items');
 
@@ -233,9 +219,6 @@ async function PushItem(id, data) {
 }
 
 async function GrantPlayerItem(id, item_id) {
-	id = sanitize(id);
-	item_id = sanitize(item_id);
-
 	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
@@ -246,8 +229,6 @@ async function GrantPlayerItem(id, item_id) {
 }
 
 async function ModifyPlayerCurrency(id, amount) {
-	id = sanitize(id);
-
 	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
@@ -259,8 +240,6 @@ async function ModifyPlayerCurrency(id, amount) {
 }
 
 async function GetPlayerItemCount(id, item_id) {
-	id = sanitize(id);
-
 	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
@@ -269,8 +248,6 @@ async function GetPlayerItemCount(id, item_id) {
 }
 
 async function SubtractPlayerItem(id, item_id) {
-	id = sanitize(id);
-
 	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 
@@ -283,8 +260,6 @@ async function SubtractPlayerItem(id, item_id) {
 }
 
 async function GetPlayerCurrency(id) {
-	id = sanitize(id);
-
 	var data = await helpers.PullPlayerData(id);
 	if(data == null) return null;
 	else return data.econ.currency;

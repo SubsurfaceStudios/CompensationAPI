@@ -1,6 +1,5 @@
 require('dotenv').config();
 const fs = require('fs');
-const sanitize = require('sanitize-filename');
 const request = require('request');
 const config = require('./config.json');
 
@@ -267,8 +266,7 @@ async function onPlayerReportedCallback(reportData) {
 }
 
 async function BanPlayer(id, reason, duration, moderator) {
-     let id_clean = sanitize(`${id}`);
-     let data = await PullPlayerData(id_clean);
+     let data = await PullPlayerData(id);
 
      const endTS = Date.now() + (duration * 60) //convert duration from hours to a unix timestamp
      
@@ -279,6 +277,6 @@ async function BanPlayer(id, reason, duration, moderator) {
      };
 
      data.auth.bans.push(ban);
-     require('./index').sendStringToClient(id_clean, "BANNED");
-     await PushPlayerData(id_clean, data);
+     require('./index').sendStringToClient(id, "BANNED");
+     await PushPlayerData(id, data);
 }

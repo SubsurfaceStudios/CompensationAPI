@@ -3,7 +3,6 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const BadWordList = require('../data/badwords/array');
-const sanitize = require('sanitize-filename');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PullPlayerData } = require('../helpers');
@@ -311,7 +310,6 @@ router.get("/mfa-enabled", middleware.authenticateToken, async (req, res) => {
 });
 
 async function Verify2faUser(user_id, code, callback) {
-     user_id = sanitize(user_id);
      var data = await helpers.PullPlayerData(user_id);
      client.verify.services(process.env.TWILIO_SERVICE_SID)
                .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
@@ -323,7 +321,6 @@ async function Verify2faUser(user_id, code, callback) {
 }
 
 async function Verify2faCode(user_id, code, callback) {
-     user_id = sanitize(user_id);
      var data = await helpers.PullPlayerData(user_id);
      client.verify.services(process.env.TWILIO_SERVICE_SID)
                .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)

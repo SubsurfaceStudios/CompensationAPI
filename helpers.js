@@ -56,7 +56,6 @@ async function NotifyPlayer(id, template, params) {
     data.notifications.push(notification);
 
     await PushPlayerData(id, data);
-    require('./index').sendStringToClient(id, "NOTIFICATION RECIEVED");
     return true;
 }
 
@@ -278,7 +277,6 @@ async function BanPlayer(id, reason, duration, moderator) {
     };
 
     data.auth.bans.push(ban);
-    require('./index').sendStringToClient(id, "BANNED");
     await PushPlayerData(id, data);
 }
 

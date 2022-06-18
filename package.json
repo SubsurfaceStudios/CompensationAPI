@@ -20,15 +20,15 @@
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^6.0.5",
     "express-slow-down": "^1.4.0",
-    "firebase": "^9.8.2",
+    "firebase": "^9.8.3",
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.3.1",
+    "mongodb": "^4.7.0",
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
-    "twilio": "^3.77.2",
+    "twilio": "^3.77.3",
     "uuid": "^8.3.2",
-    "ws": "^8.7.0"
+    "ws": "^8.8.0"
   },
   "devDependencies": {
     "eslint": "^8.17.0",

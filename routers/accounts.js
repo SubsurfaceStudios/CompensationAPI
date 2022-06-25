@@ -320,7 +320,6 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
     const data = await helpers.PullPlayerData(id);
     if(data === null) return res.status(404).send({code: "player_not_found", message: "That player does not exist."});
-    if(data.presence.status !== 'online') return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
 
     // the joinCode to allow the client to join the room is privellaged information,
     // and should NEVER be sent unless we want the client to join a room.
@@ -360,10 +359,6 @@ router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, re
     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
     const data = await helpers.PullPlayerData(id);
     if(data === null) return res.status(404).send({code: "player_not_found", message: "That player does not exist."});
-
-    // Developers can force pull any player, even those appearing offline.
-    // if(data.presence.status != 'online') return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
-    // Nobody is safe.
 
     var selfClient = clients[req.user.id];
     clients[id].Socket.emit('force-pull', selfClient.roomId, selfClient.joinCode);

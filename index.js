@@ -81,7 +81,7 @@ app.post("/api/update", async (req, res) => {
     if(!config.development_mode) return res.status(403).send({"code": "unauthorized", "message": "This is a production server, and therefore cannot be automatically restarted."});
 
     const sha256 = "sha256=" + crypto.createHmac('sha256', process.env.GITHUB_SECRET)
-        .update(req.body)
+        .update(JSON.stringify(req.body, null, 2))
         .digest('hex');
     const matches = crypto.timingSafeEqual(sha256, req.headers["X-Hub-Signature-256"]);
     if(!matches) return res.status(403).send({"code": "unauthorized", "message": "Wait a minute, you're not GitHub!"});

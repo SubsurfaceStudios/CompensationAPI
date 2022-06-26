@@ -414,7 +414,7 @@ WebSocketServerV2.on('connection', (Socket) => {
 
             // The invite & player sending it are valid, process the request.
             // eslint-disable-next-line no-redeclare
-            var instance = await MatchmakingAPI.GetInstanceByJoinCode(ws_connected_clients[ParsedContent.data.user_id].roomId, ws_connected_clients[ParsedContent.data.user_id].joinCode);
+            var instance = (await MatchmakingAPI.GetInstances(ws_connected_clients[ParsedContent.data.user_id].roomId)).filter(x => x.JoinCode == ws_connected_clients[ParsedContent.data.user_id].joinCode)[0];
 
             if (typeof instance != 'object') {
                 // Instance is invalid for some reason, fail.

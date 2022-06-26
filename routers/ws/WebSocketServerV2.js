@@ -385,7 +385,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
-            var inviteIndex = currentData.notifications.findIndex(x => x.template === "invite" && x.parameters.sending_id === ParsedContent.data.user_id);
+            var inviteIndex = currentData.notifications.findIndex(x => x.template === "invite" && x.parameters.sendingPlayer === ParsedContent.data.user_id);
 
             if (inviteIndex === -1)
                 return;
@@ -495,10 +495,10 @@ WebSocketServerV2.on('connection', (Socket) => {
             return;
         }
     });
-    Socket.on('force-pull', async (roomId, instanceId) => {
+    Socket.on('force-pull', async (roomId, joinCode) => {
         if (!ConnectedUserData.isAuthenticated)
             return;
-        var instance = (await MatchmakingAPI.GetInstances(roomId)).filter(x => x.InstanceId == instanceId)[0];
+        var instance = (await MatchmakingAPI.GetInstances(roomId)).filter(x => x.JoinCode == joinCode)[0];
         var roomData = await require('../../index')
             .mongoClient
             .db(process.env.MONGOOSE_DATABASE_NAME)

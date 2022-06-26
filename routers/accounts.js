@@ -6,7 +6,6 @@ const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
-const { getClients } = require('../index');
 
 router.use(express.urlencoded({extended: false}));
 
@@ -16,7 +15,7 @@ router.get("/:id/public", async (req, res) => {
     let data = await helpers.PullPlayerData(id);
     if (data !== null) {
         var send = data.public;
-        const clients = getClients();
+        const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
         if(typeof clients[id] != 'object') {
             send.presence = {
                 online: false,
@@ -304,6 +303,7 @@ router.route("/:id/tags/:tag").
     });
 
 router.post('/invite', middleware.authenticateToken, async (req, res) => {
+    console.log(req.params);
     var { id, expiresAfter } = req.params;
 
     if(typeof id == 'undefined') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
@@ -315,7 +315,7 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 
     const self = await helpers.PullPlayerData(req.user.id);
 
-    const clients = getClients();
+    const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
     const data = await helpers.PullPlayerData(id);
@@ -350,11 +350,12 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 });
 
 router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, res) => {
+    console.log(req.params);
     var { id } = req.params;
 
     if(typeof id == 'undefined') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
 
-    const clients = getClients();
+    const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
     const data = await helpers.PullPlayerData(id);

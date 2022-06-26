@@ -1,7 +1,7 @@
 const helpers = require('../../helpers');
 const jwt = require('jsonwebtoken');
 const WebSocket = require('ws');
-const { ws_connected_clients} = require("../../index");
+const ws_connected_clients = {};
 
 const WebSocketsLegacy = new WebSocket.Server({ noServer: true });
 exports.wss_v1 = WebSocketsLegacy;

@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const { MatchmakingModes } = require('../matchmaking');
 const { WebSocketV2_MessageTemplate } = require("../../index");
 var ws_connected_clients = {};
+exports.ws_connected_clients = ws_connected_clients;
 
 const WebSocketServerV2 = new WebSocket.Server({ noServer: true });
 exports.WebSocketServerV2 = WebSocketServerV2;
@@ -384,17 +385,10 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
-            var inviteIndex = currentData.notifications.findIndex(x => x.type === "invite" && x.parameters.sending_id === ParsedContent.data.user_id);
+            var inviteIndex = currentData.notifications.findIndex(x => x.template === "invite" && x.parameters.sendingPlayer === ParsedContent.data.user_id);
 
             if (inviteIndex === -1)
                 return;
-
-            var invite = currentData.notifications[inviteIndex];
-            if (invite.expiresAt < Date.now()) {
-                currentData.notifications.splice(inviteIndex);
-                await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
-                return;
-            }
 
             // The invite itself is valid, now validate the player's location.
             if (typeof ws_connected_clients[ParsedContent.data.user_id] != 'object') {
@@ -420,7 +414,7 @@ WebSocketServerV2.on('connection', (Socket) => {
 
             // The invite & player sending it are valid, process the request.
             // eslint-disable-next-line no-redeclare
-            var instance = await MatchmakingAPI.GetInstanceByJoinCode(ws_connected_clients[ParsedContent.data.user_id].roomId, ws_connected_clients[ParsedContent.data.user_id].joinCode);
+            var instance = (await MatchmakingAPI.GetInstances(ws_connected_clients[ParsedContent.data.user_id].roomId)).filter(x => x.JoinCode == ws_connected_clients[ParsedContent.data.user_id].joinCode)[0];
 
             if (typeof instance != 'object') {
                 // Instance is invalid for some reason, fail.
@@ -489,11 +483,10 @@ WebSocketServerV2.on('connection', (Socket) => {
                 parameters: {
                     sendingPlayer: ConnectedUserData.uid,
                     sending_data: currentData.public,
-                    issued: Date.now(),
                     headerText: "Invite Declined",
                     bodyText: `@${currentData.public.username} has declined your invite.`,
-                    cancelText: "",
-                    continueText: ""
+                    cancelText: "OK",
+                    continueText: "OK"
                 }
             };
 
@@ -505,7 +498,7 @@ WebSocketServerV2.on('connection', (Socket) => {
     Socket.on('force-pull', async (roomId, joinCode) => {
         if (!ConnectedUserData.isAuthenticated)
             return;
-        var instance = await MatchmakingAPI.GetInstanceByJoinCode(roomId, joinCode);
+        var instance = (await MatchmakingAPI.GetInstances(roomId)).filter(x => x.JoinCode == joinCode)[0];
         var roomData = await require('../../index')
             .mongoClient
             .db(process.env.MONGOOSE_DATABASE_NAME)
@@ -531,9 +524,8 @@ WebSocketServerV2.on('connection', (Socket) => {
             name: instance.JoinCode,
             // we will never speak of this again
             baseSceneId: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].baseSceneId,
-            // or thisa3
-            spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn,
-            issued: Date.now()
+            // or this
+            spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn
         };
         Socket.send(JSON.stringify(send));
     });

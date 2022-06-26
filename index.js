@@ -35,10 +35,6 @@ const config = require('./config.json');
 
 //#region routers
 
-var ws_connected_clients = {};
-exports.ws_connected_clients = ws_connected_clients;
-exports.getClients = () => ws_connected_clients;
-
 // /api/accounts/*
 app.use("/api/accounts", require("./routers/accounts"));
 // /api/auth/*

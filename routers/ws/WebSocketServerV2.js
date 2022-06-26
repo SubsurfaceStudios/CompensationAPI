@@ -390,13 +390,6 @@ WebSocketServerV2.on('connection', (Socket) => {
             if (inviteIndex === -1)
                 return;
 
-            var invite = currentData.notifications[inviteIndex];
-            if (invite.expiresAt < Date.now()) {
-                currentData.notifications.splice(inviteIndex);
-                await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
-                return;
-            }
-
             // The invite itself is valid, now validate the player's location.
             if (typeof ws_connected_clients[ParsedContent.data.user_id] != 'object') {
                 // If the player is offline, revoke the invite & fail.

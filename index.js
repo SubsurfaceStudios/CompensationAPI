@@ -83,7 +83,7 @@ app.post("/api/update", async (req, res) => {
     const sha256 = "sha256=" + crypto.createHmac('sha256', process.env.GITHUB_SECRET)
         .update(JSON.stringify(req.body, null, 2))
         .digest('hex');
-    const matches = crypto.timingSafeEqual(Buffer.from(sha256), Buffer.from(req.headers["X-Hub-Signature-256"]));
+    const matches = crypto.timingSafeEqual(Buffer.from(sha256), Buffer.from(req.headers["x-hub-signature-256"]));
     if(!matches) return res.status(403).send({"code": "unauthorized", "message": "Wait a minute, you're not GitHub!"});
 
 

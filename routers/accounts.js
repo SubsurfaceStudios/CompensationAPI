@@ -326,7 +326,6 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
         template: "invite",
         parameters: {
             sendingPlayer: req.user.id,
-            sending_data: self.public,
             headerText: "Invite Recieved",
             bodyText: `@${self.public.username} has invited you to play with them!`,
             cancelText: "Decline",

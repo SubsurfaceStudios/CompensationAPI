@@ -120,7 +120,7 @@ router.route("/channels/:channel_id/messages")
 	
             res.status(200).json({message_id: message._id});
 
-            require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+            require('./ws/MessagingGatewayServerV1').MessagingGatewayServerV1.clients.forEach(client => {
                 client.emit('message_sent', message.server, message.channel, message._id);
             });
         } catch (ex) {
@@ -239,7 +239,7 @@ router.route("/messages/:message_id")
 
             res.sendStatus(200);
 
-            require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+            require('./ws/MessagingGatewayServerV1').MessagingGatewayServerV1.clients.forEach(client => {
                 client.emit('message_edited', message.server, message.channel, message._id);
             });
         } catch (ex) {
@@ -285,7 +285,7 @@ router.route("/messages/:message_id")
 
             res.sendStatus(200);
 
-            require('../index').MessagingGatewayServerV1.clients.forEach(client => {
+            require('./ws/MessagingGatewayServerV1').MessagingGatewayServerV1.clients.forEach(client => {
                 client.emit('message_deleted', message.server, message.channel, message._id);
             });
         } catch (ex) {

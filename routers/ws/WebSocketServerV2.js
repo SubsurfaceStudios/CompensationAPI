@@ -498,7 +498,7 @@ WebSocketServerV2.on('connection', (Socket) => {
     Socket.on('force-pull', async (roomId, instanceId) => {
         if (!ConnectedUserData.isAuthenticated)
             return;
-        var instance = (await MatchmakingAPI.GetInstances(roomId)).find(x => x.InstanceId == instanceId)[0];
+        var instance = (await MatchmakingAPI.GetInstances(roomId)).filter(x => x.InstanceId == instanceId)[0];
         var roomData = await require('../../index')
             .mongoClient
             .db(process.env.MONGOOSE_DATABASE_NAME)

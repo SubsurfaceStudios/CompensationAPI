@@ -503,10 +503,10 @@ WebSocketServerV2.on('connection', (Socket) => {
             return;
         }
     });
-    Socket.on('force-pull', async (roomId, joinCode) => {
+    Socket.on('force-pull', async (roomId, instanceId) => {
         if (!ConnectedUserData.isAuthenticated)
             return;
-        var instance = await MatchmakingAPI.GetInstanceByJoinCode(roomId, joinCode);
+        var instance = await MatchmakingAPI.GetInstanceById(roomId, instanceId);
         var roomData = await require('../../index')
             .mongoClient
             .db(process.env.MONGOOSE_DATABASE_NAME)
@@ -532,7 +532,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             name: instance.JoinCode,
             // we will never speak of this again
             baseSceneId: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].baseSceneId,
-            // or thisa3
+            // or this
             spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn,
             issued: Date.now()
         };

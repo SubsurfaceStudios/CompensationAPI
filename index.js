@@ -4,8 +4,6 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
-const proc = require('node:child_process');
-const crypto = require('node:crypto');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",
@@ -76,20 +74,6 @@ app.get("/", async (req, res) => {
     return res.status(200).send("Pong!");
 });
 
-app.post("/dev/update", async (req, res) => {
-    if(!config.development_mode) return res.status(403).send({"code": "unauthorized", "message": "This is a production server, and therefore cannot be automatically restarted."});
-
-    const sha256 = "sha256=" + crypto.createHmac('sha256', process.env.GITHUB_SECRET)
-        .update(req.body)
-        .digest('hex');
-    const matches = crypto.timingSafeEqual(sha256, req.headers["X-Hub-Signature-256"]);
-    if(!matches) return res.status(403).send({"code": "unauthorized", "message": "Wait a minute, you're not GitHub!"});
-
-
-    proc.exec("git pull && npm i");
-    res.sendStatus(200);
-    process.exit(0);
-});
 
 //Joke
 app.get("/api/dingus", async(req, res) => {

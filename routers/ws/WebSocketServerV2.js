@@ -498,7 +498,7 @@ WebSocketServerV2.on('connection', (Socket) => {
     Socket.on('force-pull', async (roomId, instanceId) => {
         if (!ConnectedUserData.isAuthenticated)
             return;
-        var instance = await MatchmakingAPI.GetInstanceById(roomId, instanceId);
+        var instance = (await MatchmakingAPI.GetInstances(roomId)).find(x => x.instanceId == instanceId)[0];
         var roomData = await require('../../index')
             .mongoClient
             .db(process.env.MONGOOSE_DATABASE_NAME)
@@ -525,8 +525,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             // we will never speak of this again
             baseSceneId: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].baseSceneId,
             // or this
-            spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn,
-            issued: Date.now()
+            spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn
         };
         Socket.send(JSON.stringify(send));
     });

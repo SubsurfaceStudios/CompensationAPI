@@ -322,16 +322,11 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 
     // the joinCode to allow the client to join the room is privellaged information,
     // and should NEVER be sent unless we want the client to join a room.
-    const now = Date.now();
-    const expiresAt = now + expiresAfter;
     const notification = {
         template: "invite",
         parameters: {
             sendingPlayer: req.user.id,
             sending_data: self.public,
-            expiresAt: expiresAt,
-            expiresAfter: expiresAfter,
-            issued: now,
             headerText: "Invite Recieved",
             bodyText: `@${self.public.username} has invited you to play with them!`,
             cancelText: "Decline",

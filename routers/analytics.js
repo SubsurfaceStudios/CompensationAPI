@@ -10,7 +10,7 @@ router.get("/account-count", async (req, res) => {
 });
 
 router.get("/online-count", async (req, res) => {
-    const clients = Object.keys(require('../index').getClients());
+    const clients = Object.keys(require('./ws/WebSocketServerV2').ws_connected_clients);
     res.status(200).send(`${clients.length}`);
 });
 

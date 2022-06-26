@@ -6,7 +6,6 @@ const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
-const { getClients } = require('../index');
 
 router.use(express.urlencoded({extended: false}));
 
@@ -16,7 +15,7 @@ router.get("/:id/public", async (req, res) => {
     let data = await helpers.PullPlayerData(id);
     if (data !== null) {
         var send = data.public;
-        const clients = getClients();
+        const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
         if(typeof clients[id] != 'object') {
             send.presence = {
                 online: false,
@@ -304,9 +303,9 @@ router.route("/:id/tags/:tag").
     });
 
 router.post('/invite', middleware.authenticateToken, async (req, res) => {
-    var { id, expiresAfter } = req.params;
+    var { id, expiresAfter } = req.body;
 
-    if(typeof id == 'undefined') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+    if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
     if(typeof expiresAfter != 'string') expiresAfter = 300000;
     else {
         expiresAfter = parseInt(expiresAfter);
@@ -315,7 +314,7 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 
     const self = await helpers.PullPlayerData(req.user.id);
 
-    const clients = getClients();
+    const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
     const data = await helpers.PullPlayerData(id);
@@ -323,16 +322,10 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 
     // the joinCode to allow the client to join the room is privellaged information,
     // and should NEVER be sent unless we want the client to join a room.
-    const now = Date.now();
-    const expiresAt = now + expiresAfter;
     const notification = {
         template: "invite",
         parameters: {
             sendingPlayer: req.user.id,
-            sending_data: self.public,
-            expiresAt: expiresAt,
-            expiresAfter: expiresAfter,
-            issued: now,
             headerText: "Invite Recieved",
             bodyText: `@${self.public.username} has invited you to play with them!`,
             cancelText: "Decline",
@@ -350,17 +343,17 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 });
 
 router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, res) => {
-    var { id } = req.params;
+    var { id } = req.body;
 
-    if(typeof id == 'undefined') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+    if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
 
-    const clients = getClients();
+    const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});
     if(!Object.keys(clients).includes(req.user.id)) return res.status(400).send({code: "self_not_online", message: "You are not currently in-game."});
     const data = await helpers.PullPlayerData(id);
     if(data === null) return res.status(404).send({code: "player_not_found", message: "That player does not exist."});
 
     var selfClient = clients[req.user.id];
-    clients[id].Socket.emit('force-pull', selfClient.roomId, selfClient.joinCode);
+    clients[id].socket.emit('force-pull', selfClient.roomId, selfClient.JoinCode);
 });
 module.exports = router;

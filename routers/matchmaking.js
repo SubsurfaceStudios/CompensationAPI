@@ -181,6 +181,8 @@ class RoomSession {
         else 
             GlobalRoomInstances[RoomId][this.GlobalInstanceId][SubroomId] = this.InstanceId;
 
+        SetInstance(this.RoomId, this.InstanceId, this);
+
         this.BeginEventLoop();
     }
 }

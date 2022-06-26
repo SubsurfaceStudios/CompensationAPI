@@ -303,10 +303,9 @@ router.route("/:id/tags/:tag").
     });
 
 router.post('/invite', middleware.authenticateToken, async (req, res) => {
-    console.log(req.params);
-    var { id, expiresAfter } = req.params;
+    var { id, expiresAfter } = req.body;
 
-    if(typeof id == 'undefined') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+    if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
     if(typeof expiresAfter != 'string') expiresAfter = 300000;
     else {
         expiresAfter = parseInt(expiresAfter);
@@ -350,10 +349,9 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 });
 
 router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, res) => {
-    console.log(req.params);
-    var { id } = req.params;
+    var { id } = req.body;
 
-    if(typeof id == 'undefined') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
+    if(typeof id != 'string') return res.status(400).send({code: "unspecified_parameter", message: "You did not specify the player to invite."});
 
     const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
     if(!Object.keys(clients).includes(id)) return res.status(400).send({code: "player_not_online", message: "That player is not online. Please try again later."});

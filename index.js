@@ -4,6 +4,7 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
+const proc = require('node:child_process');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",
@@ -72,6 +73,12 @@ app.use("/api/messaging", messaging.router);
 //Server test call
 app.get("/", async (req, res) => {
     return res.status(200).send("Pong!");
+});
+
+app.post("/dev/update", async (req, res) => {
+    if(!config.development_mode) return res.status(403).send({"code": "unauthorized", "message": "This is a production server, and therefore cannot be automatically restarted."});
+    proc.exec("git pull && npm i && forever restartall");
+    return res.sendStatus(200);
 });
 
 //Joke

@@ -86,8 +86,9 @@ app.post("/dev/update", async (req, res) => {
     if(!matches) return res.status(403).send({"code": "unauthorized", "message": "Wait a minute, you're not GitHub!"});
 
 
-    proc.exec("git pull && npm i && forever restartall");
-    return res.sendStatus(200);
+    proc.exec("git pull && npm i");
+    res.sendStatus(200);
+    process.exit(0);
 });
 
 //Joke

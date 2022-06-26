@@ -385,7 +385,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
-            var inviteIndex = currentData.notifications.findIndex(x => x.type === "invite" && x.parameters.sending_id === ParsedContent.data.user_id);
+            var inviteIndex = currentData.notifications.findIndex(x => x.template === "invite" && x.parameters.sending_id === ParsedContent.data.user_id);
 
             if (inviteIndex === -1)
                 return;
@@ -490,11 +490,10 @@ WebSocketServerV2.on('connection', (Socket) => {
                 parameters: {
                     sendingPlayer: ConnectedUserData.uid,
                     sending_data: currentData.public,
-                    issued: Date.now(),
                     headerText: "Invite Declined",
                     bodyText: `@${currentData.public.username} has declined your invite.`,
-                    cancelText: "",
-                    continueText: ""
+                    cancelText: "OK",
+                    continueText: "OK"
                 }
             };
 

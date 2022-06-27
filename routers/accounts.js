@@ -354,6 +354,6 @@ router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, re
     if(data === null) return res.status(404).send({code: "player_not_found", message: "That player does not exist."});
 
     var selfClient = clients[req.user.id];
-    clients[id].socket.emit('force-pull', selfClient.roomId, selfClient.JoinCode);
+    clients[id].socket.emit('force-pull', selfClient.roomId, selfClient.joinCode);
 });
 module.exports = router;

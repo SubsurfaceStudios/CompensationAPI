@@ -171,8 +171,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 ConnectedUserData.matchmaking_RoomId = instance.RoomId;
 
                 ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
-                ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
-                ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+                ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+                ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
                 ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
                 ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
                 return;
@@ -287,8 +287,8 @@ WebSocketServerV2.on('connection', (Socket) => {
             ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
             ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
-            ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
-            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+            ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
             ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
             ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
             return;
@@ -351,8 +351,8 @@ WebSocketServerV2.on('connection', (Socket) => {
             ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
             ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
-            ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
-            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+            ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
             ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
             ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
             return;
@@ -373,8 +373,8 @@ WebSocketServerV2.on('connection', (Socket) => {
             ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
             ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
-            ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
-            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+            ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
             ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
             ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
             return;
@@ -439,21 +439,25 @@ WebSocketServerV2.on('connection', (Socket) => {
             ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
             ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
-            ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
-            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+            ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
             ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
             ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
 
             // eslint-disable-next-line no-redeclare
+            var collection = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
             var room = await collection.findOne({ _id: { $eq: ConnectedUserData.matchmaking_RoomId, $exists: true } });
 
             // eslint-disable-next-line no-redeclare
             var send = WebSocketV2_MessageTemplate;
             send.type = "join_or_create_photon_room";
+            
+            // eslint-disable-next-line no-redeclare
+            var subroom = room.subrooms[instance.SubroomId];
             send.data = {
                 name: instance.JoinCode,
-                baseSceneId: room.subrooms[instance.subroomId].versions[room.subrooms[instance.subroomId].publicVersionId].baseSceneId,
-                spawn: room.subrooms[instance.subroomId].versions[room.subrooms[instance.subroomId].publicVersionId].spawn,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                spawn: subroom.versions[subroom.publicVersionId].spawn,
             };
 
             Socket.send(JSON.stringify(send, null, 5));
@@ -512,20 +516,21 @@ WebSocketServerV2.on('connection', (Socket) => {
         ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
 
         ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
-        ws_connected_clients[ConnectedUserData.uid].roomId = instance.roomid;
-        ws_connected_clients[ConnectedUserData.uid].subroomId = instance.subroomId;
+        ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+        ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
         ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
         ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
 
         // eslint-disable-next-line no-redeclare
         var send = WebSocketV2_MessageTemplate;
         send.code = "join_or_create_photon_room";
+        var subroom = roomData.subrooms[instance.SubroomId];
         send.data = {
             name: instance.JoinCode,
             // we will never speak of this again
-            baseSceneId: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].baseSceneId,
+            baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
             // or this
-            spawn: roomData.subrooms[instance.subroomId].versions[roomData.subrooms[instance.subroomId].publicVersionId].spawn
+            spawn: subroom.versions[subroom.publicVersionId].spawn
         };
         Socket.send(JSON.stringify(send));
     });

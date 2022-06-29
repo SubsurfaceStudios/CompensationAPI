@@ -450,7 +450,7 @@ WebSocketServerV2.on('connection', (Socket) => {
 
             // eslint-disable-next-line no-redeclare
             var send = WebSocketV2_MessageTemplate;
-            send.type = "join_or_create_photon_room";
+            send.code = "join_or_create_photon_room";
             
             // eslint-disable-next-line no-redeclare
             var subroom = room.subrooms[instance.SubroomId];

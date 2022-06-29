@@ -6,6 +6,7 @@ const notificationTemplates = {
     friendRequest: "friendRequest",
     messageRecieved: "messageRecieved"
 };
+const {WebSocketV2_MessageTemplate} = require('./ws/WebSocketServerV2');
 
 router.get("/imgfeed", async (req, res) => {
     try {
@@ -174,6 +175,11 @@ router.post("/friend-request", middleware.authenticateToken, async (req, res) =>
     res.status(200).send("Successfully sent friend request to player!");
     sendingData.private.friendRequestsSent.push(target);
     await helpers.PushPlayerData(req.user.id, sendingData);
+    
+    var send = WebSocketV2_MessageTemplate;
+    send.code = "standard_notification_recieved";
+    send.data = {};
+    require('./ws/WebSocketServerV2').ws_connected_clients[target].socket.send(JSON.stringify(send, null, 5));
 });
 
 router.post("/accept-request", middleware.authenticateToken, async (req, res) => {

@@ -6,6 +6,7 @@ const { authenticateDeveloperToken } = require('../middleware');
 const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
+const { WebSocketV2_MessageTemplate } = require('../index');
 
 router.use(express.urlencoded({extended: false}));
 
@@ -335,11 +336,15 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
 
     if(data.notifications.findIndex(item => item.template === 'invite' && item.parameters.sending_id === req.user.id) === -1) {
         data.notifications.push(notification);
-        helpers.PushPlayerData(id, data);
+        await helpers.PushPlayerData(id, data);
+        var send = WebSocketV2_MessageTemplate;
+        send.code = "standard_notification_recieved";
+        send.data = {};
+        require('./ws/WebSocketServerV2').ws_connected_clients[id].socket.send(JSON.stringify(send, null, 5));
         return res.sendStatus(200);
     }
 
-    return res.status(400).send({code: "denied", message: "You can only send a player ONE invite until they accept or decline it. After that you may send them ONE more, and the process repeats."});
+    return res.status(400).send({code: "invite_denied", message: "You can only send a player ONE invite until they accept or decline it. After that you may send them ONE more, and the process repeats."});
 });
 
 router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, res) => {

@@ -385,7 +385,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             var currentData = await helpers.PullPlayerData(ConnectedUserData.uid);
-            var inviteIndex = currentData.notifications.findIndex(x => x.template === "invite" && x.parameters.sendingPlayer === ParsedContent.data.user_id);
+            var now = Date.now();
+            var inviteIndex = currentData.notifications.findIndex(x => x.template === "invite" && x.parameters.sendingPlayer === ParsedContent.data.user_id && x.parameters.sentAt + 5 * 60 * 1000 < now);
 
             if (inviteIndex === -1)
                 return;

@@ -8,7 +8,8 @@
     "start": "forever index.js",
     "admin": "node administrator_dashboard.js",
     "pull": "git pull && npm install",
-    "test": "node ."
+    "test": "node .",
+    "outdated": "npx check-outdated"
   },
   "keywords": [],
   "author": "SubsurfaceStudios",

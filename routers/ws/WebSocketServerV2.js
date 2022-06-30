@@ -363,10 +363,10 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             // eslint-disable-next-line no-redeclare
-            var instance = await MatchmakingAPI.GetInstanceByJoinCode(ParsedContent.data.room_id, ParsedContent.data.join_code);
+            var instance = (await MatchmakingAPI.GetInstances(ParsedContent.data.room_id)).filter(x => x.JoinCode == ParsedContent.data.join_code)[0];
             instance.AddPlayer(ConnectedUserData.uid);
 
-            await MatchmakingAPI.SetInstance(ParsedContent.data.room_id, instance.InstanceId, instance);
+            await MatchmakingAPI.SetInstance(instance.RoomId, instance.InstanceId, instance);
 
             ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
             ConnectedUserData.matchmaking_RoomId = instance.RoomId;

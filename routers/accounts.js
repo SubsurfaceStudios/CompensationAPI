@@ -330,11 +330,12 @@ router.post('/invite', middleware.authenticateToken, async (req, res) => {
             headerText: "Invite Recieved",
             bodyText: `@${self.public.username} has invited you to play with them!`,
             cancelText: "Decline",
-            continueText: "Accept"
+            continueText: "Accept",
+            sentAt: Date.now().toString()
         }
     };
 
-    if(data.notifications.findIndex(item => item.template === 'invite' && item.parameters.sending_id === req.user.id) === -1) {
+    if(data.notifications.findIndex(item => item.template === 'invite' && item.parameters.sendingPlayer === req.user.id) === -1) {
         data.notifications.push(notification);
         await helpers.PushPlayerData(id, data);
         var send = WebSocketV2_MessageTemplate;

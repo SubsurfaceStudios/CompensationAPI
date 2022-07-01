@@ -14,7 +14,7 @@ router.get("/get/", middleware.authenticateToken, async (req, res) => {
     data.notifications = copiedNotifications.filter(x => {
         switch(x.template) {
             case "invite": 
-                if(x.parameters.sentAt + (5 * 60 * 1000) < now) return false;
+                if(parseInt(x.parameters.sentAt) + (5 * 60 * 1000) < now) return false;
                 return true;
             default:
                 return true;

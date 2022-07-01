@@ -361,5 +361,6 @@ router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, re
 
     var selfClient = clients[req.user.id];
     clients[id].socket.emit('force-pull', selfClient.roomId, selfClient.joinCode);
+    res.sendStatus(200);
 });
 module.exports = router;

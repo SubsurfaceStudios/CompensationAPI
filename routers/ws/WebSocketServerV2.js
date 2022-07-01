@@ -161,7 +161,17 @@ WebSocketServerV2.on('connection', (Socket) => {
                 send.data = {
                     name: instance.JoinCode,
                     baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                    spawn: subroom.versions[subroom.publicVersionId].spawn
+                    spawn: subroom.versions[subroom.publicVersionId].spawn,
+                    roomFaceData: {
+                        _id: room._id,
+                        name: room.name,
+                        description: room.description,
+                        tags: room.tags,
+                        created_at: room.created_at,
+                        homeSubroomId: room.homeSubroomId,
+                        creator_id: room.creator_id
+                    },
+                    authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
                 };
 
                 Socket.send(JSON.stringify(send, null, 5));
@@ -214,7 +224,17 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: final_selection.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn
+                spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomFaceData: {
+                    _id: room._id,
+                    name: room.name,
+                    description: room.description,
+                    tags: room.tags,
+                    created_at: room.created_at,
+                    homeSubroomId: room.homeSubroomId,
+                    creator_id: room.creator_id
+                },
+                authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
             };
 
             Socket.send(JSON.stringify(send, null, 5));
@@ -277,7 +297,17 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn
+                spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomFaceData: {
+                    _id: room._id,
+                    name: room.name,
+                    description: room.description,
+                    tags: room.tags,
+                    created_at: room.created_at,
+                    homeSubroomId: room.homeSubroomId,
+                    creator_id: room.creator_id
+                },
+                authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
             };
 
             Socket.send(JSON.stringify(send, null, 5));
@@ -341,7 +371,17 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn
+                spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomFaceData: {
+                    _id: room._id,
+                    name: room.name,
+                    description: room.description,
+                    tags: room.tags,
+                    created_at: room.created_at,
+                    homeSubroomId: room.homeSubroomId,
+                    creator_id: room.creator_id
+                },
+                authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
             };
 
             Socket.send(JSON.stringify(send, null, 5));
@@ -459,7 +499,20 @@ WebSocketServerV2.on('connection', (Socket) => {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                 spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomFaceData: {
+                    _id: room._id,
+                    name: room.name,
+                    description: room.description,
+                    tags: room.tags,
+                    created_at: room.created_at,
+                    homeSubroomId: room.homeSubroomId,
+                    creator_id: room.creator_id
+                },
+                authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
             };
+            
+            currentData.notifications.splice(inviteIndex);
+            await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
 
             Socket.send(JSON.stringify(send, null, 5));
             return;
@@ -522,16 +575,28 @@ WebSocketServerV2.on('connection', (Socket) => {
         ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
         ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
 
+        var room = await require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms')
+            .findOne({_id: {$exists: true, $eq: instance.RoomId}});
+
         // eslint-disable-next-line no-redeclare
         var send = WebSocketV2_MessageTemplate;
         send.code = "join_or_create_photon_room";
         var subroom = roomData.subrooms[instance.SubroomId];
         send.data = {
             name: instance.JoinCode,
-            // we will never speak of this again
             baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-            // or this
-            spawn: subroom.versions[subroom.publicVersionId].spawn
+            spawn: subroom.versions[subroom.publicVersionId].spawn,
+            roomFaceData: {
+                _id: room._id,
+                name: room.name,
+                description: room.description,
+                tags: room.tags,
+                created_at: room.created_at,
+                homeSubroomId: room.homeSubroomId,
+                creator_id: room.creator_id
+            },
+            authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
         };
         Socket.send(JSON.stringify(send));
     });

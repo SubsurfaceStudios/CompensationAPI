@@ -4,4 +4,4 @@ config.json
 src
 env.js
 nginx.conf
-data
+data/audit.json

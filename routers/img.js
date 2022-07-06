@@ -110,7 +110,18 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         storage.maxUploadRetryTime = 30 * 1000;
         storage.maxOperationRetryTime = 30 * 1000;
         const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
-        await firebaseStorage.uploadBytes(ref, buff);
+        for (let index = 0; index < 5; index++) {
+            try {
+                await firebaseStorage.uploadBytes(ref, buff);
+                break;
+            } catch (ex) {
+                console.error(ex);
+                if(ex.code != 'storage/retry-limit-exceeded') {
+                    return res.sendStatus(500);
+                }
+                continue;
+            }  
+        }
 
         helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\nhttps://api.compensationvr.tk/img/${MetaData._id}`, true);
 

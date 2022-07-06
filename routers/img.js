@@ -107,8 +107,8 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
 
         // Upload image to firebase.
         const storage = firebaseStorage.getStorage();
-        storage.maxOperationRetryTime = 5 * 1000;
-        storage.maxUploadRetryTime = 10 * 1000;
+        storage.maxUploadRetryTime = 30 * 1000;
+        storage.maxOperationRetryTime = 30 * 1000;
         const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
         await firebaseStorage.uploadBytes(ref, buff);
 

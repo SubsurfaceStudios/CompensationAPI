@@ -86,7 +86,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         // TODO room implementation with photos
 
         MetaData.others = JSON.parse(others);
-        MetaData.internalPathRef = `/images/${MetaData._id}.jpg`;
+        MetaData.internalPathRef = `images/${MetaData._id}.jpg`;
         MetaData.infoPath = `/img/${MetaData._id}/info`;
         MetaData.filePath = `/img/${MetaData._id}`;
 

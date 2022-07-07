@@ -91,11 +91,11 @@ router.post("/login", async (req, res) => {
     const data = await helpers.PullPlayerData(userID);
 
 
-    const { HASHED_PASSWORD, salt } = data.auth;
+    const { HASHED_PASSWORD } = data.auth;
 
-    const externalHashed = bcrypt.hashSync(password, salt);
+    const passwordMatches = bcrypt.compareSync(password, HASHED_PASSWORD);
 
-    if(externalHashed != HASHED_PASSWORD) {
+    if(!passwordMatches) {
         if(typeof data.auth.logins != 'object') data.auth.logins = [];
         const attempt = {
             SUCCESS: false,
@@ -277,12 +277,9 @@ router.post("/create", accountCreationLimit, async (req, res) => {
 
     data.auth.username = username;
 
-    const salt = bcrypt.genSaltSync(10);
-
-    const HASHED_PASSWORD = bcrypt.hashSync(password, salt);
+    const HASHED_PASSWORD = bcrypt.hashSync(password, 10);
 
     data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
-    data.auth.salt = salt;
     data._id = id;
 
     helpers.PushPlayerData(id, data);

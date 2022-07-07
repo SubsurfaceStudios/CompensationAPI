@@ -2,7 +2,10 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const express = require('express');
-const firebaseStorage = require('firebase/storage');
+// const firebaseStorage = require('firebase/storage');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { Storage } = require('firebase-admin/storage');
+const serviceAccount = require('../admin.json');
 
 const NodeCache = require('node-cache');
 
@@ -12,6 +15,11 @@ const { default: rateLimit } = require('express-rate-limit');
 router.use(express.text({limit: config.max_image_size}));
 
 router.use(express.urlencoded({extended: false}));
+
+const app = initializeApp({
+    credential: cert(serviceAccount),
+    storageBucket: config.firebase_bucket_url
+});
 
 const imageMetadataTemplate = {
     _id: 'undefined',
@@ -106,11 +114,13 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
 
 
         // Upload image to firebase.
-        const storage = firebaseStorage.getStorage();
+        const storage = new Storage(app);
         storage.maxUploadRetryTime = 30 * 1000;
         storage.maxOperationRetryTime = 30 * 1000;
-        const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
-        await firebaseStorage.uploadBytes(ref, buff);
+        var file = storage.bucket().file(MetaData.internalPathRef).createWriteStream({
+            "contentType": "image/jpg"
+        });
+        file.end(buff);
 
         helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\nhttps://api.compensationvr.tk/img/${MetaData._id}`, true);
 
@@ -239,13 +249,13 @@ router.get("/:id", async (req, res) => {
             var ImageBuffer;
 
             if(!imgCache.has(id) || config.disable_image_caching) {
-                const storage = firebaseStorage.getStorage();
+                const storage = new Storage(app);
                 storage.maxOperationRetryTime = 5 * 1000;
                 storage.maxUploadRetryTime = 10 * 1000;
-                const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
+                const ref = storage.bucket().file(ImageInfo.internalPathRef);
 
-                var ImageBytes = await firebaseStorage.getBytes(ref);
-                ImageBuffer = Buffer.from(ImageBytes);
+                var a = await ref.download();
+                ImageBuffer = Buffer.from(a[0].buffer);
             } else {
                 ImageBuffer = imgCache.get(id);
             }
@@ -265,12 +275,12 @@ router.get("/:id", async (req, res) => {
             // eslint-disable-next-line no-redeclare
             var ImageBuffer;
             if(!imgCache.has(id) || config.disable_image_caching) {
-                const storage = firebaseStorage.getStorage();
+                const storage = new Storage(app);
                 storage.maxOperationRetryTime = 5 * 1000;
                 storage.maxUploadRetryTime = 10 * 1000;
-                const ref = firebaseStorage.ref(storage, ImageInfo.internalPathRef);
+                const ref = storage.bucket().file(ImageInfo.internalPathRef);
 
-                ImageBuffer = await firebaseStorage.getBytes(ref);
+                ImageBuffer = Buffer.from(await ref.download()).buffer;
             } else {
                 ImageBuffer = imgCache.get(id);
             }

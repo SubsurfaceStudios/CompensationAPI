@@ -86,7 +86,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         // TODO room implementation with photos
 
         MetaData.others = JSON.parse(others);
-        MetaData.internalPathRef = `/images/${MetaData._id}.jpg`;
+        MetaData.internalPathRef = `images/${MetaData._id}.jpg`;
         MetaData.infoPath = `/img/${MetaData._id}/info`;
         MetaData.filePath = `/img/${MetaData._id}`;
 
@@ -107,10 +107,10 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
 
         // Upload image to firebase.
         const storage = firebaseStorage.getStorage();
-        storage.maxOperationRetryTime = 5 * 1000;
-        storage.maxUploadRetryTime = 10 * 1000;
+        storage.maxUploadRetryTime = 30 * 1000;
+        storage.maxOperationRetryTime = 30 * 1000;
         const ref = firebaseStorage.ref(storage, MetaData.internalPathRef);
-        firebaseStorage.uploadBytes(ref, buff);
+        await firebaseStorage.uploadBytes(ref, buff);
 
         helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\nhttps://api.compensationvr.tk/img/${MetaData._id}`, true);
 
@@ -232,7 +232,8 @@ router.get("/:id", async (req, res) => {
         // Switch collection to image data.
         collection = db.collection("images");
 
-        var ImageInfo = await collection.findOne({_id: id});
+        var ImageInfo = await collection.findOne({_id: {$exists: true, $eq: id}});
+        if(ImageInfo == null) return res.status(404).send({code: "image_not_found", message: "That image does not exist."});
 
         if (typeof base64 == 'undefined' || base64 !== 'true') {
             var ImageBuffer;

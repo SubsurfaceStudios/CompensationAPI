@@ -37,7 +37,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 text: "json_parse_failed"
             };
 
-            Socket.send(send);
+            Socket.send(JSON.stringify(send, null, 5));
             throw ex;
         }
 
@@ -598,7 +598,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             },
             authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
         };
-        Socket.send(JSON.stringify(send));
+        Socket.send(JSON.stringify(send, null, 5));
     });
     Socket.on('close', async (code, reason) => {
         console.log(`Socket closed with code ${code} and reason ${reason}`);

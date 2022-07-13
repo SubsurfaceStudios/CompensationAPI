@@ -320,7 +320,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         file.end(buffer);
 
         var updateFilter = {$set: {}};
-        updateFilter.$set[`subrooms.${subroom_id}.versions[${version_id}].associated_file`] = true;
+        updateFilter.$set[`subrooms.${subroom_id}.versions.${version_id}.associated_file`] = true;
 
         await collection.updateOne({_id: {$eq: id, $exists: true}}, updateFilter);
 

@@ -171,13 +171,101 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
 });
 
 router.put('/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperToken, canViewRoom, async (req, res) => {
-    const {id, subroom_id} = req.params;
-    const metadata = req.body;
-    // Reserved for future use.
-    return res.status(501).json({
-        "code": "not_implemented",
-        "message": "This endpoint has not yet been implemented."
-    });
+    try {
+        const {id, subroom_id} = req.params;
+        const input_metadata = req.body;
+
+        // Validate metadata & assign ID.
+        var decoupled_metadata = {
+            baseSceneIndex: 9,
+            spawn: {
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    w: 1
+                }
+            },
+            shortHandCommitMessage: "No Message",
+            longHandCommitMessage: "No Description",
+            author: "1",
+            collaborators: [],
+            associated_file: false
+        };
+
+        // baseSceneIndex
+        if(typeof input_metadata.baseSceneIndex == 'number') decoupled_metadata.baseSceneIndex = input_metadata.baseSceneIndex;
+        // Validate spawn location 
+        // WARNING: actually good comments coming up
+        if(
+            !( // NOT
+                typeof input_metadata.spawn == 'object' &&                      // Top level object
+                typeof input_metadata.spawn?.position == 'object' &&            // Level 2 - Position
+                typeof input_metadata.spawn?.rotation == 'object' &&            // Level 2 - Rotation
+
+                typeof input_metadata.spawn?.position?.x == 'number' &&         // Level 3 - X Coordinate
+                typeof input_metadata.spawn?.position?.y == 'number' &&         // Level 3 - Y Coordinate
+                typeof input_metadata.spawn?.position?.z == 'number' &&         // Level 3 - Z Coordinate
+
+                typeof input_metadata.spawn?.rotation?.x == 'number' &&         // Level 3 - X Quaternion Component
+                typeof input_metadata.spawn?.rotation?.y == 'number' &&         // Level 3 - Y Quaternion Component
+                typeof input_metadata.spawn?.rotation?.z == 'number' &&         // Level 3 - Z Quaternion Component
+                typeof input_metadata.spawn?.rotation?.w == 'number'            // Level 3 - W Quaternion Component
+            )
+        ) return res.status(400).json({
+            "code": "invalid_metadata",
+            "message": "The `spawn` parameter of your version metadata is not specified or is invalid."
+        });
+
+        // shortHandCommitMessage
+        if(typeof input_metadata.shortHandCommitMessage == 'string') decoupled_metadata.shortHandCommitMessage = input_metadata.shortHandCommitMessage;
+        
+        // longHandCommitMessage
+        if(typeof input_metadata.longHandCommitMessage == 'string') decoupled_metadata.longHandCommitMessage = input_metadata.longHandCommitMessage;
+
+        // author
+        decoupled_metadata.author = req.user.id;
+        // collaborators
+        if(typeof input_metadata.collaborators != 'object' || !Array.isArray(input_metadata.collaborators)) return res.status(400).json({
+            "code": "invalid_metadata",
+            "message": "The `collaborators` parameter of your version metadata is not specified or is invalid."
+        });
+
+        if(!(await hasPermission(req.user.id, id, 'createVersions'))) return res.status(403).json({
+            "code": "permission_denied",
+            "message": "You do not have permission to create versions of this room."
+        });
+
+        const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
+        const room = await collection.findOne({_id: {$eq: id, $exists: true}});
+
+        if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).json({
+            "code": "nonexistent_subroom",
+            "message": "No subroom found with specified ID."
+        });
+
+        var updateFilter = {$push: {}};
+        updateFilter.$push[`subrooms.${subroom_id}.versions`] = decoupled_metadata;
+
+        await collection.updateOne({_id: {$eq: id, $exists: true}}, updateFilter);
+
+        return res.status(200).json({
+            "code": "success",
+            "message": "Operation succeeded.",
+            "id": room.subrooms[subroom_id].versions.length.toString()
+        });
+    } catch (ex) {
+        res.status(500).json({
+            "code": "internal_error",
+            "message": "An internal server error occured, and the operation failed. Please contact Support if the issue persists."
+        });
+        throw ex;
+    }
 });
 router.post('/:id/subrooms/:subroom_id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     const {id, subroom_id, version} = req.params;

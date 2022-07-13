@@ -3,16 +3,7 @@ const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken
 const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
 const express = require('express');
-const {initializeApp, cert} = require('firebase-admin/app');
 const {Storage} = require('firebase-admin/storage');
-const serviceAccount = require('../admin.json');
-
-const config = require('../config.json');
-
-const app = initializeApp({
-    credential: cert(serviceAccount),
-    storageBucket: config.firebase_bucket_url
-});
 
 // Base URL: /api/rooms/...
 
@@ -318,7 +309,7 @@ router.post('//:id/subrooms/:subroom_id/versions/:version_id/associate-data', au
             });
         }
 
-        const storage = new Storage(app);
+        const storage = new Storage();
         var file = storage
             .bucket()
             .file(`rooms/${id}/subrooms/${subroom_id}/versions/${version_id}.bin`)

@@ -84,13 +84,15 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
                
             if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).send({message: "subroom_not_found"});
 
+
+            if(version_id == 'latest') version_id = subroom.publicVersionId;
+
             const subroom = room.subrooms[subroom_id];
-            if(!subroom.associated_file) return res.status(204).json({
+            if(!subroom.versions[version_id].associated_file) return res.status(204).json({
                 "code": "no_file_associated_with_version",
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });
 
-            if(version_id == 'latest') version_id = subroom.publicVersionId;
             const storage = firebaseStorage.getStorage();
             const ref = firebaseStorage.ref(storage, `rooms/${room_id}/subrooms/${subroom_id}/versions/${subroom.publicVersionId}.bin`);
 

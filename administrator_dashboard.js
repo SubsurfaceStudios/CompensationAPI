@@ -344,21 +344,44 @@ async function updateRoom(room) {
     if(typeof room.tags != 'object') room.tags = [];
     if(typeof room.created_at != 'number') room.created_at = Date.now();
     if(typeof room.visits != 'number') room.visits = 0;
-    if(typeof room.subrooms != 'object') room.subrooms = {
-        "home": {
-            "publicVersionId": 0,
-            "maxPlayers": 20,
-            "versions": [
-                {
-                    "baseSceneIndex": 9,
-                    "shortHandCommitMessage": "Initial Commit",
-                    "longHandCommitMessage": "Initial Commit",
-                    "author": "2",
-                    "collaborators": []
-                }
-            ]
+    if(typeof room.subrooms != 'object') {
+        room.subrooms = {
+            "home": {
+                "publicVersionId": 0,
+                "maxPlayers": 20,
+                "versions": [
+                    {
+                        "baseSceneIndex": 9,
+                        "spawn": {
+                            "position": {
+                                x: 0,
+                                y: 0,
+                                z: 0
+                            },
+                            "rotation": {
+                                x: 0,
+                                y: 0,
+                                z: 0,
+                                w: 1
+                            }
+                        },
+                        "shortHandCommitMessage": "Initial Commit",
+                        "longHandCommitMessage": "Initial Commit",
+                        "author": "2",
+                        "collaborators": [],
+                        "associated_file": false
+                    }
+                ]
+            }
+        };
+    } else {
+        for(let i = 0; i < Object.keys(room.subrooms).length; i++) {
+            const key = Object.keys(room.subrooms)[i];
+            var value = room.subrooms[key];
+
+            if(typeof value.associated_file != 'boolean') value.associated_file = false;
         }
-    };
+    }
     if(typeof room.homeSubroomId != 'string') room.homeSubroomId = "home";
     if(typeof room.rolePermissions != 'object') {
         room.rolePermissions = {

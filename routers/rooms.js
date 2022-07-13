@@ -93,9 +93,13 @@ router.route("/room/:room_id/subrooms/:subroom_id/download")
             if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).send({message: "subroom_not_found"});
 
             const subroom = room.subrooms[subroom_id];
+            if(!subroom.associated_file) return res.status(204).json({
+                "code": "no_file_associated_with_version",
+                "message": "There is no file associated with this version, so loading the room objects is unnecessary."
+            });
 
             const storage = firebaseStorage.getStorage();
-            const ref = firebaseStorage.ref(storage, `/rooms/${room_id}/subrooms/${subroom_id}/saves/${subroom.publicVersionId}.json`);
+            const ref = firebaseStorage.ref(storage, `rooms/${room_id}/subrooms/${subroom_id}/saves/${subroom.publicVersionId}.json`);
 
             var arrayBuffer = await firebaseStorage.getBytes(ref);
             var buffer = Buffer.from(arrayBuffer);

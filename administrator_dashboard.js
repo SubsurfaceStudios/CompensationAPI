@@ -353,7 +353,7 @@ async function updateRoom(room) {
                     "baseSceneIndex": 2,
                     "shortHandCommitMessage": "Initial Commit",
                     "longHandCommitMessage": "Initial Commit",
-                    "author": "0",
+                    "author": "2",
                     "collaborators": []
                 }
             ]
@@ -363,7 +363,9 @@ async function updateRoom(room) {
     if(typeof room.rolePermissions != 'object') {
         room.rolePermissions = {
             "everyone": {
-                "viewAndJoin": true
+                "viewAndJoin": true,
+                "createVersions": false,
+                "setPublicVersion": false
             }
         };
     } else {
@@ -372,6 +374,8 @@ async function updateRoom(room) {
             var value = room.rolePermissions[key];
 
             if(typeof value.viewAndJoin != 'boolean') value.viewAndJoin = true;
+            if(typeof value.createVersions != 'boolean') value.createVersions = false;
+            if(typeof value.setPublicVersion != 'boolean') value.setPublicVersion = false;
 
             room.rolePermissions[key] = value;
         }

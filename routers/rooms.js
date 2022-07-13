@@ -3,7 +3,7 @@ const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken
 const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
 const express = require('express');
-const {Storage} = require('firebase-admin/storage');
+const { getStorage } = require('firebase-admin/storage');
 
 // Base URL: /api/rooms/...
 
@@ -309,7 +309,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
             });
         }
 
-        const storage = new Storage();
+        const storage = getStorage();
         var file = storage
             .bucket()
             .file(`rooms/${id}/subrooms/${subroom_id}/versions/${version_id}.bin`)

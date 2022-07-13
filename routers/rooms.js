@@ -439,6 +439,7 @@ async function hasPermission(user_id, room_id, permission) {
     const userPermissions = room.userPermissions;
 
     const role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
+    console.log(role);
     return role[permission];
 }
 

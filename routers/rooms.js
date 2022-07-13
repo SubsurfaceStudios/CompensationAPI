@@ -68,10 +68,10 @@ router.route("/room/:room_id/info")
         }
     });
 
-router.route("/room/:room_id/subrooms/:subroom_id/download")
+router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download")
     .get(authenticateToken, async (req, res) => {
         try {
-            const {room_id, subroom_id} = req.params;
+            var {room_id, subroom_id, version_id} = req.params;
 
             const {mongoClient: client} = require('../index');
             const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
@@ -98,6 +98,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/download")
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });
 
+            if(version_id == 'latest') version_id = subroom.publicVersionId;
             const storage = firebaseStorage.getStorage();
             const ref = firebaseStorage.ref(storage, `rooms/${room_id}/subrooms/${subroom_id}/saves/${subroom.publicVersionId}.json`);
 
@@ -170,7 +171,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     }
 });
 
-router.put('/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const input_metadata = req.body;
@@ -267,7 +268,7 @@ router.put('/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperToken,
         throw ex;
     }
 });
-router.post('/:id/subrooms/:subroom_id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+router.post('//:id/subrooms/:subroom_id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     const {id, subroom_id, version} = req.params;
     const base_64_data = req.body;
     // Reserved for future use.

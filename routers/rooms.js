@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
-const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
@@ -93,11 +92,11 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });
 
-            const storage = firebaseStorage.getStorage();
-            const ref = firebaseStorage.ref(storage, `rooms/${room_id}/subrooms/${subroom_id}/versions/${subroom.publicVersionId}.bin`);
-
-            var arrayBuffer = await firebaseStorage.getBytes(ref);
-            var buffer = Buffer.from(arrayBuffer);
+            const storage = getStorage();
+            const file = storage.bucket().file(`rooms/${room_id}/subrooms/${subroom_id}/versions/${version_id}.bin`);
+            
+            var arrayBuffer = await file.download();
+            var buffer = Buffer.from(arrayBuffer[0].buffer);
                
             res.writeHead(200, {
                 'Content-Type': 'application/json',

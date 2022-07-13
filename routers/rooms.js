@@ -437,9 +437,10 @@ async function hasPermission(user_id, room_id, permission) {
         .findOne({_id: {$eq: room_id, $exists: true}});
 
     const userPermissions = room.userPermissions;
+    const rolePermissions = room.rolePermissions;
 
-    const role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
-    console.log(role);
+    const assigned_role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
+    const role = rolePermissions[assigned_role];
     return role[permission];
 }
 

@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
 
@@ -156,6 +156,32 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     default:
         return res.status(400).json({message: "invalid_mode"});
     }
+});
+
+router.put('/:id/versions/new', authenticateDeveloperToken, async (req, res) => {
+    const {id} = req.params;
+    // Reserved for future use.
+    return res.status(501).json({
+        "code": "not_implemented",
+        "message": "This endpoint has not yet been implemented."
+    });
+});
+router.post('/:id/versions/:version/associate-data', authenticateDeveloperToken, async (req, res) => {
+    const {id, versions} = req.params;
+    // Reserved for future use.
+    return res.status(501).json({
+        "code": "not_implemented",
+        "message": "This endpoint has not yet been implemented."
+    });
+});
+router.patch('/:id/versions/public', authenticateDeveloperToken, async (req, res) => {
+    const {id} = req.params;
+    const {new_id} = req.query;
+    // Reserved for future use.
+    return res.status(501).json({
+        "code": "not_implemented",
+        "message": "This endpoint has not yet been implemented."
+    });
 });
 
 module.exports = {

@@ -224,7 +224,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperT
         // author
         decoupled_metadata.author = req.user.id;
         // collaborators
-        if(typeof input_metadata.collaborators != 'object' || !Array.isArray(input_metadata.collaborators)) return res.status(400).json({
+        if(!Array.isArray(input_metadata.collaborators)) return res.status(400).json({
             "code": "invalid_metadata",
             "message": "The `collaborators` parameter of your version metadata is not specified or is invalid."
         });

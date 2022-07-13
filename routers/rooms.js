@@ -336,7 +336,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         throw ex;
     }
 });
-router.patch('/:id/subrooms/:subroom_id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+router.patch('/room/:id/subrooms/:subroom_id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const {new_id} = req.query;

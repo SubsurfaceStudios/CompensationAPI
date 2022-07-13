@@ -160,7 +160,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     }
 });
 
-router.put('/:id/versions/new', authenticateDeveloperToken, async (req, res) => {
+router.put('/:id/versions/new', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     const {id} = req.params;
     // Reserved for future use.
     return res.status(501).json({
@@ -168,7 +168,7 @@ router.put('/:id/versions/new', authenticateDeveloperToken, async (req, res) => 
         "message": "This endpoint has not yet been implemented."
     });
 });
-router.post('/:id/versions/:version/associate-data', authenticateDeveloperToken, async (req, res) => {
+router.post('/:id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     const {id, versions} = req.params;
     // Reserved for future use.
     return res.status(501).json({
@@ -176,15 +176,114 @@ router.post('/:id/versions/:version/associate-data', authenticateDeveloperToken,
         "message": "This endpoint has not yet been implemented."
     });
 });
-router.patch('/:id/versions/public', authenticateDeveloperToken, async (req, res) => {
-    const {id} = req.params;
-    const {new_id} = req.query;
-    // Reserved for future use.
-    return res.status(501).json({
-        "code": "not_implemented",
-        "message": "This endpoint has not yet been implemented."
-    });
+router.patch('/:id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {new_id} = req.query;
+        if(typeof new_id != 'string') return res.status(400).json({
+            "code": "invalid_input",
+            "message": "Parameter `new_id` is unset. Please specify a new publicVersionId."
+        });
+
+        if(!(await hasPermission(req.user.id, id, "setPublicVersion"))) return res.status(403).json({
+            "code": "permission_denied",
+            "message": "You do not have permission to perform this action."
+        });
+
+        const client = require('../index').mongoClient;
+        const room = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms').findOne({_id: {$eq: id, $exists: true}});
+        if(room == null) return res.status(404).json({
+            "code": "room_not_found",
+            "message": "That room does not exist."
+        });
+        if(!Object.keys(room.subrooms).includes(new_id)) return res.status(400).json({
+            "code": "nonexistent_version",
+            "message": "There is no version of this room associated with that ID."
+        });
+
+        await client.db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms')
+            .updateOne(
+                {_id: {$eq: id, $exists: true}},
+                {$set: {"publicVersionId": id}}
+            );
+        
+        return res.status(200).json({
+            "code": "success",
+            "message": "Operation successful"
+        });
+    } catch (ex) {
+        res.status(500).json({
+            "code": "internal_error",
+            "message": "An internal error occured while processing your request. If the issue persists, please contact CVR staff."
+        });
+        throw ex;
+    }
 });
+
+
+async function canViewRoom(req, res, next) {
+    // Input validation
+    const client = require('../index').mongoClient;
+    const {id} = req.params;
+    if(typeof id != 'string') return res.status(404).json({
+        "code": "room_not_found",
+        "message": "You did not specify a room."
+    });
+
+    // Fetch room
+    var room = await client
+        .db(process.env.MONGOOSE_DATABASE_NAME)
+        .collection('rooms')
+        .findOne({_id: {$eq: id, $exists: true}});
+    if(room == null) return res.status(404).json({
+        "code": "room_not_found",
+        "message": "You did not specify a room."
+    });
+
+    const userPermissions = room.userPermissions;
+    const rolePermissions = room.rolePermissions;
+
+    const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
+    const canView = rolePermissions[role].viewAndJoin;
+
+    if(!canView) {
+        return res.status(404).json({
+            "code": "room_not_found",
+            "message": "You did not specify a room."
+        });
+    }
+
+    req.room = room;
+    next();
+}
+
+async function hasPermission(user_id, room_id, permission) {
+    const client = require('../index').mongoClient;
+    var room = await client
+        .db(process.env.MONGOOSE_DATABASE_NAME)
+        .collection('rooms')
+        .findOne({_id: {$eq: room_id, $exists: true}});
+
+    const userPermissions = room.userPermissions;
+    const rolePermissions = room.rolePermissions;
+
+    const role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
+    return role[permission];
+}
+async function fetchPermissions(user_id, room_id) {
+    const client = require('../index').mongoClient;
+    var room = await client
+        .db(process.env.MONGOOSE_DATABASE_NAME)
+        .collection('rooms')
+        .findOne({_id: {$eq: room_id, $exists: true}});
+
+    const userPermissions = room.userPermissions;
+    const rolePermissions = room.rolePermissions;
+
+    const role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
+    return role;
+}
 
 module.exports = {
     Router: router

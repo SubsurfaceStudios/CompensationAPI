@@ -3,6 +3,16 @@ const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken
 const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
 const express = require('express');
+const {initializeApp, cert} = require('firebase-admin/app');
+const {Storage} = require('firebase-admin/storage');
+const serviceAccount = require('../admin.json');
+
+const config = require('../config.json');
+
+const app = initializeApp({
+    credential: cert(serviceAccount),
+    storageBucket: config.firebase_bucket_url
+});
 
 // Base URL: /api/rooms/...
 
@@ -79,16 +89,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
             const room_collection = db.collection("rooms");
 
             const room = await room_collection.findOne({_id: {$eq: room_id, $exists: true}});
-            if(room === null) return res.status(404).send({message: "room_not_found"});
-
-            // check permissions before checking the subroom, so that you can't figure out subroom names using API spam
-            const userPermissions = room.userPermissions;
-            const rolePermissions = room.rolePermissions;
-
-            const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
-            const permissions = rolePermissions[role];
-
-            if(!permissions.viewAndJoin && req.user.id !== room.creator_id) return res.status(403).send({message: "invalid_permissions"});
+            if(room == null) return res.status(404).send({message: "room_not_found"});
                
             if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).send({message: "subroom_not_found"});
 
@@ -100,7 +101,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
 
             if(version_id == 'latest') version_id = subroom.publicVersionId;
             const storage = firebaseStorage.getStorage();
-            const ref = firebaseStorage.ref(storage, `rooms/${room_id}/subrooms/${subroom_id}/saves/${subroom.publicVersionId}.json`);
+            const ref = firebaseStorage.ref(storage, `rooms/${room_id}/subrooms/${subroom_id}/versions/${subroom.publicVersionId}.bin`);
 
             var arrayBuffer = await firebaseStorage.getBytes(ref);
             var buffer = Buffer.from(arrayBuffer);
@@ -268,14 +269,81 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperT
         throw ex;
     }
 });
-router.post('//:id/subrooms/:subroom_id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
-    const {id, subroom_id, version} = req.params;
-    const base_64_data = req.body;
-    // Reserved for future use.
-    return res.status(501).json({
-        "code": "not_implemented",
-        "message": "This endpoint has not yet been implemented."
-    });
+router.post('//:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+    try {
+        var {id, subroom_id, version_id} = req.params;
+        const base_64_data = req.body;
+
+        version_id = parseInt(version_id);
+        if(isNaN(version_id)) return res.status(400).json({
+            "code": "invalid_parameter",
+            "message": "Parameter `version` is invalid, must be parsable as Integer."
+        });
+
+        if(!(await hasPermission(req.user.id, id, "createVersions"))) return res.status(403).json({
+            "code": "permission_denied",
+            "message": "You do not have permission to perform the CreateVersion operation."
+        });
+
+        const collection = require('../index')
+            .mongoClient
+            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms');
+
+        const room = await collection.findOne({_id: {$eq: id, $exists: true}});
+        
+        if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(403).json({
+            "code": "nonexistent_subroom",
+            "message": "That subroom does not exist."
+        });
+
+        const subroom = room.subrooms[subroom_id];
+        if(subroom.versions.length - 1 < version_id) return res.status(404).json({
+            "code": "version_not_found",
+            "message": "No version of this room exists with that ID."
+        });
+
+        if(subroom.versions[version_id].associated_file) return res.status(400).json({
+            "code": "file_already_associated",
+            "message": "There is already a file associated with this version. Try making a new one."
+        });
+
+        var buffer;
+        try {
+            buffer = Buffer.from(base_64_data, 'base64');
+        } catch {
+            return res.status(400).json({
+                "code": "binary_data_invalid",
+                "message": "Your byte array could not be parsed into a valid ArrayBuffer."
+            });
+        }
+
+        const storage = new Storage(app);
+        var file = storage
+            .bucket()
+            .file(`rooms/${id}/subrooms/${subroom_id}/versions/${version_id}.bin`)
+            .createWriteStream({
+                'contentType': "application/octet-stream"
+            });
+
+        file.end(buffer);
+
+        var updateFilter = {$set: {}};
+        updateFilter.$set[`subrooms.${subroom_id}.versions[${version_id}].associated_file`] = true;
+
+        await collection.updateOne({_id: {$eq: id, $exists: true}}, updateFilter);
+
+        return res.status(200).json({
+            "code": "success",
+            "message": "Operation successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            "code": "internal_error",
+            "message": "An internal server error occured and the operation failed. If the issue persists, contact Support."
+        });
+        throw ex;
+    }
 });
 router.patch('/:id/subrooms/:subroom_id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {

@@ -380,6 +380,7 @@ async function updateRoom(room) {
             var value = room.subrooms[key];
 
             if(typeof value.associated_file != 'boolean') value.associated_file = false;
+            room.subrooms[key] = value;
         }
     }
     if(typeof room.homeSubroomId != 'string') room.homeSubroomId = "home";

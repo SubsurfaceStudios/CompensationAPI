@@ -260,7 +260,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperT
         throw ex;
     }
 });
-router.post('//:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {
         var {id, subroom_id, version_id} = req.params;
         const base_64_data = req.body;

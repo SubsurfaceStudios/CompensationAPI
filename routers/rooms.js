@@ -19,7 +19,9 @@ const roomTemplate = {
     userPermissions: {},
     rolePermissions: {
         everyone: {
-            viewAndJoin: false
+            viewAndJoin: false,
+            createVersions: false,
+            setPublicVersion: false
         }
     }
 };

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const firebaseStorage = require('firebase/storage');
 const Fuse = require('fuse.js');
+const express = require('express');
 
 // Base URL: /api/rooms/...
 
@@ -25,6 +26,11 @@ const roomTemplate = {
         }
     }
 };
+
+router.use(express.text({
+    'limit': '50MB',
+    'inflate': true
+}));
 
 router.route("/room/:room_id/info")
     .get(authenticateToken_optional, async (req, res) => {
@@ -160,25 +166,27 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     }
 });
 
-router.put('/:id/versions/new', authenticateDeveloperToken, canViewRoom, async (req, res) => {
-    const {id} = req.params;
+router.put('/:id/subrooms/:subroom_id/versions/new', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+    const {id, subroom_id} = req.params;
+    const metadata = req.body;
     // Reserved for future use.
     return res.status(501).json({
         "code": "not_implemented",
         "message": "This endpoint has not yet been implemented."
     });
 });
-router.post('/:id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
-    const {id, versions} = req.params;
+router.post('/:id/subrooms/:subroom_id/versions/:version/associate-data', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+    const {id, subroom_id, version} = req.params;
+    const base_64_data = req.body;
     // Reserved for future use.
     return res.status(501).json({
         "code": "not_implemented",
         "message": "This endpoint has not yet been implemented."
     });
 });
-router.patch('/:id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+router.patch('/:id/subrooms/:subroom_id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {
-        const {id} = req.params;
+        const {id, subroom_id} = req.params;
         const {new_id} = req.query;
         if(typeof new_id != 'string') return res.status(400).json({
             "code": "invalid_input",
@@ -196,16 +204,27 @@ router.patch('/:id/versions/public', authenticateDeveloperToken, canViewRoom, as
             "code": "room_not_found",
             "message": "That room does not exist."
         });
-        if(!Object.keys(room.subrooms).includes(new_id)) return res.status(400).json({
+        if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).json({
+            "code": "nonexistent_subroom",
+            "message": "That subroom does not exist."
+        });
+        if(!room.subrooms[subroom_id].versions.includes(new_id)) return res.status(400).json({
             "code": "nonexistent_version",
             "message": "There is no version of this room associated with that ID."
         });
+
+        const str = `subrooms.${id}.publicVersionId`;
+
+        // this is a painful workaround to fix javascript's assfuckery -Rose
+        var setFilter = {};
+        setFilter[str] = id;
+
 
         await client.db(process.env.MONGOOSE_DATABASE_NAME)
             .collection('rooms')
             .updateOne(
                 {_id: {$eq: id, $exists: true}},
-                {$set: {"publicVersionId": id}}
+                {$set: setFilter}
             );
         
         return res.status(200).json({
@@ -266,23 +285,9 @@ async function hasPermission(user_id, room_id, permission) {
         .findOne({_id: {$eq: room_id, $exists: true}});
 
     const userPermissions = room.userPermissions;
-    const rolePermissions = room.rolePermissions;
 
     const role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
     return role[permission];
-}
-async function fetchPermissions(user_id, room_id) {
-    const client = require('../index').mongoClient;
-    var room = await client
-        .db(process.env.MONGOOSE_DATABASE_NAME)
-        .collection('rooms')
-        .findOne({_id: {$eq: room_id, $exists: true}});
-
-    const userPermissions = room.userPermissions;
-    const rolePermissions = room.rolePermissions;
-
-    const role = Object.keys(userPermissions).includes(user_id) ? userPermissions[user_id] : "everyone";
-    return role;
 }
 
 module.exports = {

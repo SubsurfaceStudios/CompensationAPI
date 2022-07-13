@@ -350,7 +350,7 @@ async function updateRoom(room) {
             "maxPlayers": 20,
             "versions": [
                 {
-                    "baseSceneIndex": 2,
+                    "baseSceneIndex": 9,
                     "shortHandCommitMessage": "Initial Commit",
                     "longHandCommitMessage": "Initial Commit",
                     "author": "2",

@@ -395,12 +395,36 @@ router.patch('/room/:id/subrooms/:subroom_id/versions/public', authenticateDevel
 
 router.get('/room/:id/my-permissions', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {
-        const room = req.room;
-        const role = Object.keys(room.userPermissions).includes(req.user.id) ? room.userPermissions[req.user.id] : "everyone";
         return res.status(200).json({
             "code": "success",
             "message": "The operation succeeded.",
-            "permissions": room.rolePermissions[role]
+            "permissions": req.userRoomPermissions
+        });
+    } catch (ex) {
+        res.status(500).json({
+            "code": "internal_error",
+            "message": "An internal server error occurred, preventing the operation from succeeding."
+        });
+        throw ex;
+    }
+});
+
+router.get('/room/:id/subrooms/:subroom_id/versions', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+    try {
+        const { subroom_id } = req.params;
+        if(!req.userRoomPermissions["createVersions"]) return res.status(403).json({
+            "code": "permission_denied",
+            "message": "You do not have access to the version registry of this room."
+        });
+        if(!Object.keys(req.room.subrooms).includes(subroom_id)) return res.status(404).json({
+            "code": "nonexistent_subroom",
+            "message": "No subroom on record was found with that ID."
+        });
+
+        return res.status(200).json({
+            "code": "success",
+            "message": "Operation successful.",
+            "versions": req.room.subrooms[subroom_id].versions
         });
     } catch (ex) {
         res.status(500).json({
@@ -444,6 +468,8 @@ async function canViewRoom(req, res, next) {
     }
 
     req.room = room;
+    req.userRoomRole = room.userPermissions;
+    req.userRoomPermissions = role;
     next();
 }
 

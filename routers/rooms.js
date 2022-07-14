@@ -469,7 +469,7 @@ async function canViewRoom(req, res, next) {
 
     req.room = room;
     req.userRoomRole = room.userPermissions;
-    req.userRoomPermissions = role;
+    req.userRoomPermissions = rolePermissions[role];
     next();
 }
 

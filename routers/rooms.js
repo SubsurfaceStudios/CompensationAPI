@@ -397,7 +397,11 @@ router.get('/room/:id/my-permissions', authenticateDeveloperToken, canViewRoom, 
     try {
         const room = req.room;
         const role = Object.keys(room.userPermissions).includes(req.user.id) ? room.userPermissions[req.user.id] : "everyone";
-        return res.status(200).json(room.rolePermissions[role]);
+        return res.status(200).json({
+            "code": "success",
+            "message": "The operation succeeded.",
+            "permissions": room.rolePermissions[role]
+        });
     } catch (ex) {
         res.status(500).json({
             "code": "internal_error",

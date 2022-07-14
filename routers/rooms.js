@@ -99,7 +99,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
             var buffer = Buffer.from(arrayBuffer[0].buffer);
                
             res.writeHead(200, {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/octet-stream',
                 'Content-Length': buffer.length
             });
             return res.end(buffer);

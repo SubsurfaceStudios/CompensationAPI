@@ -393,6 +393,19 @@ router.patch('/room/:id/subrooms/:subroom_id/versions/public', authenticateDevel
     }
 });
 
+router.get('/room/:id/my-permissions', authenticateDeveloperToken, canViewRoom, async (req, res) => {
+    try {
+        const room = req.room;
+        const role = Object.keys(room.userPermissions).includes(req.user.id) ? room.userPermissions[req.user.id] : "everyone";
+        return res.status(200).json(room.rolePermissions[role]);
+    } catch (ex) {
+        res.status(500).json({
+            "code": "internal_error",
+            "message": "An internal server error occurred, preventing the operation from succeeding."
+        });
+        throw ex;
+    }
+});
 
 async function canViewRoom(req, res, next) {
     // Input validation

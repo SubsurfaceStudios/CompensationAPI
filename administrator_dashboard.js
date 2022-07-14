@@ -389,7 +389,10 @@ async function updateRoom(room) {
             "everyone": {
                 "viewAndJoin": true,
                 "createVersions": false,
-                "setPublicVersion": false
+                "setPublicVersion": false,
+                "viewSettings": false,
+                "viewPermissions": false,
+                "managePermissions": false
             }
         };
     } else {
@@ -400,6 +403,9 @@ async function updateRoom(room) {
             if(typeof value.viewAndJoin != 'boolean') value.viewAndJoin = true;
             if(typeof value.createVersions != 'boolean') value.createVersions = false;
             if(typeof value.setPublicVersion != 'boolean') value.setPublicVersion = false;
+            if(typeof value.viewSettings != 'boolean') value.viewSettings = false;
+            if(typeof value.viewPermissions != 'boolean') value.viewPermissions = false;
+            if(typeof value.managePermissions != 'boolean') value.managePermissions = false;
 
             room.rolePermissions[key] = value;
         }

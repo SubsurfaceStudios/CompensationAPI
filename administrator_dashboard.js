@@ -379,7 +379,12 @@ async function updateRoom(room) {
             const key = Object.keys(room.subrooms)[i];
             var value = room.subrooms[key];
 
-            if(typeof value.associated_file != 'boolean') value.associated_file = false;
+            if(typeof value.associated_file == 'boolean') delete value.associated_file;
+            for (let index = 0; index < value.versions.length; index++) {
+                const element = value.versions[index];
+                if(typeof element.associated_file != 'boolean') element.associated_file = false;
+                value.versions[index] = element;
+            }
             room.subrooms[key] = value;
         }
     }

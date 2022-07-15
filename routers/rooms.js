@@ -425,7 +425,10 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateDeveloperToken
         return res.status(200).json({
             "code": "success",
             "message": "Operation successful.",
-            "versions": req.room.subrooms[subroom_id].versions.map((item, index) => item.id = `${index}`)
+            "versions": req.room.subrooms[subroom_id].versions.map((item, index) => {
+                item.id = `${index}`;
+                return item;
+            })
         });
     } catch (ex) {
         res.status(500).json({

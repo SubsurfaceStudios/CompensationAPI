@@ -341,7 +341,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
 router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateDeveloperToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
-        const {new_id} = req.query;
+        const {id: new_id} = req.body;
         if(typeof new_id != 'string') return res.status(400).json({
             "code": "invalid_input",
             "message": "Parameter `new_id` is unset. Please specify a new publicVersionId."

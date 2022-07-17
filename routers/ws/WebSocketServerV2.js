@@ -129,6 +129,8 @@ WebSocketServerV2.on('connection', (Socket) => {
             if (!Object.keys(room.subrooms).includes(ParsedContent.data.subroomId))
                 return;
 
+            await collection.updateOne({_id: {$eq: ParsedContent.data.roomId}}, {'$inc': {"visits": 1}});
+
 
             // leave current room
             if (ConnectedUserData.matchmaking_InstanceId !== null) {
@@ -269,6 +271,8 @@ WebSocketServerV2.on('connection', (Socket) => {
 
             // eslint-disable-next-line no-redeclare
             var instances = await MatchmakingAPI.GetInstances(ParsedContent.data.roomId);
+
+            await collection.updateOne({_id: {$eq: ParsedContent.data.roomId}}, {'$inc': {"visits": 1}});
 
 
             // leave current room

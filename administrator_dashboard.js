@@ -412,7 +412,7 @@ async function updateRoom(room) {
             if(typeof value.viewSettings != 'boolean') value.viewSettings = false;
             if(typeof value.viewPermissions != 'boolean') value.viewPermissions = false;
             if(typeof value.managePermissions != 'boolean') value.managePermissions = false;
-            if(typeof value.useCreationTool != 'boolean') value.managePermissions = false;
+            if(typeof value.useCreationTool != 'boolean') value.useCreationTool = false;
 
             room.rolePermissions[key] = value;
         }

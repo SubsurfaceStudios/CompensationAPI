@@ -397,7 +397,8 @@ async function updateRoom(room) {
                 "setPublicVersion": false,
                 "viewSettings": false,
                 "viewPermissions": false,
-                "managePermissions": false
+                "managePermissions": false,
+                "useCreationTool": false
             }
         };
     } else {
@@ -411,6 +412,7 @@ async function updateRoom(room) {
             if(typeof value.viewSettings != 'boolean') value.viewSettings = false;
             if(typeof value.viewPermissions != 'boolean') value.viewPermissions = false;
             if(typeof value.managePermissions != 'boolean') value.managePermissions = false;
+            if(typeof value.useCreationTool != 'boolean') value.managePermissions = false;
 
             room.rolePermissions[key] = value;
         }

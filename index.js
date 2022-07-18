@@ -93,6 +93,35 @@ app.post("/api/update", async (req, res) => {
 });
 
 
+app.get("/api/versioncheck/:platform/:version_id", async (req, res) => {
+    let {platform, version_id} = req.params;
+    
+    let conf = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection('global').findOne({_id: {$eq: "VersionCheckConfig", $exists: true}});
+    if(conf == null) {
+        res.status(500).json({
+            "code": "internal_error",
+            "message": "The server is misconfigured and cannot serve your request. Please contact the Compensation VR support team.",
+            "allowed": false
+        });
+        throw new Error("The version check config has not been set!");
+    }
+
+    if(!Object.keys(conf.allowed_versions).includes(platform)) {
+        return res.status(200).json({
+            "code": "success",
+            "message": "This version is not permitted.",
+            "allowed": false
+        });
+    }
+
+    return res.status(200).json({
+        "code": "success",
+        "message": "The operation was successful.",
+        "allowed": conf.allowed_versions[platform].includes(version_id)
+    });
+});
+
+
 //Joke
 app.get("/api/dingus", async(req, res) => {
     return res.status(200).send("You have ascended");

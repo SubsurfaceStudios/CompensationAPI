@@ -165,7 +165,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     }
 });
 
-router.put('/room/:id/subrooms/:subroom_id/versions/new', canViewRoom, async (req, res) => {
+router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const input_metadata = req.body;
@@ -262,7 +262,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', canViewRoom, async (re
         throw ex;
     }
 });
-router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateToken, canViewRoom, async (req, res) => {
     try {
         var {id, subroom_id, version_id} = req.params;
         const base_64_data = req.body;
@@ -338,7 +338,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         throw ex;
     }
 });
-router.post('/room/:id/subrooms/:subroom_id/versions/public', canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const {id: new_id} = req.body;
@@ -394,7 +394,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', canViewRoom, async
     }
 });
 
-router.get('/room/:id/my-permissions', canViewRoom, async (req, res) => {
+router.get('/room/:id/my-permissions', authenticateToken, canViewRoom, async (req, res) => {
     try {
         return res.status(200).json({
             "code": "success",
@@ -410,7 +410,7 @@ router.get('/room/:id/my-permissions', canViewRoom, async (req, res) => {
     }
 });
 
-router.get('/room/:id/subrooms/:subroom_id/versions', canViewRoom, async (req, res) => {
+router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canViewRoom, async (req, res) => {
     try {
         const { subroom_id } = req.params;
         if(!req.userRoomPermissions["createVersions"]) return res.status(403).json({

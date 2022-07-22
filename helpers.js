@@ -278,6 +278,10 @@ async function BanPlayer(id, reason, duration, moderator) {
 
     data.auth.bans.push(ban);
     await PushPlayerData(id, data);
+
+    let clients = require('./routers/ws/WebSocketServerV2').ws_connected_clients;
+    if(!Object.keys(clients).includes(id)) return;
+    clients[id].socket.close();
 }
 
 function check(string) {

@@ -18,20 +18,20 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
-    "express-rate-limit": "^6.0.5",
+    "express-rate-limit": "^6.5.1",
     "express-slow-down": "^1.4.0",
-    "firebase": "^9.9.0",
-    "firebase-admin": "^11.0.0",
+    "firebase": "^9.9.1",
+    "firebase-admin": "^11.0.1",
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.8.0",
+    "mongodb": "^4.8.1",
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
-    "twilio": "^3.79.0",
+    "twilio": "^3.80.0",
     "uuid": "^8.3.2",
-    "ws": "^8.8.0"
+    "ws": "^8.8.1"
   },
   "devDependencies": {
-    "eslint": "^8.19.0"
+    "eslint": "^8.20.0"
   }
 }

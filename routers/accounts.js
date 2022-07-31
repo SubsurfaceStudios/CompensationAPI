@@ -32,60 +32,63 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
 
         if(authenticated && Object.keys(clients).includes(req.user?.id)) {
             let own = await helpers.PullPlayerData(req.user.id);
+
             let areAcquaintances = own.private.acquaintances.includes(id);
             let areFriends = own.private.friends.includes(id);
             let areFavoriteFriends = own.private.favoriteFriends.includes(id);
-            let friendRequestSentByEitherParty = 
-                own.private.friendRequestsSent.includes(id) ||
-                data.private.friendRequestsSent.includes(req.user.id);
+
+            let friendRequestSent = 
+                own.private.friendRequestsSent.includes(id);
+
             send.social_options = {
                 can_send_friend_request:
                     !areAcquaintances &&
                     !areFriends &&
                     !areFavoriteFriends &&
-                    !friendRequestSentByEitherParty,
+                    !friendRequestSent,
                 can_make_acquaintance:
                     !areAcquaintances &&
                     (
                         areFriends ||
                         areFavoriteFriends
                     ) &&
-                    !friendRequestSentByEitherParty,
+                    !friendRequestSent,
                 can_make_friend:
                     !areFriends &&
                     (
                         areAcquaintances ||
                         areFavoriteFriends
                     ) &&
-                    !friendRequestSentByEitherParty,
+                    !friendRequestSent,
                 can_make_favorite_friend:
                     !areFavoriteFriends &&
                     (
                         areAcquaintances ||
                         areFriends
                     ) &&
-                    !friendRequestSentByEitherParty,
+                    !friendRequestSent,
                 can_remove_friend:
                     (
                         areAcquaintances ||
                         areFriends ||
                         areFavoriteFriends
                     ) &&
-                    !friendRequestSentByEitherParty
+                    !friendRequestSent
             };
             
             let instance = null;
             if(Object.keys(clients).includes(id)) instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
+
             let public = false;
-    
             if(instance != null) {
                 public = 
-                        instance.MatchmakingMode == MatchmakingModes.Public ||
-                        instance.MatchmakingMode == MatchmakingModes.Unlisted;         
+                    instance.MatchmakingMode == MatchmakingModes.Public ||
+                    instance.MatchmakingMode == MatchmakingModes.Unlisted;         
             }
     
             send.matchmaking_options = {
-                can_invite: typeof clients[id] == 'object',
+                can_invite: typeof clients[id] == 'object' &&
+                    clients[req.user.id].joinCode != clients[id].joinCode,
                 can_go_to: 
                     public &&
                     clients[req.user.id].joinCode != clients[id].joinCode

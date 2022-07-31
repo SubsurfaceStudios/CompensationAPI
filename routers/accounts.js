@@ -2,32 +2,85 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const regex = require('../data/badwords/regexp');
-const { authenticateDeveloperToken } = require('../middleware');
+const { authenticateDeveloperToken, authenticateToken_optional } = require('../middleware');
 const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
 const { WebSocketV2_MessageTemplate } = require('../index');
+const { GetInstanceByJoinCode, MatchmakingModes } = require('./matchmaking');
 
 router.use(express.urlencoded({extended: false}));
 
 //Call to get the public account data of a user.
-router.get("/:id/public", async (req, res) => {
+router.get("/:id/public", authenticateToken_optional, async (req, res) => {
     const { id } = req.params;
     let data = await helpers.PullPlayerData(id);
+    let social = typeof req.user == 'object';
+    
     if (data !== null) {
         var send = data.public;
         const clients = require('./ws/WebSocketServerV2').ws_connected_clients;
-        if(typeof clients[id] != 'object') {
-            send.presence = {
-                online: false,
-                roomId: null
-            };
-            return res.status(200).send(send);
-        }
 
-        send.presence = {
+        send.presence = typeof clients[id] == 'object' 
+        ? {
             online: true,
             roomId: clients[id].roomId
+        } : {
+            online: false,
+            roomId: null
+        };
+
+        if(social) {
+            let own = await helpers.PullPlayerData(req.user.id);
+            let areAcquaintances = own.private.acquaintances.includes(id);
+            let areFriends = own.private.friends.includes(id);
+            let areFavoriteFriends = own.private.gavoriteFriends.includes(id);
+            let friendRequestSentByEitherParty = 
+                own.private.friendRequestsSent.includes(id) ||
+                data.private.friendRequestsSent.includes(req.user.id);
+            send.social_options = {
+                can_send_friend_request:
+                    !areAcquaintances &&
+                    !areFriends &&
+                    !areFavoriteFriends &&
+                    !friendRequestSentByEitherParty,
+                can_make_acquaintance:
+                    !areAcquaintances &&
+                    (
+                        areFriends ||
+                        areFavoriteFriends
+                    ) &&
+                    !friendRequestSentByEitherParty,
+                can_make_friend:
+                    !areFriends &&
+                    (
+                        areAcquaintances ||
+                        areFavoriteFriends
+                    ) &&
+                    !friendRequestSentByEitherParty,
+                can_make_favorite_friend:
+                    !areFavoriteFriends &&
+                    (
+                        areAcquaintances ||
+                        areFriends
+                    ) &&
+                    !friendRequestSentByEitherParty,
+            };
+        }
+
+        let instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
+
+        let public = false;
+
+        if(instance != null) {
+            public = 
+                    instance.MatchmakingMode == MatchmakingModes.Public ||
+                    instance.MatchmakingMode == MatchmakingModes.Unlisted;         
+        }
+
+        send.matchmaking_options = {
+            can_invite: typeof clients[id] == 'object',
+            can_go_to: public
         };
 
         return res.status(200).send(send);

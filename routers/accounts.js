@@ -7,7 +7,7 @@ const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
 const { WebSocketV2_MessageTemplate } = require('../index');
-const { GetInstanceByJoinCode, MatchmakingModes } = require('./matchmaking');
+const { MatchmakingModes, GetInstanceById } = require('./matchmaking');
 
 router.use(express.urlencoded({extended: false}));
 
@@ -77,7 +77,7 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             };
             
             let instance = null;
-            if(Object.keys(clients).includes(id)) instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
+            if(Object.keys(clients).includes(id)) instance = await GetInstanceById(clients[id]?.instanceId) ?? null;
 
             let public = false;
             if(instance != null) {
@@ -87,7 +87,7 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             }
     
             send.matchmaking_options = {
-                can_invite: typeof clients[id] == 'object' &&
+                can_invite: Object.keys(clients).includes(id) &&
                     clients[req.user.id].joinCode != clients[id].joinCode,
                 can_go_to: 
                     public &&

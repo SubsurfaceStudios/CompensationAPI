@@ -79,6 +79,8 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             let instance = null;
             if(Object.keys(clients).includes(id)) instance = await GetInstanceById(clients[id]?.instanceId) ?? null;
 
+            console.log(instance);
+
             let public = false;
             if(instance != null) {
                 public = 

@@ -81,8 +81,6 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
                 (await GetInstances(clients[id].roomId))
                 .find(x => x.JoinCode == clients[id].joinCode);
 
-            console.log(instance);
-
             let public = false;
             if(instance != null) {
                 public = 

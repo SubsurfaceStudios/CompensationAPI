@@ -73,8 +73,9 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
                     ) &&
                     !friendRequestSentByEitherParty
             };
-
-            let instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
+            
+            let instance = null;
+            if(Object.keys(clients).includes(id)) instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
             let public = false;
     
             if(instance != null) {
@@ -89,6 +90,7 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
                     public &&
                     clients[req.user.id].joinCode != clients[id].joinCode
             };
+
         }
 
 

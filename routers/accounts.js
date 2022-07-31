@@ -7,7 +7,7 @@ const { PullPlayerData, PushPlayerData, check } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
 const { WebSocketV2_MessageTemplate } = require('../index');
-const { MatchmakingModes, GetInstanceById } = require('./matchmaking');
+const { MatchmakingModes, GetInstances } = require('./matchmaking');
 
 router.use(express.urlencoded({extended: false}));
 
@@ -77,7 +77,9 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             };
             
             let instance = null;
-            if(Object.keys(clients).includes(id)) instance = await GetInstanceById(clients[id]?.instanceId) ?? null;
+            if(Object.keys(clients).includes(id)) instance = 
+                (await GetInstances(clients[id].roomId))
+                .find(x => x.JoinCode == clients[id].joinCode);
 
             console.log(instance);
 

@@ -34,7 +34,7 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             let own = await helpers.PullPlayerData(req.user.id);
             let areAcquaintances = own.private.acquaintances.includes(id);
             let areFriends = own.private.friends.includes(id);
-            let areFavoriteFriends = own.private.gavoriteFriends.includes(id);
+            let areFavoriteFriends = own.private.favoriteFriends.includes(id);
             let friendRequestSentByEitherParty = 
                 own.private.friendRequestsSent.includes(id) ||
                 data.private.friendRequestsSent.includes(req.user.id);

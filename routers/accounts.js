@@ -15,7 +15,7 @@ router.use(express.urlencoded({extended: false}));
 router.get("/:id/public", authenticateToken_optional, async (req, res) => {
     const { id } = req.params;
     let data = await helpers.PullPlayerData(id);
-    let social = typeof req.user == 'object';
+    let authenticated = typeof req.user == 'object';
     
     if (data !== null) {
         var send = data.public;
@@ -30,7 +30,7 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             roomId: null
         };
 
-        if(social) {
+        if(authenticated) {
             let own = await helpers.PullPlayerData(req.user.id);
             let areAcquaintances = own.private.acquaintances.includes(id);
             let areFriends = own.private.friends.includes(id);
@@ -66,22 +66,24 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
                     ) &&
                     !friendRequestSentByEitherParty,
             };
+
+            let instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
+            let public = false;
+    
+            if(instance != null) {
+                public = 
+                        instance.MatchmakingMode == MatchmakingModes.Public ||
+                        instance.MatchmakingMode == MatchmakingModes.Unlisted;         
+            }
+    
+            send.matchmaking_options = {
+                can_invite: typeof clients[id] == 'object',
+                can_go_to: 
+                    public &&
+                    clients[req.user.id].joinCode != clients[id].joinCode
+            };
         }
 
-        let instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;
-
-        let public = false;
-
-        if(instance != null) {
-            public = 
-                    instance.MatchmakingMode == MatchmakingModes.Public ||
-                    instance.MatchmakingMode == MatchmakingModes.Unlisted;         
-        }
-
-        send.matchmaking_options = {
-            can_invite: typeof clients[id] == 'object',
-            can_go_to: public
-        };
 
         return res.status(200).send(send);
     } else {

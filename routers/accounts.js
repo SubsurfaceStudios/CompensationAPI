@@ -65,6 +65,13 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
                         areFriends
                     ) &&
                     !friendRequestSentByEitherParty,
+                can_remove_friend:
+                    (
+                        areAcquaintances ||
+                        areFriends ||
+                        areFavoriteFriends
+                    ) &&
+                    !friendRequestSentByEitherParty
             };
 
             let instance = await GetInstanceByJoinCode(clients[id].joinCode) ?? null;

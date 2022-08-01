@@ -10,12 +10,17 @@ router.get("/check", middleware.authenticateDeveloperToken, async (req, res) => 
 router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToken, async (req, res) => {
     try {
         const {id} = req.params;
-        const {count} = req.body;
+        const {item_id, count} = req.body;
 
         if(typeof count != 'number') 
             return res.status(400).json({
                 code: "invalid_input",
                 message: "Parameter `count` not specified or not an integer."
+            });
+        if(typeof item_id != 'string')
+            return res.status(400).json({
+                code: "invalid_input",
+                message: "Parameter `item_id` not specified or not a string."
             });
 
         let data = await PullPlayerData(id);
@@ -25,7 +30,7 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
                 message: "No account exists with that ID."
             });
 
-        data.econ.inventory[id] = count;
+        data.econ.inventory[item_id] = count;
 
         await PushPlayerData(id, data);
     } catch (ex) {

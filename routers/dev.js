@@ -33,6 +33,11 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
         data.econ.inventory[item_id] = count;
 
         await PushPlayerData(id, data);
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
     } catch (ex) {
         res.status(500).json({
             code: "internal_error",

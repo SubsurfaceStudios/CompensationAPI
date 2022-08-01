@@ -398,7 +398,9 @@ async function updateRoom(room) {
                 "viewSettings": false,
                 "viewPermissions": false,
                 "managePermissions": false,
-                "useCreationTool": false
+                "useCreationTool": false,
+                "mutePlayers": false,
+                "kickPlayers": false
             }
         };
     } else {
@@ -413,6 +415,8 @@ async function updateRoom(room) {
             if(typeof value.viewPermissions != 'boolean') value.viewPermissions = false;
             if(typeof value.managePermissions != 'boolean') value.managePermissions = false;
             if(typeof value.useCreationTool != 'boolean') value.useCreationTool = false;
+            if(typeof value.mutePlayers != 'boolean') value.mutePlayers = false;
+            if(typeof value.kickPlayers != 'boolean') value.kickPlayers = false;
 
             room.rolePermissions[key] = value;
         }

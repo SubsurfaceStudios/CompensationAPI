@@ -217,11 +217,11 @@ async function GetInstances(RoomId = null) {
 }
 
 async function GetInstanceById(RoomId, InstanceId) {
-    return SubroomInstances[RoomId].find(item => item.InstanceId === InstanceId);
+    return SubroomInstances[RoomId]?.find(item => item.InstanceId === InstanceId);
 }
 
 async function GetInstanceByJoinCode(RoomId, JoinCode) {
-    return SubroomInstances[RoomId].find(item => item.JoinCode === JoinCode);
+    return SubroomInstances[RoomId]?.find(item => item.JoinCode === JoinCode);
 }
 
 async function SetInstances(RoomId, InstanceList) {

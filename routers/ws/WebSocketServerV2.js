@@ -520,6 +520,77 @@ WebSocketServerV2.on('connection', (Socket) => {
 
             Socket.send(JSON.stringify(send, null, 5));
             return;
+        case "go_to_player":
+            if (!ConnectedUserData.isAuthenticated)
+                return;
+            if (typeof ParsedContent.data.user_id != 'string')
+                return;
+
+            if (inviteIndex === -1)
+                return;
+
+            // The invite itself is valid, now validate the player's location.
+            if (typeof ws_connected_clients[ParsedContent.data.user_id] != 'object') return;
+
+            if (typeof ws_connected_clients[ParsedContent.data.user_id].joinCode != 'string') return;
+
+            if (ws_connected_clients[ParsedContent.data.user_id].joinCode == ws_connected_clients[ConnectedUserData.uid].joinCode) return;
+
+            // The invite & player sending it are valid, process the request.
+            // eslint-disable-next-line no-redeclare
+            var instance = (await MatchmakingAPI.GetInstances(ws_connected_clients[ParsedContent.data.user_id].roomId)).filter(x => x.JoinCode == ws_connected_clients[ParsedContent.data.user_id].joinCode)[0];
+
+            if (typeof instance != 'object') return;
+
+            if (
+                instance.MatchmakingMode != MatchmakingModes.Public &&
+                instance.MatchmakingMode != MatchmakingModes.Unlisted
+            ) return;
+
+            if (instance.Players.length >= instance.MaxPlayers) return;
+
+            instance.AddPlayer(ConnectedUserData.uid);
+
+            await MatchmakingAPI.SetInstance(instance.RoomId, instance.InstanceId, instance);
+
+            ConnectedUserData.matchmaking_InstanceId = instance.InstanceId;
+            ConnectedUserData.matchmaking_RoomId = instance.RoomId;
+            ConnectedUserData.matchmaking_GlobalInstanceId = instance.GlobalInstanceId;
+
+            ws_connected_clients[ConnectedUserData.uid].instanceId = instance.InstanceId;
+            ws_connected_clients[ConnectedUserData.uid].roomId = instance.RoomId;
+            ws_connected_clients[ConnectedUserData.uid].subroomId = instance.SubroomId;
+            ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
+            ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
+
+            // eslint-disable-next-line no-redeclare
+            var collection = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+            var room = await collection.findOne({ _id: { $eq: ConnectedUserData.matchmaking_RoomId, $exists: true } });
+
+            // eslint-disable-next-line no-redeclare
+            var send = WebSocketV2_MessageTemplate;
+            send.code = "join_or_create_photon_room";
+            
+            // eslint-disable-next-line no-redeclare
+            var subroom = room.subrooms[instance.SubroomId];
+            send.data = {
+                name: instance.JoinCode,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomFaceData: {
+                    _id: room._id,
+                    name: room.name,
+                    description: room.description,
+                    tags: room.tags,
+                    created_at: room.created_at,
+                    homeSubroomId: room.homeSubroomId,
+                    creator_id: room.creator_id
+                },
+                authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
+            };
+
+            Socket.send(JSON.stringify(send, null, 5));
+            return;
         case "decline_player_invite":
             if (!ConnectedUserData.isAuthenticated)
                 return;

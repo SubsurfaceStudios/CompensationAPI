@@ -30,7 +30,9 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
                 message: "No account exists with that ID."
             });
 
-        data.econ.inventory[item_id] = count;
+            
+        if(count < 1) delete data.econ.inventory[item_id];
+        else data.econ.inventory[item_id] = count;
 
         await PushPlayerData(id, data);
 

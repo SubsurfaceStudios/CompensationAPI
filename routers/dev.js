@@ -61,6 +61,7 @@ router.post("/pull-origin", async (req, res) => {
             message: "You do not have authorization to pull changes."
         });
 
+        execSync("git stash");
         execSync("git pull");
 
         return res.status(200).json({

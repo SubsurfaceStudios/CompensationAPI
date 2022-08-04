@@ -62,6 +62,7 @@ router.post("/pull-origin", async (req, res) => {
             code: "invalid_secret",
             message: "You do not have authorization to pull changes."
         });
+        
         let success = timingSafeEqual(Buffer.from(key), Buffer.from(Authentication));
 
         if(!success) return res.status(403).json({

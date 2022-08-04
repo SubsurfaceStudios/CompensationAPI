@@ -54,7 +54,7 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
 
 router.post("/pull-origin", async (req, res) => {
     try {
-        let { Authentication } = req.headers;
+        let Authentication = req.headers.authorization;
         let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
 
         let success = timingSafeEqual(Buffer.from(key), Buffer.from(Authentication));

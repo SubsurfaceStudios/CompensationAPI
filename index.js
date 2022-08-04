@@ -4,8 +4,6 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
-const crypto = require('node:crypto');
-const proc = require('node:child_process');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",

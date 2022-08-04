@@ -1,0 +1,12 @@
+name: Dev Server Pull
+on:
+  push:
+#     branches: [ "dev" ]
+  workflow_dispatch:
+jobs:
+  pull_development:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull changes into development
+        run: |
+          curl --request POST --url https://dev.compensationvr.tk/dev/pull-origin --header 'Authorization: Bearer {{DEV_PULL_SECRET}}'

@@ -1,0 +1,12 @@
+name: Production Server Pull
+on:
+  push:
+    branches: [ "production" ]
+  workflow_dispatch:
+jobs:
+  pull_development:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull changes into production
+        run: |
+          curl --request POST --url https://api.compensationvr.tk/dev/pull-origin --header 'Authorization: Bearer ${{ secrets.PRODUCTION_PULL_SECRET }}'

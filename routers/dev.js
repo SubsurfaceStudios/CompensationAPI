@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const { PullPlayerData, PushPlayerData } = require('../helpers');
 const middleware = require('../middleware');
+const config = require('../config.json');
+const { timingSafeEqual } = require('node:crypto');
+const { execSync } = require('node:child_process');
 
 //Check if a token is valid as developer.
 router.get("/check", middleware.authenticateDeveloperToken, async (req, res) => {
@@ -44,6 +47,33 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
         res.status(500).json({
             code: "internal_error",
             message: "An unknown internal server error occured. Please try again later."
+        });
+        throw ex;
+    }
+});
+
+router.post("/pull-origin", async (req, res) => {
+    try {
+        let { Authentication } = req.headers;
+        let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
+
+        let success = timingSafeEqual(Buffer.from(key), Buffer.from(Authentication));
+
+        if(!success) return res.status(403).json({
+            code: "invalid_secret",
+            message: "You do not have authorization to pull changes."
+        });
+
+        execSync("git pull");
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation succeeded."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_server_error",
+            message: "An internal server error occurred and we could not process your request."
         });
         throw ex;
     }

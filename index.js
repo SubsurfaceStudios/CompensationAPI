@@ -77,22 +77,6 @@ app.get("/", async (req, res) => {
 });
 
 
-app.post("/api/update", async (req, res) => {
-    if(!config.development_mode) return res.status(403).send({"code": "unauthorized", "message": "This is a production server, and therefore cannot be automatically restarted."});
-
-    const sha256 = 'sha256' + crypto.createHmac('sha256', process.env.GITHUB_SECRET)
-        .update(JSON.stringify(req.body, null, 2))
-        .digest('hex');
-    const matches = crypto.timingSafeEqual(Buffer.from(sha256), Buffer.from(req.headers["x-hub-signature-256"]));
-    if(!matches) return res.status(403).send({"code": "unauthorized", "message": "Wait a minute, you're not GitHub!"});
-
-
-    proc.exec("git pull && npm i");
-    res.sendStatus(200);
-    process.exit(0);
-});
-
-
 app.get("/api/versioncheck/:platform/:version_id", async (req, res) => {
     let {platform, version_id} = req.params;
     

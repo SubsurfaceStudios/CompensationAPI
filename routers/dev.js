@@ -2,7 +2,6 @@ const router = require('express').Router();
 const { PullPlayerData, PushPlayerData } = require('../helpers');
 const middleware = require('../middleware');
 const config = require('../config.json');
-const { timingSafeEqual } = require('node:crypto');
 const { execSync } = require('node:child_process');
 
 //Check if a token is valid as developer.
@@ -59,14 +58,7 @@ router.post("/pull-origin", async (req, res) => {
         console.log(Authentication);
         let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
 
-        if(Authentication.length != key.length) return res.status(403).json({
-            code: "invalid_secret",
-            message: "You do not have authorization to pull changes."
-        });
-        
-        let success = timingSafeEqual(Buffer.from(key), Buffer.from(Authentication));
-
-        if(!success) return res.status(403).json({
+        if(Authentication.length != key.length || Authentication != key) return res.status(403).json({
             code: "invalid_secret",
             message: "You do not have authorization to pull changes."
         });

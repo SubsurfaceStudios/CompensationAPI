@@ -9,4 +9,4 @@ jobs:
     steps:
       - name: Pull changes into development
         run: |
-          curl --request POST --url https://dev.compensationvr.tk/dev/pull-origin --header 'Authorization: Bearer ${{ DEV_PULL_SECRET }}'
+          curl --request POST --url https://dev.compensationvr.tk/dev/pull-origin --header 'Authorization: Bearer ${{ secrets.DEV_PULL_SECRET }}'

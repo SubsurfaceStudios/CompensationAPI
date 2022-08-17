@@ -140,7 +140,6 @@ async function currentAccountUpdater() {
 
         var server = await servers.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
         if(typeof server != 'object') return rl.write("Failed to read official server.");
-
           
         for(let i = 0; i < accounts.length; i++) {
             var element = accounts[i];
@@ -151,6 +150,19 @@ async function currentAccountUpdater() {
 
             if(!element.private.messaging_servers.includes("a8ec2c20-a4c7-11ec-896d-419328454766"))
                 element.private.messaging_servers.push("a8ec2c20-a4c7-11ec-896d-419328454766");
+
+            // OUTFIT SCHEMA ENFORCER
+
+            if(typeof element?.public?.outfit?.hat == 'number') delete element.public.outfit.hat;
+            if(typeof element?.public?.outfit?.hairStyle == 'number') delete element.public.outfit.hairStyle;
+            if(typeof element?.public?.outfit?.hairColor == 'number') delete element.public.outfit.hairColor;
+            if(typeof element?.public?.outfit?.glasses == 'number') delete element.public.outfit.glasses;
+            if(typeof element?.public?.outfit?.shirt == 'number') delete element.public.outfit.shirt;
+            if(typeof element?.public?.outfit?.pants == 'number') delete element.public.outfit.pants;
+            if(typeof element?.public?.outfit?.chest == 'number') delete element.public.outfit.chest;
+            if(typeof element?.public?.outfit?.skinTone == 'number') delete element.public.outfit.skinTone;
+
+            // \OUTFIT SCHEMA ENFORCER
 
             db.collection('accounts').replaceOne({_id: {$eq: element._id}}, element, {upsert: true});
                

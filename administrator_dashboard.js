@@ -122,16 +122,14 @@ function MigrateAllAccounts() {
 async function currentAccountUpdater() {
     const { MongoClient } = require('mongodb');
      
-    const uri = `mongodb+srv://CVRAPI%2DDIRECT:${
-        process.env.MONGOOSE_ACCOUNT_PASSWORD
-    }@cluster0.s1qwk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
-    const client = new MongoClient(uri, {
+    
+    const client = new MongoClient(process.env.MONGOOSE_CONNECTION_STRING, {
         useNewUrlParser: true,
         useUnifiedTopology: true
     });
 
     client.connect(async (error, client) => {
-        if(error) return rl.write("Failed to connct to Mongo DB");
+        if(error) return rl.write(`Failed to connct to Mongo DB\n${error}`);
 
         const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
         var accounts = await db.collection("accounts").find({_id: {$ne: "ACCT_TEMPLATE"}}).toArray();
@@ -153,14 +151,14 @@ async function currentAccountUpdater() {
 
             // OUTFIT SCHEMA ENFORCER
 
-            if(typeof element?.public?.outfit?.hat == 'number') delete element.public.outfit.hat;
-            if(typeof element?.public?.outfit?.hairStyle == 'number') delete element.public.outfit.hairStyle;
-            if(typeof element?.public?.outfit?.hairColor == 'number') delete element.public.outfit.hairColor;
-            if(typeof element?.public?.outfit?.glasses == 'number') delete element.public.outfit.glasses;
-            if(typeof element?.public?.outfit?.shirt == 'number') delete element.public.outfit.shirt;
-            if(typeof element?.public?.outfit?.pants == 'number') delete element.public.outfit.pants;
-            if(typeof element?.public?.outfit?.chest == 'number') delete element.public.outfit.chest;
-            if(typeof element?.public?.outfit?.skinTone == 'number') delete element.public.outfit.skinTone;
+            if(typeof element?.public?.outfit?.hat != 'undefined') delete element.public.outfit.hat;
+            if(typeof element?.public?.outfit?.hairStyle != 'undefined') delete element.public.outfit.hairStyle;
+            if(typeof element?.public?.outfit?.hairColor != 'undefined') delete element.public.outfit.hairColor;
+            if(typeof element?.public?.outfit?.glasses != 'undefined') delete element.public.outfit.glasses;
+            if(typeof element?.public?.outfit?.shirt != 'undefined') delete element.public.outfit.shirt;
+            if(typeof element?.public?.outfit?.pants != 'undefined') delete element.public.outfit.pants;
+            if(typeof element?.public?.outfit?.chest != 'undefined') delete element.public.outfit.chest;
+            if(typeof element?.public?.outfit?.skinTone != 'undefined') delete element.public.outfit.skinTone;
 
             // \OUTFIT SCHEMA ENFORCER
 

@@ -4,6 +4,7 @@ const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
+const { auditLog } = require('../helpers');
 
 // Base URL: /api/rooms/...
 
@@ -516,6 +517,8 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
         const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
 
         await coll.insertOne(room);
+
+        auditLog(`User ${req.user.id} created new room with ID ${room._id} and name ${name}.`);
         
         return res.status(200).json({
             code: "success",

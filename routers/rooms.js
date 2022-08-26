@@ -1,8 +1,9 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
+const { v1 } = require('uuid');
 
 // Base URL: /api/rooms/...
 
@@ -436,6 +437,95 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canView
             "message": "An internal server error occurred, preventing the operation from succeeding."
         });
         throw ex;
+    }
+});
+
+router.post('/new', authenticateDeveloperToken, async (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if(typeof name != 'string') return res.status(400).json({
+            code: "unspecified_parameter",
+            message: "You did not specify the parameter 'name' in your request body."
+        });
+
+        let userPermissions = {};
+        userPermissions[req.user.id] = "owner";
+
+        const room = {
+            _id: v1(),
+            name: name,
+            description: "An empty room.",
+            creator_id: req.user.id,
+            tags: ["Custom Room"],
+            created_at: Date.now(),
+            visits: 0,
+            subrooms: {
+                home: {
+                    publicVersionId: 0,
+                    maxPlayers: 20,
+                    versions: [
+                        {
+                            baseSceneIndex: 15,
+                            spawn: {
+                                position: {
+                                    x: 0,
+                                    y: 0,
+                                    z: 0,
+                                },
+                                rotation: {
+                                    x: 0,
+                                    y: 0,
+                                    z: 0,
+                                    w: 0
+                                }
+                            },
+                            shortHandCommitMessage: "Initial Commit",
+                            longHandCommitMessage: "Initial Commit - Auto-Generated for your convenience by the Compensation VR API.",
+                            author: req.user.id,
+                            collaborators: [],
+                            associated_file: false
+                        }
+                    ]
+                }
+            },
+            homeSubroomId: "home",
+            rolePermissions: {
+                everyone: {
+                    viewAndJoin: false,
+                    createVersions: false,
+                    setPublicVersion: false,
+                    viewSettings: false,
+                    viewPermissions: false,
+                    managePermissions: false,
+                    useCreationTool: false
+                },
+                owner: {
+                    viewAndJoin: true,
+                    createVersions: true,
+                    setPublicVersion: true,
+                    viewSettings: true,
+                    viewPermissions: true,
+                    managePermissions: true,
+                    useCreationTool: true
+                }
+            },
+            userPermissions: userPermissions
+        };
+
+        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+
+        await coll.insertOne(room);
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_server_error",
+            message: "An internal server error occurred and we were unable to process your request."
+        });
     }
 });
 

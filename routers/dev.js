@@ -64,10 +64,12 @@ router.post("/pull-origin", async (req, res) => {
         execSync("git stash");
         execSync("git pull");
 
-        return res.status(200).json({
+        res.status(200).json({
             code: "success",
             message: "The operation succeeded."
         });
+
+        process.exit(0);
     } catch (ex) {
         res.status(500).json({
             code: "internal_server_error",

@@ -63,6 +63,7 @@ router.post("/pull-origin", async (req, res) => {
 
         execSync("git stash");
         execSync("git pull");
+        execSync("npm i");
 
         res.status(200).json({
             code: "success",

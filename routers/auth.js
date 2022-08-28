@@ -167,8 +167,7 @@ router.post("/login", async (req, res) => {
             IP: req.ip,
             TIME: Date.now(),
             HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code,
-            INAVLID_PASSWORD: password
+            TWO_FACTOR_CODE: two_factor_code
         };
         if(data.auth.logins.length < config.max_logged_logins) {
             data.auth.logins.push(attempt);

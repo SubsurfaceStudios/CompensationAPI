@@ -30,7 +30,7 @@ router.get("/:id/public", authenticateToken_optional, async (req, res) => {
             roomId: null
         };
 
-        if(authenticated && Object.keys(clients).includes(req.user?.id)) {
+        if(authenticated && Object.keys(clients).includes(req.user.id)) {
             let own = await helpers.PullPlayerData(req.user.id);
 
             let areAcquaintances = own.private.acquaintances.includes(id);

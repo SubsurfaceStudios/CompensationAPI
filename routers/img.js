@@ -181,8 +181,8 @@ router.get('/:id/embed', (req, res) => {
 
         return res.status(200).send(html);
     }, err => {
-        console.error(err);
-        return res.status(500).send("Failed to retrieve image data.");
+        res.status(500).send("Failed to retrieve image data.");
+        throw err;
     });
 });
 
@@ -205,8 +205,8 @@ router.get("/:id/info", async (req, res) => {
         var doc = await collection.findOne({_id: id});
         return res.status(200).json(doc);
     } catch (ex) {
-        console.error(ex);
-        return res.status(500).send("Failed to retrieve image data.");
+        res.status(500).send("Failed to retrieve image data.");
+        throw ex;
     }
 });
 
@@ -252,6 +252,13 @@ router.get("/:id", async (req, res) => {
                 storage.maxUploadRetryTime = 10 * 1000;
                 const ref = storage.bucket().file(ImageInfo.internalPathRef);
 
+                const exists = (await ref.exists())[0];
+
+                if (!exists) return res.status(404).json({
+                    code: "image_not_found",
+                    message: "No image exists with that ID. Typo?"
+                });
+
                 var a = await ref.download();
                 ImageBuffer = Buffer.from(a[0].buffer);
             } else {
@@ -278,6 +285,13 @@ router.get("/:id", async (req, res) => {
                 storage.maxUploadRetryTime = 10 * 1000;
                 const ref = storage.bucket().file(ImageInfo.internalPathRef);
 
+                const exists = (await ref.exists())[0];
+
+                if (!exists) return res.status(404).json({
+                    code: "image_not_found",
+                    message: "No image exists with that ID. Typo?"
+                });
+
                 ImageBuffer = Buffer.from(await ref.download()).buffer;
             } else {
                 ImageBuffer = imgCache.get(id);
@@ -291,23 +305,9 @@ router.get("/:id", async (req, res) => {
             } else console.log(`Request submitted for cached image ${id}.`);
         }
     } catch (ex) {
-        console.error(ex);
-        return res.status(500).send("Failed to retrieve image.");
+        res.status(500).send("Failed to retrieve image.");
+        throw ex;
     }
 });
-
-// this is extremely stupid
-// yes im clearing the cache if more than 50 images happen to be cached
-// is this a waste of bandwidth? yes.
-// too bad!
-function fycache() {
-    if(imgCache.keys.length > 20) {
-        for (let index = 0; index < imgCache.keys.length; index++) {
-            imgCache.del(imgCache.keys[index]);
-        }
-    }
-}
-
-setInterval(fycache, 5000);
 
 module.exports = router;

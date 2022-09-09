@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.0.1",
-    "dotenv": "^16.0.0",
+    "dotenv": "^16.0.2",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^6.6.0",

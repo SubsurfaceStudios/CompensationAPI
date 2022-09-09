@@ -24,7 +24,7 @@
     "firebase-admin": "^11.0.1",
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.9.0",
+    "mongodb": "^4.9.1",
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
     "twilio": "^3.81.0",

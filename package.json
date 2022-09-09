@@ -28,7 +28,7 @@
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
     "twilio": "^3.81.0",
-    "uuid": "^8.3.2",
+    "uuid": "^9.0.0",
     "ws": "^8.8.1"
   },
   "devDependencies": {

@@ -6,7 +6,7 @@ const notificationTemplates = {
     friendRequest: "friendRequest",
     messageRecieved: "messageRecieved"
 };
-const {WebSocketV2_MessageTemplate} = require('./ws/WebSocketServerV2');
+const {WebSocketV2_MessageTemplate} = require('../index');
 
 router.get("/imgfeed", async (req, res) => {
     try {
@@ -348,6 +348,8 @@ router.get("/all-friend-types", middleware.authenticateToken, async (req, res) =
     for (let index = 0; index < all.length; index++) {
         const element = all[index];
         let player = await helpers.PullPlayerData(element);
+
+        if (player == null) continue;
         dictionary[element] = player.public;
     }
     return res.status(200).json(dictionary);

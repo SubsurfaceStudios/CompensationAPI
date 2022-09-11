@@ -151,14 +151,17 @@ async function currentAccountUpdater() {
 
             // OUTFIT SCHEMA ENFORCER
 
-            if(typeof element?.public?.outfit?.hat != 'undefined') delete element.public.outfit.hat;
-            if(typeof element?.public?.outfit?.hairStyle != 'undefined') delete element.public.outfit.hairStyle;
-            if(typeof element?.public?.outfit?.hairColor != 'undefined') delete element.public.outfit.hairColor;
-            if(typeof element?.public?.outfit?.glasses != 'undefined') delete element.public.outfit.glasses;
-            if(typeof element?.public?.outfit?.shirt != 'undefined') delete element.public.outfit.shirt;
-            if(typeof element?.public?.outfit?.pants != 'undefined') delete element.public.outfit.pants;
-            if(typeof element?.public?.outfit?.chest != 'undefined') delete element.public.outfit.chest;
-            if(typeof element?.public?.outfit?.skinTone != 'undefined') delete element.public.outfit.skinTone;
+            if (typeof element?.public?.outfit?.hat != 'undefined') delete element.public.outfit.hat;
+            if (typeof element?.public?.outfit?.hairStyle != 'undefined') delete element.public.outfit.hairStyle;
+            if (typeof element?.public?.outfit?.hairColor != 'undefined') delete element.public.outfit.hairColor;
+            if (typeof element?.public?.outfit?.glasses != 'undefined') delete element.public.outfit.glasses;
+            if (typeof element?.public?.outfit?.shirt != 'undefined') delete element.public.outfit.shirt;
+            if (typeof element?.public?.outfit?.pants != 'undefined') delete element.public.outfit.pants;
+            if (typeof element?.public?.outfit?.chest != 'undefined') delete element.public.outfit.chest;
+            if (typeof element?.public?.outfit?.skinTone != 'undefined') delete element.public.outfit.skinTone;
+
+            if (typeof element?.settings != 'object') element.settings = {};
+            
 
             // \OUTFIT SCHEMA ENFORCER
 

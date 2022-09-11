@@ -63,6 +63,8 @@ app.use("/api/rooms", RoomsAPI.Router);
 // /api/messaging/*
 const messaging = require('./routers/messages');
 app.use("/api/messaging", messaging.router);
+// /api/settings/*
+app.use("/api/settings", require('./routers/settings'));
 
 
 //#endregion

@@ -161,6 +161,7 @@ async function currentAccountUpdater() {
             if (typeof element?.public?.outfit?.skinTone != 'undefined') delete element.public.outfit.skinTone;
 
             if (typeof element?.settings != 'object') element.settings = {};
+            if (typeof element?.public?.profile_picture_id != 'string') element.public.profile_picture_id = "1";
             
 
             // \OUTFIT SCHEMA ENFORCER

@@ -201,6 +201,27 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
     }
 });
 
+router.get("/items/featured", async (req, res) => {
+    try {
+        let db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        let data = await db.collection('global').findOne({ _id: { $eq: "featured_items", $exists: true } });
+
+        if (data == null || !Array.isArray(data))
+            return res.status(404).json({
+                code: "misconfiguration",
+                message: "An internal misconfiguration has occurred and we cannot serve the request. Please contact the development team ASAP to resolve the issue."
+            });
+
+        res.status(200).json(data);
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred. Please let us know if the issue persists."
+        });
+        throw ex;
+    }
+});
+
 //#region functions 
 
 async function PullItem(id) {

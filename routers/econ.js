@@ -206,7 +206,7 @@ router.get("/items/featured", async (req, res) => {
         let db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
         let data = await db.collection('global').findOne({ _id: { $eq: "featured_items", $exists: true } });
 
-        if (data == null || !Array.isArray(data))
+        if (data == null || !Array.isArray(data?.data))
             return res.status(404).json({
                 code: "misconfiguration",
                 message: "An internal misconfiguration has occurred and we cannot serve the request. Please contact the development team ASAP to resolve the issue."

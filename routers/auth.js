@@ -2,9 +2,9 @@ require('dotenv').config();
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PullPlayerData, check} = require('../helpers');
+const { PullPlayerData, check, PushPlayerData} = require('../helpers');
 const config = require('../config.json');
 
 const {default: rateLimit} = require('express-rate-limit');
@@ -305,6 +305,58 @@ router.post("/check", middleware.authenticateToken, async (req, res) => {
 router.get("/mfa-enabled", middleware.authenticateToken, async (req, res) => {
     const data = await helpers.PullPlayerData(req.user.id);
     return res.status(200).send(`${data.auth.mfa_enabled}`);
+});
+
+router.get("/password-update", middleware.authenticateDeveloperToken, async (req, res) => {
+    try {
+        const { current_password, new_password } = req.body;
+
+        if(typeof current_password == 'undefined' || typeof new_password == 'undefined')
+            return res.status(400).json({
+                code: "missing_parameter",
+                message: "You did not specify either your current password or your new password."
+            });
+
+        if(current_password == new_password) 
+            return res.status(400).json({
+                code: "invalid_parameter",
+                message: "Your new password cannot be the same as your old password."
+            });
+
+        if(new_password.length < 8)
+            return res.status(400).json({
+                code: "invalid_password",
+                message: "Your new password is too short."
+            });
+
+        let data = await PullPlayerData(req.user.id);
+        if(data.auth.mfa_enabled) 
+            return res.status(400).json({
+                code: "access_denied",
+                message: "The password of accounts with Multi-Factor Authentication cannot be changed. Support will not be able to assist you.\nStaff may be able to recieve exemptions, if you are a staff member locked out of your account please contact the development team directly."
+            });
+
+        if(!bcrypt.compareSync(current_password, data.auth.HASHED_PASSWORD))
+            return res.status(401).json({
+                code: "incorrect_password",
+                message: "Your current password input is incorrect. Please resolve this to continue the password reset process, or contact support."
+            });
+        
+        data.auth.HASHED_PASSWORD = bcrypt.hashSync(new_password, 10);
+
+        await PushPlayerData(req.user.id, data);
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was completed successfully."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_server_error",
+            message: "A critical internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
 });
 
 async function Verify2faUser(user_id, code, callback) {

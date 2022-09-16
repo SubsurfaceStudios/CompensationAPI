@@ -4,6 +4,7 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
+const { loadavg } = require('node:os');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",
@@ -63,6 +64,8 @@ app.use("/api/rooms", RoomsAPI.Router);
 // /api/messaging/*
 const messaging = require('./routers/messages');
 app.use("/api/messaging", messaging.router);
+// /api/settings/*
+app.use("/api/settings", require('./routers/settings'));
 
 
 //#endregion
@@ -121,6 +124,7 @@ console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
 
 
 const { MongoClient } = require('mongodb');
+const { auditLog } = require('./helpers');
 
 const uri = process.env.MONGOOSE_CONNECTION_STRING;
 const client = new MongoClient(uri, {
@@ -210,4 +214,14 @@ client.connect(async (error) => {
         
         setTimeout(() => process.exit(), 250);
     });
+
+    if (config.enable_load_logging) {
+        load_log();
+        setInterval(load_log, 15 * 5 * 1000);        // Every 15 minutes.
+    }
+    
+    function load_log() {
+        let loads = loadavg();
+        auditLog(`\nLoad averages for the last few minutes...\n\t1 Minute: ${loads[0]}\n\t5 Minutes: ${loads[1]}\n\t15 Minutes: ${loads[1]}`);
+    }
 });

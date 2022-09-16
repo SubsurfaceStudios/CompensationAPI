@@ -19,8 +19,8 @@ router.route("/item/:id/info")
             await PushItem(id, req.body);
             return res.sendStatus(200);
         } catch (ex) {
-            console.error(ex);
-            return res.sendStatus(500);
+            res.sendStatus(500);
+            throw ex;
         }
     })
     .put(middleware.authenticateDeveloperToken, async (req, res) => {
@@ -54,7 +54,7 @@ router.post("/item/buy", middleware.authenticateToken, async (req, res) => {
         return res.status(200).send("Successfully purchased item! Enjoy!");
     } catch (ex) {
         res.status(500).send("Failed to purchase item due to an internal server error. Please contact Rose932#1454 on Discord for more information.");
-        console.error(ex);
+        throw ex;
     }
 });
 
@@ -81,7 +81,7 @@ router.post("/item/gift", middleware.authenticateToken, async (req, res) => {
         return res.status(200).send("Gift successfully sent! Thanks for playing Compensation VR!");
     } catch (ex) {
         res.status(500).send("Internal server error, failed to send gift. Contact Rose932#1454 on Discord for more information.");
-        console.error(ex);
+        throw ex;
     }
 });
 
@@ -102,7 +102,7 @@ router.post("/item/refund", middleware.authenticateToken, async (req, res) => {
         return res.status(200).send("Transaction complete. Thank you for playing Compensation VR!");
     } catch (ex) {
         res.status(500).send("An error occurred and we failed to complete the transaction. Please contact Rose932#1454 on Discord for more information.");
-        console.error(ex);
+        throw ex;
     }
 });
 
@@ -128,7 +128,7 @@ router.post("/item/transfer", middleware.authenticateToken, async (req, res) => 
         return res.status(200).send("Item transferred. Thanks for playing Compensation VR!");
     } catch (ex) {
         res.status(500).send("We encountered an error and the transaction could not be completed. Please contact Rose932#1454 on Discord for more information.");
-        console.error(ex);
+        throw ex;
     }
 });
 
@@ -150,7 +150,7 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
         return res.status(200).send("Currency successfully transferred! Thanks for playing Compensation VR!");
     } catch (ex) {
         res.status(500).send("An error occured and we couldn't transfer the currency. Please contact Rose932#1454 on Discord for more information.");
-        console.error(ex);
+        throw ex;
     }
 });
 
@@ -198,6 +198,27 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
         return res.sendStatus(200);
     } catch {
         return res.sendStatus(500);
+    }
+});
+
+router.get("/items/featured", async (req, res) => {
+    try {
+        let db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        let data = await db.collection('global').findOne({ _id: { $eq: "featured_items", $exists: true } });
+
+        if (data == null || !Array.isArray(data?.data))
+            return res.status(404).json({
+                code: "misconfiguration",
+                message: "An internal misconfiguration has occurred and we cannot serve the request. Please contact the development team ASAP to resolve the issue."
+            });
+
+        res.status(200).json(data.data);
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred. Please let us know if the issue persists."
+        });
+        throw ex;
     }
 });
 

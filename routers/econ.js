@@ -212,7 +212,7 @@ router.get("/items/featured", async (req, res) => {
                 message: "An internal misconfiguration has occurred and we cannot serve the request. Please contact the development team ASAP to resolve the issue."
             });
 
-        res.status(200).json(data);
+        res.status(200).json(data.data);
     } catch (ex) {
         res.status(500).json({
             code: "internal_error",

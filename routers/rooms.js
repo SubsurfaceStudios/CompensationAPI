@@ -26,7 +26,8 @@ const roomTemplate = {
             createVersions: false,
             setPublicVersion: false
         }
-    }
+    },
+    cover_image_id: "2"
 };
 
 router.use(express.text({
@@ -62,7 +63,7 @@ router.route("/room/:room_id/info")
             }
 
             // refetch the room using projection so we're not exposing permissions and subroom data to the user
-            const room_visible = await room_collection.findOne({_id: {$eq: room_id, $exists: true}}, {projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1}});
+            const room_visible = await room_collection.findOne({_id: {$eq: room_id, $exists: true}}, {projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1, cover_image_id: 1}});
             return res.status(200).json(room_visible);
         } catch (ex) {
             res.sendStatus(500);
@@ -143,7 +144,8 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
             creator_id: item.creator_id,
             tags: item.tags,
             visits: item.visits,
-            created_at: item.created_at
+            created_at: item.created_at,
+            cover_image_id: item.cover_image_id
         };
     });
 

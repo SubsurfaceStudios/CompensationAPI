@@ -5,6 +5,7 @@ const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
 const { auditLog } = require('../helpers');
+const { default: rateLimit } = require('express-rate-limit');
 
 // Base URL: /api/rooms/...
 
@@ -71,8 +72,13 @@ router.route("/room/:room_id/info")
         }
     });
 
+const download_limit = rateLimit({
+    'windowMs': 60 * 10 * 1000,
+    'max': 10
+});
+
 router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download")
-    .get(authenticateToken, async (req, res) => {
+    .get(authenticateToken, download_limit, async (req, res) => {
         try {
             var {room_id, subroom_id, version_id} = req.params;
 

@@ -58,6 +58,13 @@ const uploadRateLimit = rateLimit({
     'standardHeaders': true
 });
 
+const fetch_rate_limit = rateLimit({
+    'windowMs': 60 * 1000,
+    'max': 30,
+    'standardHeaders': true,
+    'legacyHeaders': true
+});
+
 // 1 hour cache
 const imgCache = new NodeCache({
     "deleteOnExpire": true,
@@ -65,7 +72,7 @@ const imgCache = new NodeCache({
 });
 
 router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {
-    if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image upload have been disabled by the system administrator.", "code": "uploads_disabled"});
+    if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image uploads have been disabled by the system administrator.", "code": "uploads_disabled"});
     try {
         var {others, room_id, tags} = req.query;
         if(req.headers['content-type'] !== 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
@@ -210,7 +217,7 @@ router.get("/:id/info", async (req, res) => {
     }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", fetch_rate_limit, async (req, res) => {
     try {
         if(config.disable_image_fetch && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
         // Setup of parameters

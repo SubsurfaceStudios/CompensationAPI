@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const fileUpload = require('express-fileupload');
-const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
 const { loadavg } = require('node:os');
@@ -14,15 +13,6 @@ exports.WebSocketV2_MessageTemplate = WebSocketV2_MessageTemplate;
 
 const app = express();
 app.set('trust proxy', 1);
-
-var GlobalLimiter = RateLimit({
-    windowMs: 1*60*1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-
-app.use(GlobalLimiter);
 
 app.use(express.json({
     limit: '50mb'

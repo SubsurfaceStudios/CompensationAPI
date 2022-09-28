@@ -17,7 +17,7 @@ app.set('trust proxy', 1);
 
 var GlobalLimiter = RateLimit({
     windowMs: 1*60*1000,
-    max: 100,
+    max: 250,
     standardHeaders: true,
     legacyHeaders: false
 });

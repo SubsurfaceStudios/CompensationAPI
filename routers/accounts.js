@@ -432,4 +432,39 @@ router.post('/force-pull', middleware.authenticateDeveloperToken, async (req, re
     clients[id].socket.emit('force-pull', selfClient.roomId, selfClient.joinCode);
     res.sendStatus(200);
 });
+
+router.post('/set-pfp/:id', middleware.authenticateToken, async (req, res) => {
+    try {
+        var client = require('../index').mongoClient;
+
+        var { id } = req.params;
+
+        var image_meta = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection("images").findOne({ _id: { $eq: id, $exists: true } });
+
+        if (image_meta == null) return res.status(404).json({
+            code: "image_not_found",
+            message: "Unable to find an image with that ID."
+        });
+
+        if (image_meta.takenBy.id != req.user.id) return res.status(400).json({
+            code: "not_photographer",
+            message: "You did not take this photo, so you cannot use it as your profile picture."
+        });
+
+        var data = await PullPlayerData(req.user.id);
+        data.public.profile_picture_id = id;
+        await PushPlayerData(req.user.id, data);
+
+        res.status(200).json({
+            code: "success",
+            message: "Successfully set profile picture."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to set your profile picture. Please try again later."
+        });
+        throw ex;
+    }
+});
 module.exports = router;

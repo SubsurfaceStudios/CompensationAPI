@@ -19,17 +19,17 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^6.6.0",
-    "express-slow-down": "^1.4.1",
+    "express-slow-down": "^1.5.0",
     "firebase": "^9.10.0",
     "firebase-admin": "^11.0.1",
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.9.1",
+    "mongodb": "^4.10.0",
     "node-cache": "^5.1.2",
     "request": "^2.88.2",
     "twilio": "^3.81.0",
     "uuid": "^9.0.0",
-    "ws": "^8.8.1"
+    "ws": "^8.9.0"
   },
   "devDependencies": {
     "eslint": "^8.22.0"

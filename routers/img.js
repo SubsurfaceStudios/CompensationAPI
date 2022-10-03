@@ -60,15 +60,15 @@ const uploadRateLimit = rateLimit({
 
 const fetch_rate_limit = rateLimit({
     'windowMs': 60 * 1000,
-    'max': 30,
+    'max': 50,
     'standardHeaders': true,
     'legacyHeaders': true
 });
 
-// 1 hour cache
+// 24 hour cache
 const imgCache = new NodeCache({
     "deleteOnExpire": true,
-    "stdTTL": 60 * 60
+    "stdTTL": 60 * 60 * 24
 });
 
 router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {

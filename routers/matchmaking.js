@@ -217,11 +217,11 @@ async function GetInstances(RoomId = null) {
 }
 
 async function GetInstanceById(RoomId, InstanceId) {
-    return SubroomInstances[RoomId]?.find(item => item.InstanceId === InstanceId);
+    return SubroomInstances[RoomId]?.find(item => item.InstanceId == InstanceId);
 }
 
 async function GetInstanceByJoinCode(RoomId, JoinCode) {
-    return SubroomInstances[RoomId]?.find(item => item.JoinCode === JoinCode);
+    return SubroomInstances[RoomId]?.find(item => item.JoinCode == JoinCode);
 }
 
 async function SetInstances(RoomId, InstanceList) {
@@ -231,7 +231,7 @@ async function SetInstances(RoomId, InstanceList) {
 async function SetInstance(RoomId, InstanceId, Instance) {
     if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
-    var index = SubroomInstances[RoomId].findIndex(item => item.InstanceId === InstanceId);
+    var index = SubroomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
     if(index < 0) SubroomInstances[RoomId].push(Instance);
     else SubroomInstances[RoomId][index] = Instance;
 }
@@ -239,7 +239,7 @@ async function SetInstance(RoomId, InstanceId, Instance) {
 async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
     if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
-    const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, true, MaxPlayers);
+    const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
     SubroomInstances[RoomId].push(room);
 
     console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);

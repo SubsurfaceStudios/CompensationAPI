@@ -208,7 +208,7 @@ async function GetInstances(RoomId = null) {
     if(RoomId === null) {
         var instances = [];
         Object.keys(SubroomInstances).forEach(element => {
-            instances.concat(SubroomInstances[element]);
+            instances = instances.concat(SubroomInstances[element]);
         });
         return instances;
     }

@@ -144,16 +144,15 @@ class RoomSession {
         clearInterval(this.#eventLoopHandle);
         clearInterval(this.#automaticCleanupHandle);
 
-        console.log(`CLEANUP OF INSTANCE ${this.InstanceId}`);
+        console.log(`INSTANCE ${this.InstanceId} MARKED FOR CLEANUP`);
     }
     AutomaticInstanceCleanup() {
-        // damn i really messed up how TTL should work originally haha
         if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
 
         if(typeof this.Players != 'object') this.Players = [];
         if(this.Players.length < 1) {
             this.InstanceCleanup();
-            console.log(`AUTOMATIC CLEANUP OF INSTANCE ${this.InstanceId}`);
+            console.log(`INSTANCE ${this.InstanceId} TERMINATED`);
         }
     }
 
@@ -181,8 +180,6 @@ class RoomSession {
         else 
             GlobalRoomInstances[RoomId][this.GlobalInstanceId][SubroomId] = this.InstanceId;
 
-        SetInstance(this.RoomId, this.InstanceId, this);
-
         this.BeginEventLoop();
     }
 }
@@ -193,6 +190,10 @@ var SubroomInstances = Object.create(null);
 var GlobalRoomInstances = Object.create(null);
 
 setInterval(CleanupInstances, 300 * 1000);
+
+if (require('../config.json').debug_trace_instances) {
+    setInterval(LogInstanceTable, 30 * 1000);
+}
 
 async function CleanupInstances() {
     for(let RoomIdIndex = 0; RoomIdIndex < Object.keys(SubroomInstances).length; RoomIdIndex++) {
@@ -217,11 +218,11 @@ async function GetInstances(RoomId = null) {
 }
 
 async function GetInstanceById(RoomId, InstanceId) {
-    return SubroomInstances[RoomId]?.find(item => item.InstanceId === InstanceId);
+    return SubroomInstances[RoomId]?.find(item => item.InstanceId == InstanceId);
 }
 
 async function GetInstanceByJoinCode(RoomId, JoinCode) {
-    return SubroomInstances[RoomId]?.find(item => item.JoinCode === JoinCode);
+    return SubroomInstances[RoomId]?.find(item => item.JoinCode == JoinCode);
 }
 
 async function SetInstances(RoomId, InstanceList) {
@@ -231,7 +232,7 @@ async function SetInstances(RoomId, InstanceList) {
 async function SetInstance(RoomId, InstanceId, Instance) {
     if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
-    var index = SubroomInstances[RoomId].findIndex(item => item.InstanceId === InstanceId);
+    var index = SubroomInstances[RoomId].findIndex(item => item.InstanceId == InstanceId);
     if(index < 0) SubroomInstances[RoomId].push(Instance);
     else SubroomInstances[RoomId][index] = Instance;
 }
@@ -239,11 +240,20 @@ async function SetInstance(RoomId, InstanceId, Instance) {
 async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers) {
     if(!Object.keys(SubroomInstances).includes(RoomId)) SubroomInstances[RoomId] = [];
 
-    const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, true, MaxPlayers);
+    const room = new RoomSession(RoomId, SubroomId, MatchmakingMode, TTL, Persistent, MaxPlayers);
     SubroomInstances[RoomId].push(room);
 
     console.log(`New instance of room ${RoomId} created with InstanceId of ${room.InstanceId} and a join code of ${room.JoinCode}`);
     return room;
+}
+
+async function LogInstanceTable() {
+    let instances = await GetInstances(null);
+    if (instances.length < 1) return;
+
+    console.table(
+        instances
+    );
 }
 
 module.exports = {
@@ -256,5 +266,6 @@ module.exports = {
     GetInstanceByJoinCode: GetInstanceByJoinCode,
     SetInstances: SetInstances,
     SetInstance: SetInstance,
-    CreateInstance: CreateInstance
+    CreateInstance: CreateInstance,
+    LogInstanceTable: LogInstanceTable
 };

@@ -194,6 +194,10 @@ var GlobalRoomInstances = Object.create(null);
 
 setInterval(CleanupInstances, 300 * 1000);
 
+if (require('../config.json').debug_trace_instances) {
+    setInterval(LogInstanceTable, 30 * 1000);
+}
+
 async function CleanupInstances() {
     for(let RoomIdIndex = 0; RoomIdIndex < Object.keys(SubroomInstances).length; RoomIdIndex++) {
         var RoomId = Object.keys(SubroomInstances)[RoomIdIndex];
@@ -246,6 +250,12 @@ async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persisten
     return room;
 }
 
+async function LogInstanceTable() {
+    console.table(
+        await GetInstances(null)
+    );
+}
+
 module.exports = {
     router: router,
     MatchmakingModes: MatchmakingModes,
@@ -256,5 +266,6 @@ module.exports = {
     GetInstanceByJoinCode: GetInstanceByJoinCode,
     SetInstances: SetInstances,
     SetInstance: SetInstance,
-    CreateInstance: CreateInstance
+    CreateInstance: CreateInstance,
+    LogInstanceTable: LogInstanceTable
 };

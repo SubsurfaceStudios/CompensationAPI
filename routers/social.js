@@ -179,7 +179,7 @@ router.post("/friend-request", middleware.authenticateToken, async (req, res) =>
     var send = WebSocketV2_MessageTemplate;
     send.code = "standard_notification_recieved";
     send.data = {};
-    require('./ws/WebSocketServerV2').ws_connected_clients[target].socket.send(JSON.stringify(send, null, 5));
+    require('./ws/WebSocketServerV2').ws_connected_clients[target]?.socket?.send(JSON.stringify(send, null, 5));
 });
 
 router.post("/accept-request", middleware.authenticateToken, async (req, res) => {

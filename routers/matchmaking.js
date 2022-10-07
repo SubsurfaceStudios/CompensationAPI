@@ -144,16 +144,15 @@ class RoomSession {
         clearInterval(this.#eventLoopHandle);
         clearInterval(this.#automaticCleanupHandle);
 
-        console.log(`CLEANUP OF INSTANCE ${this.InstanceId}`);
+        console.log(`INSTANCE ${this.InstanceId} MARKED FOR CLEANUP`);
     }
     AutomaticInstanceCleanup() {
-        // damn i really messed up how TTL should work originally haha
         if(this.Persistent || this.AgeWithoutPlayer < this.TTL) return;
 
         if(typeof this.Players != 'object') this.Players = [];
         if(this.Players.length < 1) {
             this.InstanceCleanup();
-            console.log(`AUTOMATIC CLEANUP OF INSTANCE ${this.InstanceId}`);
+            console.log(`INSTANCE ${this.InstanceId} TERMINATED`);
         }
     }
 

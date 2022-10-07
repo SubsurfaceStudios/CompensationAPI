@@ -248,8 +248,11 @@ async function CreateInstance(RoomId, SubroomId, MatchmakingMode, TTL, Persisten
 }
 
 async function LogInstanceTable() {
+    let instances = await GetInstances(null);
+    if (instances.length < 1) return;
+
     console.table(
-        await GetInstances(null)
+        instances
     );
 }
 

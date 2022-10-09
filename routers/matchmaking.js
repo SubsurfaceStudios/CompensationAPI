@@ -84,7 +84,7 @@ class RoomSession {
     MaxPlayers; // The maximum number of players the instance can contain.
     Age; // Age of the instance.
     AgeWithoutPlayer;
-    TTL = 1;
+    TTL = 300*1000;
     Persistent;
     FlaggedForRemoval;
      

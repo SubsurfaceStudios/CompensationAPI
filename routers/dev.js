@@ -210,4 +210,47 @@ router.post("/quality-control/test-case/:_id/assign-self", authenticateTokenAndT
     }
 });
 
+router.post("/quality-control/test-case/:_id/set-status/:active", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const { _id, active } = req.params;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        var result = await cases.findOne(
+            {
+                _id: {$eq: _id, $exists: true}
+            }
+        );
+
+        if (result.assignee != req.user.id && result.creator != req.user.id) return res.status(400).json({
+            code: "not_assigned",
+            message: "You are not assigned to this test case and you did not create it."
+        });
+
+        await cases.updateOne(
+            {
+                _id: { $eq: _id, $exists: true }
+            },
+            {
+                $set: {
+                    open: active == "open"
+                }
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully set status of test case."
+        })
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we could not serve your request. Please notify the API team."
+        });
+        throw ex;
+    }
+});
+
 module.exports = router;

@@ -114,6 +114,54 @@ router.get("/quality-control/test-cases", authenticateTokenAndTag("QA Tester"), 
     }
 });
 
+router.post("/quality-control/test-case/:_id/relinquish", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const { _id } = req.params;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        var result = await cases.findOne(
+            {
+                _id: { $eq: _id, $exists: true }
+            }
+        );
+
+        if (result == null) return res.status(404).json({
+            code: "case_not_found",
+            message: "Unable to find a test case with that ID."
+        });
+
+        if (result.assignee != req.user.id) return res.status(400).json({
+            code: "not_assigned",
+            message: "You are not assigned to this test case, and therefore cannot relinquish control of it."
+        });
+
+        await cases.updateOne(
+            {
+                _id: { $eq: _id, $exists: true }
+            },
+            {
+                $set: {
+                    assignee: null
+                }
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully relinquished control of test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred. Please notify the API team immediately."
+        });
+        throw ex;
+    }
+});
+
 
 
 module.exports = router;

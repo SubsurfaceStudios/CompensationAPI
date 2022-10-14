@@ -4,6 +4,7 @@ const middleware = require('../middleware');
 const config = require('../config.json');
 const { execSync } = require('node:child_process');
 const { authenticateTokenAndTag } = require('../middleware');
+const { v1 } = require('uuid');
 
 //Check if a token is valid as developer.
 router.get("/check", middleware.authenticateDeveloperToken, async (req, res) => {
@@ -243,11 +244,51 @@ router.post("/quality-control/test-case/:_id/set-status/:active", authenticateTo
         return res.status(200).json({
             code: "success",
             message: "Successfully set status of test case."
-        })
+        });
     } catch (ex) {
         res.status(500).json({
             code: "internal_error",
             message: "An internal server error occurred and we could not serve your request. Please notify the API team."
+        });
+        throw ex;
+    }
+});
+
+router.put("/quality-control/submit-test-case", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const {
+            header,
+            description
+        } = req.body;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        if (typeof header != 'string' || typeof description != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Either your header or description were either not set or were not valid JSON strings."
+        });
+
+        const test_case = {
+            _id: v1(),
+            header: header,
+            description: description,
+            creator: req.user.id,
+            assignee: null,
+            open: true
+        };
+
+        cases.insertOne(test_case);
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully created test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to create the test case. Please notify the API team."
         });
         throw ex;
     }

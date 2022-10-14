@@ -3,6 +3,8 @@ const { PullPlayerData, PushPlayerData } = require('../helpers');
 const middleware = require('../middleware');
 const config = require('../config.json');
 const { execSync } = require('node:child_process');
+const { authenticateTokenAndTag } = require('../middleware');
+const { v1 } = require('uuid');
 
 //Check if a token is valid as developer.
 router.get("/check", middleware.authenticateDeveloperToken, async (req, res) => {
@@ -56,7 +58,7 @@ router.post("/pull-origin", async (req, res) => {
         let Authentication = req.headers.authorization.split(' ')[1];
         let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
 
-        if(Authentication.length != key.length || Authentication != key) return res.status(403).json({
+        if(Authentication?.length != key?.length || Authentication != key) return res.status(403).json({
             code: "invalid_secret",
             message: "You do not have authorization to pull changes."
         });
@@ -80,6 +82,216 @@ router.post("/pull-origin", async (req, res) => {
     }
 });
 
+router.get("/quality-control/test-cases", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        var { filter } = req.query;
+        if (!filter) filter = "";
 
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        const filters = filter.split("|");
+
+        var collection_filter = {
+            _id: { $exists: true },
+            open: { $eq: true }
+        };
+
+        if (filters.includes("only_unassigned")) collection_filter.assignee = { $eq: null };
+        if (filters.includes("assigned_to_me")) collection_filter.assignee = { $eq: req.user.id };
+
+        if (filters.includes("include_closed")) delete collection_filter.open;
+
+        var results = await cases.find(collection_filter).toArray();
+
+        return res.status(200).json(results);
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to serve your request. Please inform the API team."
+        });
+        throw ex;
+    }
+});
+
+router.post("/quality-control/test-case/:_id/relinquish", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const { _id } = req.params;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        var result = await cases.findOne(
+            {
+                _id: { $eq: _id, $exists: true }
+            }
+        );
+
+        if (result == null) return res.status(404).json({
+            code: "case_not_found",
+            message: "Unable to find a test case with that ID."
+        });
+
+        if (result.assignee != req.user.id) return res.status(400).json({
+            code: "not_assigned",
+            message: "You are not assigned to this test case, and therefore cannot relinquish control of it."
+        });
+
+        await cases.updateOne(
+            {
+                _id: { $eq: _id, $exists: true }
+            },
+            {
+                $set: {
+                    assignee: null
+                }
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully relinquished control of test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred. Please notify the API team immediately."
+        });
+        throw ex;
+    }
+});
+
+router.post("/quality-control/test-case/:_id/assign-self", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const { _id } = req.params;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        var result = await cases.findOne(
+            {
+                _id: {$eq: _id, $exists: true}
+            }
+        );
+
+        if (result == null) return res.status(404).json({
+            code: "not_found" ,
+            message: "Unable to locate test case with that ID."
+        });
+
+        if (result.assignee != null) return res.status(400).json({
+            code: "already_assigned",
+            message: "Somebody is already assigned to this test case."
+        });
+
+        await cases.updateOne(
+            {
+                _id: {$eq: _id, $exists: true}
+            },
+            {
+                $set: {
+                    assignee: req.user.id
+                }
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully assigned self to test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to serve your request. Please alert the API team."
+        });
+        throw ex;
+    }
+});
+
+router.post("/quality-control/test-case/:_id/set-status/:active", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const { _id, active } = req.params;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        var result = await cases.findOne(
+            {
+                _id: {$eq: _id, $exists: true}
+            }
+        );
+
+        if (result.assignee != req.user.id && result.creator != req.user.id) return res.status(400).json({
+            code: "not_assigned",
+            message: "You are not assigned to this test case and you did not create it."
+        });
+
+        await cases.updateOne(
+            {
+                _id: { $eq: _id, $exists: true }
+            },
+            {
+                $set: {
+                    open: active == "open"
+                }
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully set status of test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we could not serve your request. Please notify the API team."
+        });
+        throw ex;
+    }
+});
+
+router.put("/quality-control/submit-test-case", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const {
+            header,
+            description
+        } = req.body;
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        if (typeof header != 'string' || typeof description != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Either your header or description were either not set or were not valid JSON strings."
+        });
+
+        const test_case = {
+            _id: v1(),
+            header: header,
+            description: description,
+            creator: req.user.id,
+            assignee: null,
+            open: true
+        };
+
+        cases.insertOne(test_case);
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully created test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to create the test case. Please notify the API team."
+        });
+        throw ex;
+    }
+});
 
 module.exports = router;

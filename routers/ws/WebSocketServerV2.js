@@ -677,9 +677,9 @@ WebSocketServerV2.on('connection', (Socket) => {
         delete ws_connected_clients[ConnectedUserData.uid];
         auditLog(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has disconnected. Currently online players: ${Object.keys(ws_connected_clients).length}`);
 
-        if (ConnectedUserData.matchmaking_InstanceId !== null) {
+        if (ConnectedUserData.matchmaking_InstanceId != null) {
             var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);
-            if (instance !== null) {
+            if (instance != null) {
                 instance.RemovePlayer(ConnectedUserData.uid);
                 await MatchmakingAPI.SetInstance(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId, instance);
             }

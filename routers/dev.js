@@ -3,6 +3,7 @@ const { PullPlayerData, PushPlayerData } = require('../helpers');
 const middleware = require('../middleware');
 const config = require('../config.json');
 const { execSync } = require('node:child_process');
+const { authenticateTokenAndTag } = require('../middleware');
 
 //Check if a token is valid as developer.
 router.get("/check", middleware.authenticateDeveloperToken, async (req, res) => {
@@ -75,6 +76,39 @@ router.post("/pull-origin", async (req, res) => {
         res.status(500).json({
             code: "internal_server_error",
             message: "An internal server error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
+router.get("/quality-control/test-cases", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        var { filter } = req.query;
+        if (!filter) filter = "";
+
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        const filters = filter.split(";");
+
+        var collection_filter = {
+            _id: { $exists: true },
+            open: { $eq: true }
+        };
+
+        if (filters.includes("only_unassigned")) collection_filter.assignee = { $eq: null };
+        if (filters.includes("assigned_to_me")) collection_filter.assignee = { $eq: req.user.id };
+
+        if (filters.includes("include_closed")) delete collection_filter.open;
+
+        var results = await cases.find(collection_filter).toArray();
+
+        return res.status(200).json(results);
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to serve your request. Please inform the API team."
         });
         throw ex;
     }

@@ -162,6 +162,52 @@ router.post("/quality-control/test-case/:_id/relinquish", authenticateTokenAndTa
     }
 });
 
+router.post("/quality-control/test-case/:_id/assign-self", authenticateTokenAndTag("QA Tester"), async (req, res) => {
+    try {
+        const { _id } = req.params;
 
+        const client = require('../index').mongoClient;
+
+        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+
+        var result = await cases.findOne(
+            {
+                _id: {$eq: _id, $exists: true}
+            }
+        );
+
+        if (result == null) return res.status(404).json({
+            code: "not_found" ,
+            message: "Unable to locate test case with that ID."
+        });
+
+        if (result.assignee != null) return res.status(400).json({
+            code: "already_assigned",
+            message: "Somebody is already assigned to this test case."
+        });
+
+        await cases.updateOne(
+            {
+                _id: {$eq: _id, $exists: true}
+            },
+            {
+                $set: {
+                    assignee: req.user.id
+                }
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully assigned self to test case."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we were unable to serve your request. Please alert the API team."
+        });
+        throw ex;
+    }
+});
 
 module.exports = router;

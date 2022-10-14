@@ -90,7 +90,7 @@ router.get("/quality-control/test-cases", authenticateTokenAndTag("QA Tester"), 
 
         const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
 
-        const filters = filter.split(";");
+        const filters = filter.split("|");
 
         var collection_filter = {
             _id: { $exists: true },

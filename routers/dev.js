@@ -58,7 +58,7 @@ router.post("/pull-origin", async (req, res) => {
         let Authentication = req.headers.authorization.split(' ')[1];
         let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
 
-        if(Authentication.length != key.length || Authentication != key) return res.status(403).json({
+        if(Authentication?.length != key?.length || Authentication != key) return res.status(403).json({
             code: "invalid_secret",
             message: "You do not have authorization to pull changes."
         });

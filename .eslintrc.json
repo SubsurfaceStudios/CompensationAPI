@@ -16,6 +16,7 @@
         "no-invalid-this": "error",
         "semi-style": "error",
         "semi-spacing": "error",
-        "no-useless-escape": "off"
+        "no-useless-escape": "off",
+        "no-await-in-loop": "error"
     }
 }

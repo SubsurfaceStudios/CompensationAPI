@@ -5,7 +5,8 @@ module.exports = {
     authenticateToken: authenticateToken,
     authenticateDeveloperToken: authenticateDeveloperToken,
     authenticateToken_internal: authenticateToken_internal,
-    authenticateToken_optional: authenticateToken_optional
+    authenticateToken_optional: authenticateToken_optional,
+    authenticateTokenAndTag: authenticateTokenAndTag
 };
 
 async function authenticateToken(req, res, next) {
@@ -79,6 +80,41 @@ async function authenticateDeveloperToken(req, res, next) {
     {
         return res.status(403).send("Invalid or expired authorization token.");
     }
+}
+
+function authenticateTokenAndTag(tag) {
+    return async (req, res, next) => {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(" ")[1];
+
+        if (typeof token != 'string') return res.sendStatus(401);
+
+        try {
+            const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            req.user = tokenData;
+
+            const data = await helpers.PullPlayerData(tokenData.id);
+
+            for (let index = 0; index < data.auth.bans.length; index++) {
+                const element = data.auth.bans[index];
+                
+                if (element.endTS > Date.now()) return res.status(403).send({
+                    message: "USER IS BANNED",
+                    endTimeStamp: element.endTS,
+                    reason: element.reason
+                });
+                console.log(element);
+            }
+
+            if (!data?.private?.availableTags?.includes(tag)) return res.status(403).send("No requisite permissions.");
+
+            next();
+        }
+        catch
+        {
+            return res.status(403).send("Invalid or expired authorization token.");
+        }
+    };
 }
 
 async function authenticateToken_internal(token) {

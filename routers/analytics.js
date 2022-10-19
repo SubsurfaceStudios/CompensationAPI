@@ -44,7 +44,7 @@ router.put("/exception-report", authenticateToken, async (req, res) => {
             stack_trace: req.body.stack_trace
         };
 
-        if (data.settings.EXCEPTION_REPORTING_DONT_ANONYMIZE) {
+        if (data.settings.EXCEPTION_REPORTING_DONT_ANONYMIZE == "true") {
             exception_data.PLAYER_ID = req.user.id;
         }
 

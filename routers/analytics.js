@@ -3,7 +3,7 @@ const { PullPlayerData } = require('../helpers');
 const { authenticateToken } = require('../middleware');
 const { GetInstances } = require('./matchmaking');
 const { readFileSync } = require('node:fs');
-const { default: RSA } = require('node-rsa');
+const RSA = require('node-rsa');
 const cfg = require('../config.json');
 
 const EXCEPTION_LOGGING_PUBLIC_KEY = new RSA().importKey(readFileSync(cfg.exception_logging_publickey_path).toString('utf-8'), cfg.exception_logging_publickey_format);

@@ -6,3 +6,4 @@ env.js
 nginx.conf
 data/audit.json
 admin.json
+keys/

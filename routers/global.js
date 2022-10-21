@@ -19,7 +19,7 @@ router.route("/:key")
             res.sendStatus(404);
         }
     })
-    .post(middleware.authenticateDeveloperToken, async (req, res) => {
+    .patch(middleware.authenticateDeveloperToken, async (req, res) => {
         const { mongoClient } = require('../index');
         try {
             const { key } = req.params;
@@ -27,7 +27,16 @@ router.route("/:key")
 
             const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
 
-            collection.findOneAndUpdate({_id: key}, {data: value});
+            await collection.updateOne(
+                {
+                    _id: { $eq: key, $exists: true }
+                },
+                {
+                    $set: {
+                        data: value
+                    }
+                }
+            );
 
             return res.sendStatus(200);
         } catch (ex) {

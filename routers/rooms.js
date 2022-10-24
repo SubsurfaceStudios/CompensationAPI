@@ -171,7 +171,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     case "mine":
         return res.status(200).json(results.filter(room => room.creator_id === req.user.id));
     default:
-        return res.status(400).json({message: "invalid_mode"});
+        return res.status(400).json({code: "invalid_mode"});
     }
 });
 
@@ -453,9 +453,25 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
     try {
         const { name } = req.body;
 
+        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+
+        
         if(typeof name != 'string') return res.status(400).json({
             code: "unspecified_parameter",
             message: "You did not specify the parameter 'name' in your request body."
+        });
+
+        const predecessor = await coll.findOne(
+            {
+                _id: { $exists: true },
+                creator_id: { $exists: true, $eq: req.user.id },
+                name: { $exists: true, $eq: name}
+            }
+        );
+
+        if (predecessor != null) return res.status(400).json({
+            code: "room_already_exists",
+            message: "You have already created a room with that name."
         });
 
         let userPermissions = {};
@@ -521,8 +537,6 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
             },
             userPermissions: userPermissions
         };
-
-        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
 
         await coll.insertOne(room);
 

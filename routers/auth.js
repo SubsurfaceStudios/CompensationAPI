@@ -125,6 +125,7 @@ router.post("/login", async (req, res) => {
             };
             if(data.auth.logins.length < config.max_logged_logins) {
                 data.auth.logins.push(attempt);
+                // eslint-disable-next-line no-await-in-loop
                 await helpers.PushPlayerData(userID, data);
             }
             return res.status(403).send({

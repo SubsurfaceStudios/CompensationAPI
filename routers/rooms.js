@@ -4,7 +4,7 @@ const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
-const { auditLog } = require('../helpers');
+const { auditLog, PullPlayerData } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
 
 // Base URL: /api/rooms/...
@@ -577,7 +577,7 @@ async function canViewRoom(req, res, next) {
     const rolePermissions = room.rolePermissions;
 
     const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
-    const canView = rolePermissions[role].viewAndJoin;
+    const canView = rolePermissions[role].viewAndJoin || req.user.developer;
 
     if(!canView) {
         return res.status(404).json({
@@ -597,7 +597,10 @@ async function hasPermission(user_id, room_id, permission) {
     var room = await client
         .db(process.env.MONGOOSE_DATABASE_NAME)
         .collection('rooms')
-        .findOne({_id: {$eq: room_id, $exists: true}});
+        .findOne({ _id: { $eq: room_id, $exists: true } });
+    
+    const user = await PullPlayerData(user_id);
+    if (user.private.availableTags.includes("Developer")) return true;
 
     const userPermissions = room.userPermissions;
     const rolePermissions = room.rolePermissions;

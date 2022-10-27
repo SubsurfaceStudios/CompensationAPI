@@ -21,6 +21,32 @@ const accountCreationLimit = rateLimit({
     'standardHeaders': true
 });
 
+router.get('/photon-info', async (req, res) => {
+    try {
+        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("configuration");
+
+        const data = await coll.findOne(
+            {
+                _id: { $exists: true, $eq: "PhotonData" }
+            }
+        );
+
+        if (!data) return res.status(500).json({
+            code: "internal_error",
+            message: "This server is misconfigured and cannot serve your request."
+        });
+
+        return res.status(200).json(
+            data.data
+        );
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we could not serve your request."
+        });
+    }
+});
+
 router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
     try {
         const data = await helpers.PullPlayerData(req.user.id);

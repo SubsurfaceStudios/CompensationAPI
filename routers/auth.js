@@ -36,7 +36,7 @@ router.get('/photon-info', async (req, res) => {
             message: "This server is misconfigured and cannot serve your request."
         });
 
-        return res.status(200).json(
+        return res.status(200).send(
             data.data
         );
     } catch (ex) {

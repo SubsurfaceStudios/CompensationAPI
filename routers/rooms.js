@@ -4,7 +4,7 @@ const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
-const { auditLog } = require('../helpers');
+const { auditLog, PullPlayerData } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
 
 // Base URL: /api/rooms/...
@@ -171,7 +171,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     case "mine":
         return res.status(200).json(results.filter(room => room.creator_id === req.user.id));
     default:
-        return res.status(400).json({message: "invalid_mode"});
+        return res.status(400).json({code: "invalid_mode"});
     }
 });
 
@@ -453,9 +453,25 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
     try {
         const { name } = req.body;
 
+        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+
+        
         if(typeof name != 'string') return res.status(400).json({
             code: "unspecified_parameter",
             message: "You did not specify the parameter 'name' in your request body."
+        });
+
+        const predecessor = await coll.findOne(
+            {
+                _id: { $exists: true },
+                creator_id: { $exists: true, $eq: req.user.id },
+                name: { $exists: true, $eq: name}
+            }
+        );
+
+        if (predecessor != null) return res.status(400).json({
+            code: "room_already_exists",
+            message: "You have already created a room with that name."
         });
 
         let userPermissions = {};
@@ -522,8 +538,6 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
             userPermissions: userPermissions
         };
 
-        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
-
         await coll.insertOne(room);
 
         auditLog(`User ${req.user.id} created new room with ID ${room._id} and name ${name}.`);
@@ -563,7 +577,7 @@ async function canViewRoom(req, res, next) {
     const rolePermissions = room.rolePermissions;
 
     const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
-    const canView = rolePermissions[role].viewAndJoin;
+    const canView = rolePermissions[role].viewAndJoin || req.user.developer;
 
     if(!canView) {
         return res.status(404).json({
@@ -583,7 +597,10 @@ async function hasPermission(user_id, room_id, permission) {
     var room = await client
         .db(process.env.MONGOOSE_DATABASE_NAME)
         .collection('rooms')
-        .findOne({_id: {$eq: room_id, $exists: true}});
+        .findOne({ _id: { $eq: room_id, $exists: true } });
+    
+    const user = await PullPlayerData(user_id);
+    if (user.private.availableTags.includes("Developer")) return true;
 
     const userPermissions = room.userPermissions;
     const rolePermissions = room.rolePermissions;

@@ -463,7 +463,6 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
         });
 
         for (let index = 0; index < Object.keys(flags).length; index++) {
-            console.log(typeof flags[Object.keys(flags)[index]]);
             if (typeof flags[Object.keys(flags)[index]] != 'string') return res.status(400).json({
                 code: "invalid_input",
                 message: "Cannot set flags of room to anything other than a Dictionary<string, string>."

@@ -451,6 +451,46 @@ router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageT
     }
 });
 
+router.post('/room/:id/description', authenticateToken, requiresRoomPermission("editDescription"), async (req, res) => {
+    try {
+        const { description } = req.body;
+        const { id } = req.params;
+
+        if (typeof description != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot set description of room to anything other than a string."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms')
+            .updateOne(
+                {
+                    _id: {
+                        $exists: true,
+                        $eq: id
+                    }
+                },
+                {
+                    '$set': {
+                        "description": description
+                    }
+                }
+        );
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
 router.get('/room/:id/my-permissions', authenticateToken, canViewRoom, async (req, res) => {
     try {
         return res.status(200).json({
@@ -639,7 +679,7 @@ async function canViewRoom(req, res, next) {
     next();
 }
 
-async function requiresRoomPermission(permission) {
+function requiresRoomPermission(permission) {
     return async (req, res, next) => {
         // Input validation
         const client = require('../index').mongoClient;

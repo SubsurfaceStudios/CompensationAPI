@@ -778,7 +778,7 @@ function requiresRoomPermission(permission) {
             .findOne({_id: {$eq: id, $exists: true}});
         if(room == null) return res.status(404).json({
             "code": "room_not_found",
-            "message": "You did not specify a room."
+            "message": "Room not found."
         });
     
         const userPermissions = room.userPermissions;
@@ -789,7 +789,7 @@ function requiresRoomPermission(permission) {
         if(req.user.developer || rolePermissions[role][permission]) {
             return res.status(404).json({
                 "code": "room_not_found",
-                "message": "You did not specify a room."
+                "message": "Access denied."
             });
         }
     

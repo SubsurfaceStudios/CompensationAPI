@@ -786,7 +786,7 @@ function requiresRoomPermission(permission) {
     
         const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
     
-        if(req.user.developer || rolePermissions[role][permission]) {
+        if(!req.user.developer && rolePermissions[role][permission]) {
             return res.status(404).json({
                 "code": "room_not_found",
                 "message": "Access denied."

@@ -558,7 +558,7 @@ router.get('/room/:id/subrooms/list', authenticateToken, requiresRoomPermission(
                         'subrooms': true
                     }
                 }
-            ).tryNext()).tags;
+            ).tryNext()).subrooms;
         
         return res.status(200).json({
             code: "success",

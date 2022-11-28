@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 const fs = require('node:fs');
 const { stdin, stdout } = require('node:process');
 const readline = require('readline');
@@ -99,11 +100,13 @@ function MigrateAllAccounts() {
         for(let i = 0; i < accounts.length; i++) {
             rl.write("Preparing account " + accounts[i].split(".")[0] + " for migration.\n\n");
 
+            // eslint-disable-next-line no-await-in-loop
             var item = await JSON.parse(fs.readFileSync(`./data/accounts/${accounts[i]}`));
             item._id = accounts[i].split(".")[0];
 
             rl.write("Read and prepared account " + item._id + "\n\n");
 
+            // eslint-disable-next-line no-await-in-loop
             await accounts_collection.replaceOne({_id: {$eq: item._id}}, item, {upsert: true});
 
             rl.write("Successfully pushed account " + item._id + "\n\n");
@@ -336,6 +339,7 @@ function room_updater(id) {
 
         console.log("Beginning room update. This is a long and intensive operation.");
         for (let index = 0; index < rooms_array.length; index++) {
+            // eslint-disable-next-line no-await-in-loop
             rooms_array[index] = await updateRoom(rooms_array[index]);
         }
 
@@ -435,7 +439,9 @@ async function updateRoom(room) {
             room.rolePermissions[key] = value;
         }
     }
-    if(typeof room.userPermissions != 'object') room.userPermissions = {};
+    if (typeof room.userPermissions != 'object') room.userPermissions = {};
+    if (typeof room.cover_image_id != 'string') room.cover_image_id = "2";
+    if (typeof room.contentFlags != 'object') room.contentFlags = {};
 
     return room;
 }

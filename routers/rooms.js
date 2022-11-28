@@ -538,6 +538,40 @@ router.post('/room/:id/description', authenticateToken, requiresRoomPermission("
     }
 });
 
+router.get('/room/:id/subrooms/list', authenticateToken, hasPermission("manageSubrooms"), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        const subrooms = (await db.collection('rooms')
+            .find(
+                {
+                    _id: {
+                        $eq: id,
+                        $exists: true
+                    }
+                },
+                {
+                    'projection': {
+                        'subrooms': true
+                    }
+                }
+            ).tryNext()).tags;
+        
+        return res.status(200).json({
+            code: "success",
+            data: subrooms
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we could not serve your request."
+        });
+        throw ex;
+    }
+});
+
 router.get('/room/:id/my-permissions', authenticateToken, canViewRoom, async (req, res) => {
     try {
         return res.status(200).json({

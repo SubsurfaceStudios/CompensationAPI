@@ -451,6 +451,53 @@ router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageT
     }
 });
 
+router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission("manageTags"), async (req, res) => {
+    try {
+        const { flags } = req.body;
+        const { id } = req.params;
+
+        if (typeof flags != 'object' || Array.isArray(flags)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot set flags of room to anything other than a Dictionary<string, string>."
+        });
+
+        for (let index = 0; index < Object.keys(flags).length; index++) {
+            if (typeof flags[Object.keys(flags)[index]] != 'string') return res.status(400).json({
+                code: "invalid_input",
+                message: "Cannot set flags of room to anything other than a Dictionary<string, string>."
+            });
+        }
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms')
+            .updateOne(
+                {
+                    _id: {
+                        $exists: true,
+                        $eq: id
+                    }
+                },
+                {
+                    '$set': {
+                        "contentFlags": flags
+                    }
+                }
+        );
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
 router.post('/room/:id/description', authenticateToken, requiresRoomPermission("editDescription"), async (req, res) => {
     try {
         const { description } = req.body;

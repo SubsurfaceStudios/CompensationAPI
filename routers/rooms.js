@@ -404,6 +404,53 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
     }
 });
 
+router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageTags"), async (req, res) => {
+    try {
+        const { tags } = req.body;
+        const { id } = req.params;
+
+        if (typeof tags != 'object' || !Array.isArray(tags)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot set tags of room to anything other than a string[]."
+        });
+
+        for (let index = 0; index < tags.length; index++) {
+            if (typeof tags[index] != 'string') return res.status(400).json({
+                code: "invalid_input",
+                message: "Cannot set tags of room to anything other than a string[]."
+            });
+        }
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms')
+            .updateOne(
+                {
+                    _id: {
+                        $exists: true,
+                        $eq: id
+                    }
+                },
+                {
+                    '$set': {
+                        "tags": tags
+                    }
+                }
+        );
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
 router.get('/room/:id/my-permissions', authenticateToken, canViewRoom, async (req, res) => {
     try {
         return res.status(200).json({
@@ -590,6 +637,45 @@ async function canViewRoom(req, res, next) {
     req.userRoomRole = room.userPermissions;
     req.userRoomPermissions = rolePermissions[role];
     next();
+}
+
+async function requiresRoomPermission(permission) {
+    return async (req, res, next) => {
+        // Input validation
+        const client = require('../index').mongoClient;
+        const {id} = req.params;
+        if(typeof id != 'string') return res.status(404).json({
+            "code": "room_not_found",
+            "message": "You did not specify a room."
+        });
+    
+        // Fetch room
+        var room = await client
+            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms')
+            .findOne({_id: {$eq: id, $exists: true}});
+        if(room == null) return res.status(404).json({
+            "code": "room_not_found",
+            "message": "You did not specify a room."
+        });
+    
+        const userPermissions = room.userPermissions;
+        const rolePermissions = room.rolePermissions;
+    
+        const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
+    
+        if(req.user.developer || rolePermissions[role][permission]) {
+            return res.status(404).json({
+                "code": "room_not_found",
+                "message": "You did not specify a room."
+            });
+        }
+    
+        req.room = room;
+        req.userRoomRole = room.userPermissions;
+        req.userRoomPermissions = rolePermissions[role];
+        next();
+    };
 }
 
 async function hasPermission(user_id, room_id, permission) {

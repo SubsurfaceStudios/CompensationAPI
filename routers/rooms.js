@@ -539,7 +539,7 @@ router.post('/room/:id/description', authenticateToken, requiresRoomPermission("
     }
 });
 
-router.get('/room/:id/subrooms/list', authenticateToken, hasPermission("manageSubrooms"), async (req, res) => {
+router.get('/room/:id/subrooms/list', authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
     try {
         const { id } = req.params;
 

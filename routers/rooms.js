@@ -352,8 +352,8 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
 router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
-        const {id: new_id} = req.body;
-        if(typeof new_id != 'string') return res.status(400).json({
+        const {id: version_id} = req.body;
+        if(typeof version_id != 'string') return res.status(400).json({
             "code": "invalid_input",
             "message": "Parameter `new_id` is unset. Please specify a new publicVersionId."
         });
@@ -373,12 +373,12 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
             "code": "nonexistent_subroom",
             "message": "That subroom does not exist."
         });
-        if(room.subrooms[subroom_id].versions.length <= parseInt(new_id)) return res.status(400).json({
+        if(room.subrooms[subroom_id].versions.length <= parseInt(version_id)) return res.status(400).json({
             "code": "nonexistent_version",
             "message": "There is no version of this room associated with that ID."
         });
 
-        const str = `subrooms.${id}.publicVersionId`;
+        const str = `subrooms.${subroom_id}.publicVersionId`;
 
         // this is a painful workaround to fix javascript's assfuckery -Rose
         var setFilter = {};

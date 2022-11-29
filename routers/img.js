@@ -48,7 +48,8 @@ const imageMetadataTemplate = {
         tags: [
             'photo'
         ]
-    }
+    },
+    visibility: "public"
 };
 
 const uploadRateLimit = rateLimit({
@@ -106,6 +107,8 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         MetaData.filePath = `/img/${MetaData._id}`;
 
         MetaData.social.tags = JSON.parse(tags);
+
+        if (req.query.visibility == "unlisted") MetaData.visibility = "unlisted";
 
         // Push metadata to MongoDB
           

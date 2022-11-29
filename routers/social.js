@@ -16,7 +16,14 @@ router.get("/imgfeed", async (req, res) => {
         const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
         const image_collection = db.collection("images");
           
-        const all_images = await image_collection.find().toArray();
+        const all_images = await image_collection.find(
+            {
+                visibility: {
+                    $eq: "public",
+                    $exists: true
+                }
+            }
+        ).toArray();
         const image_count = all_images.length;
           
         // input validation

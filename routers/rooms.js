@@ -651,7 +651,7 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
             name: name,
             description: "An empty room.",
             creator_id: req.user.id,
-            tags: ["Custom Room"],
+            tags: ["community", "custom room"],
             created_at: Date.now(),
             visits: 0,
             subrooms: {
@@ -704,7 +704,9 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
                     useCreationTool: true
                 }
             },
-            userPermissions: userPermissions
+            userPermissions: userPermissions,
+            cover_image_id: "2",
+            contentFlags: {}
         };
 
         await coll.insertOne(room);

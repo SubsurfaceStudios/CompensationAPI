@@ -382,7 +382,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
 
         // this is a painful workaround to fix javascript's assfuckery -Rose
         var setFilter = {};
-        setFilter[str] = id;
+        setFilter[str] = version_id;
 
 
         await client.db(process.env.MONGOOSE_DATABASE_NAME)

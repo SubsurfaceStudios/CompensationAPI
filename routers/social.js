@@ -10,14 +10,19 @@ const {WebSocketV2_MessageTemplate} = require('../index');
 
 router.get("/imgfeed", async (req, res) => {
     try {
-        var {count, reverse, offset} = req.query;
+        var { count, reverse, offset, filter } = req.query;
 
         const client = require('../index').mongoClient;
         const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
         const image_collection = db.collection("images");
           
         const all_images = await image_collection.find(
-            {
+            filter == "mine" ? {
+                'takenBy.id': {
+                    $eq: req.user.id,
+                    $exists: true
+                }
+            } : {
                 visibility: {
                     $eq: "public",
                     $exists: true

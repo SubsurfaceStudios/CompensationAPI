@@ -8,7 +8,7 @@ const notificationTemplates = {
 };
 const {WebSocketV2_MessageTemplate} = require('../index');
 
-router.get("/imgfeed", async (req, res) => {
+router.get("/imgfeed", middleware.authenticateToken_optional, async (req, res) => {
     try {
         var { count, reverse, offset, filter } = req.query;
 
@@ -16,6 +16,11 @@ router.get("/imgfeed", async (req, res) => {
         const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
         const image_collection = db.collection("images");
           
+        if (filter == "mine" && !req.user) return res.status(400).json({
+            code: "not_authenticated",
+            message: "You cannot use the `filter=mine` query parameter without specifying an access token."
+        });
+
         const all_images = await image_collection.find(
             filter == "mine" ? {
                 'takenBy.id': {

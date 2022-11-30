@@ -41,10 +41,10 @@ router.get("/imgfeed", async (req, res) => {
 
         try {
             offset = parseInt(offset);
-            if(isNaN(offset)) return res.status(400).send({message: "cannot_parse_offset"});
-            if(image_count < offset) return res.status(400).send({message: "not_enough_images"});
+            if(isNaN(offset)) return res.status(400).send({code: "cannot_parse_offset"});
+            if(image_count < offset) return res.status(400).send({code: "not_enough_images"});
         } catch {
-            return res.status(400).send({message: "cannot_parse_offset"});
+            return res.status(400).send({code: "cannot_parse_offset"});
         }
 
         if(image_count < (count + offset)) count = (image_count - offset) - 1;
@@ -60,7 +60,11 @@ router.get("/imgfeed", async (req, res) => {
 
         return res.status(200).json(feed);
     } catch (ex) {
-        return res.sendStatus(500);
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred."
+        });
+        throw ex;
     }
 });
 

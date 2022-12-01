@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
@@ -64,7 +64,7 @@ router.route("/room/:room_id/info")
             }
 
             // refetch the room using projection so we're not exposing permissions and subroom data to the user
-            const room_visible = await room_collection.findOne({_id: {$eq: room_id, $exists: true}}, {projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1, cover_image_id: 1}});
+            const room_visible = await room_collection.findOne({_id: {$eq: room_id, $exists: true}}, {projection: {_id: 1, name: 1, description: 1, creator_id: 1, tags: 1, created_at: 1, visits: 1, homeSubroomId: 1, cover_image_id: 1, contentFlags: 1}});
             return res.status(200).json(room_visible);
         } catch (ex) {
             res.sendStatus(500);
@@ -151,7 +151,8 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
             tags: item.tags,
             visits: item.visits,
             created_at: item.created_at,
-            cover_image_id: item.cover_image_id
+            cover_image_id: item.cover_image_id,
+            contentFlags: item.contentFlags
         };
     });
 
@@ -351,8 +352,8 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
 router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, canViewRoom, async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
-        const {id: new_id} = req.body;
-        if(typeof new_id != 'string') return res.status(400).json({
+        const {id: version_id} = req.body;
+        if(typeof version_id != 'string') return res.status(400).json({
             "code": "invalid_input",
             "message": "Parameter `new_id` is unset. Please specify a new publicVersionId."
         });
@@ -372,16 +373,16 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
             "code": "nonexistent_subroom",
             "message": "That subroom does not exist."
         });
-        if(room.subrooms[subroom_id].versions.length <= parseInt(new_id)) return res.status(400).json({
+        if(room.subrooms[subroom_id].versions.length <= parseInt(version_id)) return res.status(400).json({
             "code": "nonexistent_version",
             "message": "There is no version of this room associated with that ID."
         });
 
-        const str = `subrooms.${id}.publicVersionId`;
+        const str = `subrooms.${subroom_id}.publicVersionId`;
 
         // this is a painful workaround to fix javascript's assfuckery -Rose
         var setFilter = {};
-        setFilter[str] = id;
+        setFilter[str] = version_id;
 
 
         await client.db(process.env.MONGOOSE_DATABASE_NAME)
@@ -399,6 +400,174 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
         res.status(500).json({
             "code": "internal_error",
             "message": "An internal error occured while processing your request. If the issue persists, please contact CVR staff."
+        });
+        throw ex;
+    }
+});
+
+router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageTags"), async (req, res) => {
+    try {
+        const { tags } = req.body;
+        const { id } = req.params;
+
+        if (typeof tags != 'object' || !Array.isArray(tags)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot set tags of room to anything other than a string[]."
+        });
+
+        for (let index = 0; index < tags.length; index++) {
+            if (typeof tags[index] != 'string') return res.status(400).json({
+                code: "invalid_input",
+                message: "Cannot set tags of room to anything other than a string[]."
+            });
+        }
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms')
+            .updateOne(
+                {
+                    _id: {
+                        $exists: true,
+                        $eq: id
+                    }
+                },
+                {
+                    '$set': {
+                        "tags": tags
+                    }
+                }
+        );
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
+router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission("manageTags"), async (req, res) => {
+    try {
+        const { flags } = req.body;
+        const { id } = req.params;
+
+        if (typeof flags != 'object' || Array.isArray(flags)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot set flags of room to anything other than a Dictionary<string, string>."
+        });
+
+        for (let index = 0; index < Object.keys(flags).length; index++) {
+            if (typeof flags[Object.keys(flags)[index]] != 'string') return res.status(400).json({
+                code: "invalid_input",
+                message: "Cannot set flags of room to anything other than a Dictionary<string, string>."
+            });
+        }
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms')
+            .updateOne(
+                {
+                    _id: {
+                        $exists: true,
+                        $eq: id
+                    }
+                },
+                {
+                    '$set': {
+                        "contentFlags": flags
+                    }
+                }
+        );
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
+router.post('/room/:id/description', authenticateToken, requiresRoomPermission("editDescription"), async (req, res) => {
+    try {
+        const { description } = req.body;
+        const { id } = req.params;
+
+        if (typeof description != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot set description of room to anything other than a string."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms')
+            .updateOne(
+                {
+                    _id: {
+                        $exists: true,
+                        $eq: id
+                    }
+                },
+                {
+                    '$set': {
+                        "description": description
+                    }
+                }
+        );
+        
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
+router.get('/room/:id/subrooms/list', authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        const subrooms = (await db.collection('rooms')
+            .find(
+                {
+                    _id: {
+                        $eq: id,
+                        $exists: true
+                    }
+                },
+                {
+                    'projection': {
+                        'subrooms': true
+                    }
+                }
+            ).tryNext()).subrooms;
+        
+        return res.status(200).json({
+            code: "success",
+            data: subrooms
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we could not serve your request."
         });
         throw ex;
     }
@@ -449,7 +618,7 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canView
     }
 });
 
-router.post('/new', authenticateDeveloperToken, async (req, res) => {
+router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"), async (req, res) => {
     try {
         const { name } = req.body;
 
@@ -482,7 +651,7 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
             name: name,
             description: "An empty room.",
             creator_id: req.user.id,
-            tags: ["Custom Room"],
+            tags: ["community", "custom room"],
             created_at: Date.now(),
             visits: 0,
             subrooms: {
@@ -535,7 +704,9 @@ router.post('/new', authenticateDeveloperToken, async (req, res) => {
                     useCreationTool: true
                 }
             },
-            userPermissions: userPermissions
+            userPermissions: userPermissions,
+            cover_image_id: "2",
+            contentFlags: {}
         };
 
         await coll.insertOne(room);
@@ -590,6 +761,45 @@ async function canViewRoom(req, res, next) {
     req.userRoomRole = room.userPermissions;
     req.userRoomPermissions = rolePermissions[role];
     next();
+}
+
+function requiresRoomPermission(permission) {
+    return async (req, res, next) => {
+        // Input validation
+        const client = require('../index').mongoClient;
+        const {id} = req.params;
+        if(typeof id != 'string') return res.status(404).json({
+            "code": "room_not_found",
+            "message": "You did not specify a room."
+        });
+    
+        // Fetch room
+        var room = await client
+            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms')
+            .findOne({_id: {$eq: id, $exists: true}});
+        if(room == null) return res.status(404).json({
+            "code": "room_not_found",
+            "message": "Room not found."
+        });
+    
+        const userPermissions = room.userPermissions;
+        const rolePermissions = room.rolePermissions;
+    
+        const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
+    
+        if(!req.user.developer && rolePermissions[role][permission]) {
+            return res.status(404).json({
+                "code": "room_not_found",
+                "message": "Access denied."
+            });
+        }
+    
+        req.room = room;
+        req.userRoomRole = room.userPermissions;
+        req.userRoomPermissions = rolePermissions[role];
+        next();
+    };
 }
 
 async function hasPermission(user_id, room_id, permission) {

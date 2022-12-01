@@ -21,6 +21,32 @@ const accountCreationLimit = rateLimit({
     'standardHeaders': true
 });
 
+router.get('/photon-info', async (req, res) => {
+    try {
+        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("configuration");
+
+        const data = await coll.findOne(
+            {
+                _id: { $exists: true, $eq: "PhotonData" }
+            }
+        );
+
+        if (!data) return res.status(500).json({
+            code: "internal_error",
+            message: "This server is misconfigured and cannot serve your request."
+        });
+
+        return res.status(200).send(
+            data.data
+        );
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we could not serve your request."
+        });
+    }
+});
+
 router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
     try {
         const data = await helpers.PullPlayerData(req.user.id);
@@ -158,6 +184,12 @@ router.post("/login", async (req, res) => {
             await helpers.PushPlayerData(userID, data);
         }
 
+        const mongo = require('../index').mongoClient;
+        const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+        coll.insertOne({
+            date_time: new Date(),
+            type: "LOGIN"
+        });
         return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
     }
 
@@ -174,6 +206,14 @@ router.post("/login", async (req, res) => {
             data.auth.logins.push(attempt);
             await helpers.PushPlayerData(userID, data);
         }
+
+        const mongo = require('../index').mongoClient;
+        const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+        coll.insertOne({
+            date_time: new Date(),
+            type: "LOGIN"
+        });
+
         if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken, developer: developer});
         else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
     }
@@ -201,7 +241,15 @@ router.post("/login", async (req, res) => {
         });
 
 
-        if(MatchingLogins.length > 0) return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
+        if (MatchingLogins.length > 0) {
+            const mongo = require('../index').mongoClient;
+            const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+            coll.insertOne({
+                date_time: new Date(),
+                type: "LOGIN"
+            });
+            return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer });
+        }
 
         return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
     }
@@ -217,6 +265,13 @@ router.post("/login", async (req, res) => {
             };
             data.auth.multi_factor_authenticated_logins.push(login);
             await helpers.PushPlayerData(userID, data);
+                
+            var mongo = require('../index').mongoClient;
+            var coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+            coll.insertOne({
+                date_time: new Date(),
+                type: "LOGIN"
+            });
             return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
         case 'denied':
             return res.status(401).send({message: "2FA Denied.", failureCode: "2"});

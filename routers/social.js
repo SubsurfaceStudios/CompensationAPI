@@ -8,15 +8,32 @@ const notificationTemplates = {
 };
 const {WebSocketV2_MessageTemplate} = require('../index');
 
-router.get("/imgfeed", async (req, res) => {
+router.get("/imgfeed", middleware.authenticateToken_optional, async (req, res) => {
     try {
-        var {count, reverse, offset} = req.query;
+        var { count, reverse, offset, filter } = req.query;
 
         const client = require('../index').mongoClient;
         const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
         const image_collection = db.collection("images");
           
-        const all_images = await image_collection.find().toArray();
+        if (filter == "mine" && !req.user) return res.status(400).json({
+            code: "not_authenticated",
+            message: "You cannot use the `filter=mine` query parameter without specifying an access token."
+        });
+
+        const all_images = await image_collection.find(
+            filter == "mine" ? {
+                'takenBy.id': {
+                    $eq: req.user.id,
+                    $exists: true
+                }
+            } : {
+                visibility: {
+                    $eq: "public",
+                    $exists: true
+                }
+            }
+        ).toArray();
         const image_count = all_images.length;
           
         // input validation
@@ -29,10 +46,10 @@ router.get("/imgfeed", async (req, res) => {
 
         try {
             offset = parseInt(offset);
-            if(isNaN(offset)) return res.status(400).send({message: "cannot_parse_offset"});
-            if(image_count < offset) return res.status(400).send({message: "not_enough_images"});
+            if(isNaN(offset)) return res.status(400).send({code: "cannot_parse_offset"});
+            if(image_count < offset) return res.status(400).send({code: "not_enough_images"});
         } catch {
-            return res.status(400).send({message: "cannot_parse_offset"});
+            return res.status(400).send({code: "cannot_parse_offset"});
         }
 
         if(image_count < (count + offset)) count = (image_count - offset) - 1;
@@ -48,7 +65,11 @@ router.get("/imgfeed", async (req, res) => {
 
         return res.status(200).json(feed);
     } catch (ex) {
-        return res.sendStatus(500);
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred."
+        });
+        throw ex;
     }
 });
 

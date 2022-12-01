@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
@@ -618,7 +618,7 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canView
     }
 });
 
-router.post('/new', authenticateDeveloperToken, async (req, res) => {
+router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"), async (req, res) => {
     try {
         const { name } = req.body;
 

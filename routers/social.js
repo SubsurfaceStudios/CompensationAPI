@@ -29,7 +29,7 @@ router.get("/imgfeed", middleware.authenticateToken_optional, async (req, res) =
                 }
             } : {
                 visibility: {
-                    $eq: "public",
+                    $ne: "unlisted",
                     $exists: true
                 }
             }

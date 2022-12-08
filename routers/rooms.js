@@ -909,6 +909,7 @@ async function roomAuditLog(room_id, user_id, event) {
     var event = {
         room_id: room_id,
         user_id: user_id,
+        event_time: Date.now(),
         event_data: event
     };
 

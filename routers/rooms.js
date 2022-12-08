@@ -517,7 +517,7 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
                 new_value: flags
             }
         );
-        
+
         await db.collection('rooms')
             .updateOne(
                 {
@@ -916,5 +916,6 @@ async function roomAuditLog(room_id, user_id, event) {
 }
 
 module.exports = {
-    Router: router
+    Router: router,
+    roomAuditLog: roomAuditLog
 };

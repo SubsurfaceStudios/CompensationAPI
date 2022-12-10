@@ -600,6 +600,8 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
             'note': note
         });
 
+        auditLog(`!! MODERATION ACTION !! - User ${req.user.id} **suspended** room ${room_id}`);
+
         return res.status(200).json({
             code: "success",
             message: "The operation was successful."
@@ -661,6 +663,8 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
             'new_value': null,
             'note': note
         });
+
+        auditLog(`!! MODERATION ACTION !! - User ${req.user.id} **terminated** room ${room_id}!`);
 
         return res.status(200).json({
             code: "success",

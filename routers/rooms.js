@@ -6,6 +6,7 @@ const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
 const { auditLog, PullPlayerData } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
+const { WebSocketV2_MessageTemplate } = require('../index');
 
 // Base URL: /api/rooms/...
 
@@ -589,6 +590,7 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
                     "userPermissions": {},
                     "rolePermissions.everyone.viewAndJoin": false,
                     "rolePermissions.everyone.managePermissions": false,
+                    "description": "This room has been suspended by the Compensation Social moderation team for possible violations of our community standards. Please see https://compensationvr.tk/about/suspension for more information.",
                 }
             }
         );
@@ -601,6 +603,43 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
         });
 
         auditLog(`!! MODERATION ACTION !! - User ${req.user.id} **suspended** room ${room_id}`);
+
+        const players = db.collection("accounts");
+
+        /** @type {string} */
+        var roomname = room.name;
+
+        while (roomname.indexOf("</noparse>") >= 0) {
+            roomname = roomname.replace("</noparse>", "<\\\\noparse>");
+        }
+
+        await players.updateOne(
+            {
+                _id: {
+                    $eq: room.creator_id,
+                    $exists: true
+                }
+            },
+            {
+                $push: {
+                    "notifications": {
+                        template: "room_suspension_notice",
+                        data: {
+                            "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
+                            "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=yellow>suspended</color> by the Compensation Social moderation team.
+
+                            For more information, please see
+                            <color=#FF5566>https://compensationvr.tk/about/suspension</color>`
+                        }
+                    }
+                }
+            }
+        );
+
+        var send = WebSocketV2_MessageTemplate;
+        send.code = "urgent_notification_recieved";
+        send.data = {};
+        require('./ws/WebSocketServerV2').ws_connected_clients[room.creator_id]?.socket?.send(JSON.stringify(send, null, 5));
 
         return res.status(200).json({
             code: "success",
@@ -653,6 +692,7 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
                     "rolePermissions": {
                         "everyone": {},
                     },
+                    "description": "This room has been terminated by the Compensation Social moderation team for repeated violations of our community standards. Please see https://compensationvr.tk/about/termination for more information.",
                 }
             }
         );
@@ -665,6 +705,45 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
         });
 
         auditLog(`!! MODERATION ACTION !! - User ${req.user.id} **terminated** room ${room_id}!`);
+
+        const players = db.collection("accounts");
+
+        /** @type {string} */
+        var roomname = room.name;
+
+        while (roomname.indexOf("</noparse>") >= 0) {
+            roomname = roomname.replace("</noparse>", "<\\\\noparse>");
+        }
+
+        await players.updateOne(
+            {
+                _id: {
+                    $eq: room.creator_id,
+                    $exists: true
+                }
+            },
+            {
+                $push: {
+                    "notifications": {
+                        template: "room_termination_notice",
+                        data: {
+                            "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
+                            "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=#FF5566>Terminated</color> by the Compensation Social moderation team.
+
+                            For more information, please see
+                            <color=#FF5566>https://compensationvr.tk/about/terminated</color>
+                            
+                            You can appeal this decision on our Discord, the link is available at the page above.`
+                        }
+                    }
+                }
+            }
+        );
+
+        var send = WebSocketV2_MessageTemplate;
+        send.code = "urgent_notification_recieved";
+        send.data = {};
+        require('./ws/WebSocketServerV2').ws_connected_clients[room.creator_id]?.socket?.send(JSON.stringify(send, null, 5));
 
         return res.status(200).json({
             code: "success",

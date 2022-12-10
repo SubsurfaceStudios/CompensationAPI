@@ -1,15 +1,44 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
 const { auditLog, PullPlayerData } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
+const { WebSocketV2_MessageTemplate } = require('../index');
 
 // Base URL: /api/rooms/...
 
-// TODO implement API endpoint to create a room.
+/**
+ * @readonly
+ * @enum {string}
+ */
+const AuditEventType = {
+    /** Logged when a player first creates a room. */
+    RoomCreate: "room_created",
+    /** Logged when a player creates a new subroom. */
+    SubroomCreate: "subroom_created",
+    /** Logged when a user updates another user's role within this room. */
+    UserRoleUpdate: "user_roles_updated",
+    /** Logged when a user updates the permissions of a role. */
+    RolePermissionsUpdate: "role_permissions_updated",
+    /** Logged when a user updates the tags for this room. */
+    TagUpdate: "tags_updated",
+    /** Logged when a user updates the description for this room. */
+    DescriptionUpdate: "description_updated",
+    /** Logged when a user creates a new changeset. */
+    ChangesetCreation: "changeset_created",
+    /** Logged when a user changes the public version of this room. */
+    PublicVersionUpdate: "public_version_updated",
+    /** Logged when a user changes the content flags on this room. */
+    ContentFlagsUpdate: "content_flags_updated",
+    /** MAJOR - Logged when a developer suspends this room, locking everyone out until moderation review concludes. */
+    RoomSuspendedByDeveloper: "room_suspended",
+    /** MAJOR - Logged when a developer terminates this room, permanently locking it from all users. */
+    RoomTerminatedByDeveloper: "room_terminated"
+};
+
 // eslint-disable-next-line no-unused-vars
 const roomTemplate = {
     _id: "undefined_room",
@@ -258,7 +287,11 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, can
         var updateFilter = {$push: {}};
         updateFilter.$push[`subrooms.${subroom_id}.versions`] = decoupled_metadata;
 
-        await collection.updateOne({_id: {$eq: id, $exists: true}}, updateFilter);
+        await collection.updateOne({ _id: { $eq: id, $exists: true } }, updateFilter);
+        
+        await roomAuditLog(id, req.user.id, {
+            type: AuditEventType.ChangesetCreation
+        });
 
         return res.status(200).json({
             "code": "success",
@@ -390,7 +423,13 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
             .updateOne(
                 {_id: {$eq: id, $exists: true}},
                 {$set: setFilter}
-            );
+        );
+        
+        await roomAuditLog(id, req.user.id, {
+            type: AuditEventType.PublicVersionUpdate,
+            previous_value: room.subrooms[subroom_id].publicVersionId,
+            new_value: version_id
+        });
         
         return res.status(200).json({
             "code": "success",
@@ -471,6 +510,19 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
 
         const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
 
+        await roomAuditLog(
+            id,
+            req.user.id,
+            {
+                type: AuditEventType.ContentFlagsUpdate,
+                previous_value:
+                    await db.collection('rooms').findOne({
+                        _id: { $exists: true, $eq: id }
+                    }).contentFlags,
+                new_value: flags
+            }
+        );
+
         await db.collection('rooms')
             .updateOne(
                 {
@@ -485,6 +537,8 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
                     }
                 }
         );
+
+        
         
         return res.status(200).json({
             code: "success",
@@ -494,6 +548,211 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
         res.status(500).json({
             code: "internal_error",
             message: "An internal error occurred and we could not process your request."
+        });
+        throw ex;
+    }
+});
+
+router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (req, res) => {
+    try {
+        const { id: room_id } = req.params;
+        const { note } = req.body;
+
+        if (note && typeof note != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Note must be either unspecified or a string."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        const room = await collection.findOne({
+            _id: {
+                $exists: true,
+                $eq: room_id
+            }
+        });
+
+        if (!room) return res.status(404).json({
+            code: "room_not_found",
+            message: "Could not locate that room. Has another developer already terminated it?"
+        });
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $exists: true,
+                    $eq: room_id
+                }
+            },
+            {
+                $set: {
+                    "userPermissions": {},
+                    "rolePermissions.everyone.viewAndJoin": false,
+                    "rolePermissions.everyone.managePermissions": false,
+                    "description": "This room has been suspended by the Compensation Social moderation team for possible violations of our community standards. Please see https://compensationvr.tk/about/suspension for more information.",
+                }
+            }
+        );
+
+        roomAuditLog(room_id, req.user.id, {
+            'type': AuditEventType.RoomSuspendedByDeveloper,
+            'previous_value': null,
+            'new_value': null,
+            'note': note
+        });
+
+        auditLog(`!! MODERATION ACTION !! - User ${req.user.id} **suspended** room ${room_id}`);
+
+        const players = db.collection("accounts");
+
+        /** @type {string} */
+        var roomname = room.name;
+
+        while (roomname.indexOf("</noparse>") >= 0) {
+            roomname = roomname.replace("</noparse>", "<\\\\noparse>");
+        }
+
+        await players.updateOne(
+            {
+                _id: {
+                    $eq: room.creator_id,
+                    $exists: true
+                }
+            },
+            {
+                $push: {
+                    "notifications": {
+                        template: "room_suspension_notice",
+                        data: {
+                            "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
+                            "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=yellow>suspended</color> by the Compensation Social moderation team.
+
+                            For more information, please see
+                            <color=#FF5566>https://compensationvr.tk/about/suspension</color>`
+                        }
+                    }
+                }
+            }
+        );
+
+        var send = WebSocketV2_MessageTemplate;
+        send.code = "urgent_notification_recieved";
+        send.data = {};
+        require('./ws/WebSocketServerV2').ws_connected_clients[room.creator_id]?.socket?.send(JSON.stringify(send, null, 5));
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not suspend that room."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async (req, res) => {
+    try {
+        const { id: room_id } = req.params;
+        const { note } = req.body;
+
+        if (note && typeof note != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Note must be either unspecified or a string."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        const room = await collection.findOne({
+            _id: {
+                $exists: true,
+                $eq: room_id
+            }
+        });
+
+        if (!room) return res.status(404).json({
+            code: "room_not_found",
+            message: "Could not locate that room. Has another developer already terminated it?"
+        });
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $exists: true,
+                    $eq: room_id
+                }
+            },
+            {
+                $set: {
+                    "userPermissions": {},
+                    "rolePermissions": {
+                        "everyone": {},
+                    },
+                    "description": "This room has been terminated by the Compensation Social moderation team for repeated violations of our community standards. Please see https://compensationvr.tk/about/termination for more information.",
+                }
+            }
+        );
+
+        roomAuditLog(room_id, req.user.id, {
+            'type': AuditEventType.RoomTerminatedByDeveloper,
+            'previous_value': null,
+            'new_value': null,
+            'note': note
+        });
+
+        auditLog(`!! MODERATION ACTION !! - User ${req.user.id} **terminated** room ${room_id}!`);
+
+        const players = db.collection("accounts");
+
+        /** @type {string} */
+        var roomname = room.name;
+
+        while (roomname.indexOf("</noparse>") >= 0) {
+            roomname = roomname.replace("</noparse>", "<\\\\noparse>");
+        }
+
+        await players.updateOne(
+            {
+                _id: {
+                    $eq: room.creator_id,
+                    $exists: true
+                }
+            },
+            {
+                $push: {
+                    "notifications": {
+                        template: "room_termination_notice",
+                        data: {
+                            "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
+                            "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=#FF5566>Terminated</color> by the Compensation Social moderation team.
+
+                            For more information, please see
+                            <color=#FF5566>https://compensationvr.tk/about/terminated</color>
+                            
+                            You can appeal this decision on our Discord, the link is available at the page above.`
+                        }
+                    }
+                }
+            }
+        );
+
+        var send = WebSocketV2_MessageTemplate;
+        send.code = "urgent_notification_recieved";
+        send.data = {};
+        require('./ws/WebSocketServerV2').ws_connected_clients[room.creator_id]?.socket?.send(JSON.stringify(send, null, 5));
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not suspend that room."
         });
         throw ex;
     }
@@ -524,6 +783,19 @@ router.post('/room/:id/description', authenticateToken, requiresRoomPermission("
                         "description": description
                     }
                 }
+        );
+
+        await roomAuditLog(
+            id,
+            req.user.id,
+            {
+                type: AuditEventType.DescriptionUpdate,
+                previous_value:
+                    await db.collection('rooms').findOne({
+                        _id: { $exists: true, $eq: id }
+                    }).description,
+                new_value: description
+            }
         );
         
         return res.status(200).json({
@@ -710,6 +982,14 @@ router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"
         };
 
         await coll.insertOne(room);
+        await roomAuditLog(
+            room._id,
+            req.user.id,
+            {
+                type: AuditEventType.RoomCreate,
+                new_value: name
+            }
+        );
 
         auditLog(`User ${req.user.id} created new room with ID ${room._id} and name ${name}.`);
         
@@ -820,6 +1100,34 @@ async function hasPermission(user_id, room_id, permission) {
     return role[permission];
 }
 
+/**
+ * @async
+ * @function roomAuditLog
+ * @param {string} room_id - The room ID to apply the event to.
+ * @param {string} user_id - The user applying this event.
+ * @param {Object} event - The audit log event to apply.
+ * @param {AuditEventType} event.type - The type of event this is.
+ * @param {string?} event.previous_value - The previous value of the variable changed, if applicable.
+ * @param {string?} event.new_value - The new value of the variable changed, if applicable.
+ * @param {string?} event.note - The note left by the user who made the change, if applicable.
+ * @returns {Promise<void>}
+ */
+async function roomAuditLog(room_id, user_id, event) {
+    const client = require('../index').mongoClient;
+    const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+    const collection = db.collection("room_audit");
+    
+    var event = {
+        room_id: room_id,
+        user_id: user_id,
+        event_time: Date.now(),
+        event_data: event
+    };
+
+    await collection.insertOne(event);
+}
+
 module.exports = {
-    Router: router
+    Router: router,
+    roomAuditLog: roomAuditLog
 };

@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
@@ -32,6 +32,10 @@ const AuditEventType = {
     PublicVersionUpdate: "public_version_updated",
     /** Logged when a user changes the content flags on this room. */
     ContentFlagsUpdate: "content_flags_updated",
+    /** MAJOR - Logged when a developer suspends this room, locking everyone out until moderation review concludes. */
+    RoomSuspendedByDeveloper: "room_suspended",
+    /** MAJOR - Logged when a developer terminates this room, permanently locking it from all users. */
+    RoomTerminatedByDeveloper: "room_terminated"
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -548,6 +552,129 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
     }
 });
 
+router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (req, res) => {
+    try {
+        const { id: room_id } = req.params;
+        const { note } = req.body;
+
+        if (note && typeof note != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Note must be either unspecified or a string."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        const room = await collection.findOne({
+            _id: {
+                $exists: true,
+                $eq: room_id
+            }
+        });
+
+        if (!room) return res.status(404).json({
+            code: "room_not_found",
+            message: "Could not locate that room. Has another developer already terminated it?"
+        });
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $exists: true,
+                    $eq: room_id
+                }
+            },
+            {
+                $set: {
+                    "userPermissions": {},
+                    "rolePermissions.everyone.viewAndJoin": false,
+                    "rolePermissions.everyone.managePermissions": false,
+                }
+            }
+        );
+
+        roomAuditLog(room_id, req.user.id, {
+            'type': AuditEventType.RoomSuspendedByDeveloper,
+            'previous_value': null,
+            'new_value': null,
+            'note': note
+        });
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not suspend that room."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async (req, res) => {
+    try {
+        const { id: room_id } = req.params;
+        const { note } = req.body;
+
+        if (note && typeof note != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Note must be either unspecified or a string."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        const room = await collection.findOne({
+            _id: {
+                $exists: true,
+                $eq: room_id
+            }
+        });
+
+        if (!room) return res.status(404).json({
+            code: "room_not_found",
+            message: "Could not locate that room. Has another developer already terminated it?"
+        });
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $exists: true,
+                    $eq: room_id
+                }
+            },
+            {
+                $set: {
+                    "userPermissions": {},
+                    "rolePermissions": {
+                        "everyone": {},
+                    },
+                }
+            }
+        );
+
+        roomAuditLog(room_id, req.user.id, {
+            'type': AuditEventType.RoomTerminatedByDeveloper,
+            'previous_value': null,
+            'new_value': null,
+            'note': note
+        });
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not suspend that room."
+        });
+        throw ex;
+    }
+});
+
 router.post('/room/:id/description', authenticateToken, requiresRoomPermission("editDescription"), async (req, res) => {
     try {
         const { description } = req.body;
@@ -899,6 +1026,7 @@ async function hasPermission(user_id, room_id, permission) {
  * @param {AuditEventType} event.type - The type of event this is.
  * @param {string?} event.previous_value - The previous value of the variable changed, if applicable.
  * @param {string?} event.new_value - The new value of the variable changed, if applicable.
+ * @param {string?} event.note - The note left by the user who made the change, if applicable.
  * @returns {Promise<void>}
  */
 async function roomAuditLog(room_id, user_id, event) {

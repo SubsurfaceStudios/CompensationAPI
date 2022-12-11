@@ -36,7 +36,9 @@ const AuditEventType = {
     /** MAJOR - Logged when a developer suspends this room, locking everyone out until moderation review concludes. */
     RoomSuspendedByDeveloper: "room_suspended",
     /** MAJOR - Logged when a developer terminates this room, permanently locking it from all users. */
-    RoomTerminatedByDeveloper: "room_terminated"
+    RoomTerminatedByDeveloper: "room_terminated",
+    /** MAJOR - Logged when a developer completely wipes this room from the database forever, usually for legal reasons. */
+    RoomTerminatedByDeveloperForIllegalContent: "room_terminated_for_illegal_content"
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -658,6 +660,7 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
     try {
         const { id: room_id } = req.params;
         const { note } = req.body;
+        const { permanent } = req.query;
 
         if (note && typeof note != 'string') return res.status(400).json({
             code: "invalid_input",
@@ -678,6 +681,29 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
             code: "room_not_found",
             message: "Could not locate that room. Has another developer already terminated it?"
         });
+
+        if (permanent == "true") {
+            await collection.deleteOne({
+                _id: {
+                    $exists: true,
+                    $eq: room_id
+                } 
+            });
+
+            roomAuditLog(room_id, req.user.id, {
+                'type': AuditEventType.RoomTerminatedByDeveloperForIllegalContent,
+                'previous_value': null,
+                'new_value': null,
+                'note': note
+            });
+
+            auditLog(`!! EXTREME MODERATION ACTION !! - User ${req.user.id} **terminated** room ${room_id} permanently, wiping it from the database FOREVER! This should only ever happen for legal reasons!`);
+
+            return res.status(200).json({
+                code: "success",
+                message: "Room wiped entirely from database."
+            });
+        }
 
         await collection.updateOne(
             {

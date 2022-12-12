@@ -165,7 +165,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
         if(typeof req.user != 'undefined') {
             const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
             const permissions = rolePermissions[role];
-            return permissions.viewAndJoin;
+            return permissions.viewAndJoin || req.user.developer;
         } else {
             const permissions = rolePermissions.everyone;
             return permissions.viewAndJoin;

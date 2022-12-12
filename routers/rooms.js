@@ -996,7 +996,7 @@ router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, 
             auditLog(
                 `
                 !! EMERGENCY !!
-                
+                <@&812976292634427394>
                 A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
                 Reason: 
                 \`${reason}\`
@@ -1010,7 +1010,7 @@ router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, 
             auditLog(
                 `
                 !! EMERGENCY !!
-                
+                <@&812976292634427394>
                 A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
                 Reason: 
                 \`${reason}\`

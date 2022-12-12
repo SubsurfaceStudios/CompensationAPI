@@ -946,7 +946,11 @@ router.post('/room/:id/report', authenticateDeveloperToken, async (req, res) => 
             typeof danger_of_harm != 'boolean'
         ) return res.status(400).json({
             code: "invalid_input",
-            message: "One or more parameters of your request are invalid."
+            message: "One or more parameters of your request are invalid.",
+            typeof_room_id: typeof room_id,
+            typeof_reason: typeof reason,
+            typeof_illegal_content: typeof illegal_content,
+            typeof_danger_of_harm: typeof danger_of_harm
         });
 
         const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);

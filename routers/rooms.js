@@ -916,12 +916,12 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canView
     }
 });
 
-const ReportRateLimit = rateLimit({
-    'max': 1,
-    'windowMs': 60 * 60 * 1000
-});
+// const ReportRateLimit = rateLimit({
+//     'max': 1,
+//     'windowMs': 60 * 60 * 1000
+// });
 
-router.post('/room/:id/report', ReportRateLimit, authenticateDeveloperToken, async (req, res) => {
+router.post('/room/:id/report', authenticateDeveloperToken, async (req, res) => {
     try {
         const {
             /** @type {string} */

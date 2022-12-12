@@ -916,6 +916,138 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canView
     }
 });
 
+const ReportRateLimit = rateLimit({
+    'max': 1,
+    'windowMs': 60 * 60 * 1000
+});
+
+router.post('/room/:id/report', ReportRateLimit, authenticateDeveloperToken, async (req, res) => {
+    try {
+        const {
+            /** @type {string} */
+            id
+        } = req.params;
+
+        const {
+            /** @type {string} */
+            room_id,
+            /** @type {string} */
+            reason,
+            /** @type {boolean} */
+            illegal_content,
+            /** @type {boolean} */
+            danger_of_harm
+        } = req.body;
+
+        if (
+            typeof room_id != 'string' ||
+            typeof reason != 'string' ||
+            typeof illegal_content != 'boolean' ||
+            typeof danger_of_harm != 'boolean'
+        ) return res.status(400).json({
+            code: "invalid_input",
+            message: "One or more parameters of your request are invalid."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $push: {
+                    "reports": {
+                        reason: reason,
+                        alleges_illegal_content: illegal_content,
+                        alleges_danger_of_harm: danger_of_harm,
+                        reporting_user_id: req.user.id,
+                        time: Date.now()
+                    }
+                }
+            }
+        );
+
+        const data = await collection.findOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            }
+        );
+
+        if (illegal_content && danger_of_harm) {
+            auditLog(
+                `
+                    !! EMERGENCY !!
+                    <@&812976292634427394>
+                    A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
+                    Reason: 
+                    \`${reason}\`
+                    HOWEVER
+                    The user also indicated that this room may contain both ***ILLEGAL CONTENT*** and an ***IMMEDIATE THREAT TO HUMAN LIFE***!
+                    It is absolutely paramount that this room is immediately investigated! Serious legal consequences may result if it is not!
+                    Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
+                    you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
+                    `, true);
+        } else if (illegal_content) {
+            auditLog(
+                `
+                    !! EMERGENCY !!
+                    
+                    A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
+                    Reason: 
+                    \`${reason}\`
+                    HOWEVER
+                    The user also indicated that this room may contain ***ILLEGAL CONTENT!***
+                    It is absolutely paramount that this room is immediately investigated! Serious legal consequences may result if it is not!
+                    Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
+                    you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
+            `, true);
+        } else if (danger_of_harm) {
+            auditLog(
+                `
+                    !! EMERGENCY !!
+                    
+                    A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
+                    Reason: 
+                    \`${reason}\`
+                    HOWEVER
+                    The user also indicated that this room may pose an ***IMMEDIATE THREAT TO HUMAN LIFE!***
+                    It is absolutely paramount that this room is immediately investigated! Serious IRL consequences may result if it is not!
+                    Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
+                    you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
+            `, true);
+        } else {
+            auditLog(
+                `
+                    !! MODERATION ACTION !!
+                    A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id}).
+                    Reason:
+                    \`${reason}\`
+                    Please investigate at your soonest convenience.
+                `, true
+            );
+        }
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully reported room."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not perform that operation."
+        });
+        throw ex;
+    }
+});
+
 router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"), async (req, res) => {
     try {
         const { name } = req.body;

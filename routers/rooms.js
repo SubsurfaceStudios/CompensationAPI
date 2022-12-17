@@ -1159,6 +1159,74 @@ router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"
     }
 });
 
+router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, res) => {
+    try {
+        const {
+            /** @type {string} */
+            id
+        } = req.params;
+        const {
+            /** @type {string} */
+            name
+        } = req.body;
+
+        if (!req.userRoomPermissions["managePermissions"]) return res.status(403).json({
+            code: "permission_denied",
+            message: "You do not have permission to manage permissions on this room."
+        });
+
+        if (typeof name != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Body field 'name' must be a string."
+        });
+
+        const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
+
+        if (["owner", "everyone"].includes(name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot create a role with a reserved name like 'owner' or 'everyone'."
+        });
+
+        const room = await collection.findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+        
+        if (Object.keys(room.rolePermissions).includes(name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot create a role with the same name as one that already exists."
+        });
+
+        let $set = {};
+        $set[`rolePermissions.${name}`] = {};
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: $set
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully created role."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not serve your request."
+        });
+        throw ex;
+    }
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

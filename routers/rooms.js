@@ -128,7 +128,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
             const subroom = room.subrooms[subroom_id];
             
             if(version_id == 'latest') version_id = subroom.publicVersionId;
-            if(!subroom.versions[version_id].associated_file) return res.status(204).json({
+            if(!subroom.versions[version_id]?.associated_file) return res.status(204).json({
                 "code": "no_file_associated_with_version",
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });

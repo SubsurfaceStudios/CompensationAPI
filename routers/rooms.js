@@ -36,7 +36,9 @@ const AuditEventType = {
     /** MAJOR - Logged when a developer suspends this room, locking everyone out until moderation review concludes. */
     RoomSuspendedByDeveloper: "room_suspended",
     /** MAJOR - Logged when a developer terminates this room, permanently locking it from all users. */
-    RoomTerminatedByDeveloper: "room_terminated"
+    RoomTerminatedByDeveloper: "room_terminated",
+    /** MAJOR - Logged when a developer completely wipes this room from the database forever, usually for legal reasons. */
+    RoomTerminatedByDeveloperForIllegalContent: "room_terminated_for_illegal_content"
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -163,7 +165,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
         if(typeof req.user != 'undefined') {
             const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
             const permissions = rolePermissions[role];
-            return permissions.viewAndJoin;
+            return permissions.viewAndJoin || req.user.developer;
         } else {
             const permissions = rolePermissions.everyone;
             return permissions.viewAndJoin;
@@ -658,6 +660,7 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
     try {
         const { id: room_id } = req.params;
         const { note } = req.body;
+        const { permanent } = req.query;
 
         if (note && typeof note != 'string') return res.status(400).json({
             code: "invalid_input",
@@ -678,6 +681,29 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
             code: "room_not_found",
             message: "Could not locate that room. Has another developer already terminated it?"
         });
+
+        if (permanent == "true") {
+            await collection.deleteOne({
+                _id: {
+                    $exists: true,
+                    $eq: room_id
+                } 
+            });
+
+            roomAuditLog(room_id, req.user.id, {
+                'type': AuditEventType.RoomTerminatedByDeveloperForIllegalContent,
+                'previous_value': null,
+                'new_value': null,
+                'note': note
+            });
+
+            auditLog(`!! EXTREME MODERATION ACTION !! - User ${req.user.id} **terminated** room ${room_id} permanently, wiping it from the database FOREVER! This should only ever happen for legal reasons!`);
+
+            return res.status(200).json({
+                code: "success",
+                message: "Room wiped entirely from database."
+            });
+        }
 
         await collection.updateOne(
             {
@@ -885,6 +911,134 @@ router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canView
         res.status(500).json({
             "code": "internal_error",
             "message": "An internal server error occurred, preventing the operation from succeeding."
+        });
+        throw ex;
+    }
+});
+
+const ReportRateLimit = rateLimit({
+    'max': 1,
+    'windowMs': 60 * 60 * 1000
+});
+
+router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, res) => {
+    try {
+        const {
+            /** @type {string} */
+            id
+        } = req.params;
+
+        const {
+            /** @type {string} */
+            reason,
+            /** @type {boolean} */
+            illegal_content,
+            /** @type {boolean} */
+            danger_of_harm
+        } = req.body;
+
+        if (
+            typeof reason != 'string' ||
+            typeof illegal_content != 'boolean' ||
+            typeof danger_of_harm != 'boolean'
+        ) return res.status(400).json({
+            code: "invalid_input",
+            message: "One or more parameters of your request are invalid."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $push: {
+                    "reports": {
+                        reason: reason,
+                        alleges_illegal_content: illegal_content,
+                        alleges_danger_of_harm: danger_of_harm,
+                        reporting_user_id: req.user.id,
+                        time: Date.now()
+                    }
+                }
+            }
+        );
+
+        const data = await collection.findOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            }
+        );
+
+        if (illegal_content && danger_of_harm) {
+            auditLog(
+                `
+                !! EMERGENCY !!
+                <@&812976292634427394>
+                A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
+                Reason: 
+                \`${reason}\`
+                HOWEVER
+                The user also indicated that this room may contain both ***ILLEGAL CONTENT*** and an ***IMMEDIATE THREAT TO HUMAN LIFE***!
+                It is absolutely paramount that this room is immediately investigated! Serious physical and legal consequences may result if it is not!
+                Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
+                you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
+                `, true);
+        } else if (illegal_content) {
+            auditLog(
+                `
+                !! EMERGENCY !!
+                <@&812976292634427394>
+                A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
+                Reason: 
+                \`${reason}\`
+                HOWEVER
+                The user also indicated that this room may contain ***ILLEGAL CONTENT!***
+                It is absolutely paramount that this room is immediately investigated! Serious legal consequences may result if it is not!
+                Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
+                you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
+                `, true);
+        } else if (danger_of_harm) {
+            auditLog(
+                `
+                !! EMERGENCY !!
+                <@&812976292634427394>
+                A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id})!
+                Reason: 
+                \`${reason}\`
+                HOWEVER
+                The user also indicated that this room may pose an ***IMMEDIATE THREAT TO HUMAN LIFE!***
+                It is absolutely paramount that this room is immediately investigated! Serious physical consequences may result if it is not!
+                Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
+                you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
+                `, true);
+        } else {
+            auditLog(
+                `
+                !! MODERATION ACTION !!
+                A player (ID ${req.user.id}) has submitted a report against room '${data.name}' (ID ${data._id}).
+                Reason:
+                \`${reason}\`
+                Please investigate at your soonest convenience.
+                `, true);
+        }
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully reported room."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not perform that operation."
         });
         throw ex;
     }

@@ -988,7 +988,7 @@ router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, 
                 \`${reason}\`
                 HOWEVER
                 The user also indicated that this room may contain both ***ILLEGAL CONTENT*** and an ***IMMEDIATE THREAT TO HUMAN LIFE***!
-                It is absolutely paramount that this room is immediately investigated! Serious legal consequences may result if it is not!
+                It is absolutely paramount that this room is immediately investigated! Serious physical and legal consequences may result if it is not!
                 Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
                 you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
                 `, true);
@@ -1016,7 +1016,7 @@ router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, 
                 \`${reason}\`
                 HOWEVER
                 The user also indicated that this room may pose an ***IMMEDIATE THREAT TO HUMAN LIFE!***
-                It is absolutely paramount that this room is immediately investigated! Serious IRL consequences may result if it is not!
+                It is absolutely paramount that this room is immediately investigated! Serious physical consequences may result if it is not!
                 Please remember it may be necessary to inform law enforcement of this incident, for that reason it is ***essential*** that
                 you keep a detailed log of your actions on this room and against this user. ***DO NOT DELETE ANY LOGS!***
                 `, true);

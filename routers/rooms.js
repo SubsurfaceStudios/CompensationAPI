@@ -1306,6 +1306,62 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
     }
 });
 
+router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRoomPermission("setRoomPhoto"), async (req, res) => {
+    try {
+        const {
+            id,
+            image_id
+        } = req.params;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const image_collection = db.collection('images');
+
+        const image = await image_collection.findOne(
+            {
+                _id: {
+                    $eq: image_id,
+                    $exists: true
+                }
+            }
+        );
+
+        if (image == null) return res.status(404).json({
+            code: "not_found",
+            message: "No image exists with that ID!"
+        });
+
+        if (image.takenInRoomId != id) return res.status(400).json({
+            code: "invalid_input",
+            message: "That image was not taken in this room!"
+        });
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: {
+                    "cover_image_id": image_id
+                }
+            }
+        );
+
+        res.status(200).json({
+            code: "success",
+            message: "Successfully set room image!"
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't process your request."
+        });
+        throw ex;
+    }
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

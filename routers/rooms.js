@@ -1227,6 +1227,85 @@ router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, re
     }
 });
 
+router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+    try {
+        const {
+            /** @type {string} */
+            id,
+            /** @type {string} */
+            role_name
+        } = req.params;
+
+        const {
+            /** @type {Object.<string, boolean>} */
+            permissions
+        } = req.body;
+
+        if (role_name == "owner") return res.status(400).json({
+            code: "access_denied",
+            message: "You cannot edit the permissions of the 'owner' role."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        const room = await collection.findOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            }
+        );
+
+        if (!room.rolePermissions[role_name]) return res.status(404).json({
+            code: "not_found",
+            message: "No role with that name exists."
+        });
+
+        for (const key in permissions) {
+            if (Object.hasOwnProperty.call(permissions, key)) {
+                const element = permissions[key];
+                if (!req.userRoomPermissions[key]) return res.status(400).json({
+                    code: "access_denied",
+                    message: "You cannot manage permissions you don't have."
+                });
+                if (typeof element != 'boolean') return res.status(400).json({
+                    code: "invalid_input",
+                    message: `All values must be booleans. (permission \`${key}\`)`
+                });
+
+                room.rolePermissions[role_name][key] = element;
+            }
+        }
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: {
+                    rolePermissions: room.rolePermissions
+                }
+            }
+        );
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not serve your request."
+        });
+        throw ex;
+    }
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

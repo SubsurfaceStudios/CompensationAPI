@@ -1270,6 +1270,10 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
                     code: "access_denied",
                     message: "You cannot manage permissions you don't have."
                 });
+                if (key.includes("__proto__")) return res.status(400).json({
+                    code: "invalid_input",
+                    message: "Possible prototype pollution attack detected."
+                });
                 if (typeof element != 'boolean') return res.status(400).json({
                     code: "invalid_input",
                     message: `All values must be booleans. (permission \`${key}\`)`

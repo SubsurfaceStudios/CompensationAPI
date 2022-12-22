@@ -128,7 +128,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
             const subroom = room.subrooms[subroom_id];
             
             if(version_id == 'latest') version_id = subroom.publicVersionId;
-            if(!subroom.versions[version_id].associated_file) return res.status(204).json({
+            if(!subroom.versions[version_id]?.associated_file) return res.status(204).json({
                 "code": "no_file_associated_with_version",
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });
@@ -1156,6 +1156,218 @@ router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"
             code: "internal_server_error",
             message: "An internal server error occurred and we were unable to process your request."
         });
+    }
+});
+
+router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, res) => {
+    try {
+        const {
+            /** @type {string} */
+            id
+        } = req.params;
+        const {
+            /** @type {string} */
+            name
+        } = req.body;
+
+        if (!req.userRoomPermissions["managePermissions"]) return res.status(403).json({
+            code: "permission_denied",
+            message: "You do not have permission to manage permissions on this room."
+        });
+
+        if (typeof name != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Body field 'name' must be a string."
+        });
+
+        const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
+
+        if (["owner", "everyone"].includes(name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot create a role with a reserved name like 'owner' or 'everyone'."
+        });
+
+        const room = await collection.findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+        
+        if (Object.keys(room.rolePermissions).includes(name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "Cannot create a role with the same name as one that already exists."
+        });
+
+        let $set = {};
+        $set[`rolePermissions.${name}`] = {};
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: $set
+            }
+        );
+
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully created role."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not serve your request."
+        });
+        throw ex;
+    }
+});
+
+router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+    try {
+        const {
+            /** @type {string} */
+            id,
+            /** @type {string} */
+            role_name
+        } = req.params;
+
+        if (role_name.includes("__proto__")) return res.status(400).json({
+            code: "invalid_input",
+            message: "Possible prototype pollution attack detected."
+        });
+
+        const {
+            /** @type {Object.<string, boolean>} */
+            permissions
+        } = req.body;
+
+        if (role_name == "owner") return res.status(400).json({
+            code: "access_denied",
+            message: "You cannot edit the permissions of the 'owner' role."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        const room = await collection.findOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            }
+        );
+
+        if (!room.rolePermissions[role_name]) return res.status(404).json({
+            code: "not_found",
+            message: "No role with that name exists."
+        });
+
+        for (const key in permissions) {
+            if (Object.hasOwnProperty.call(permissions, key)) {
+                const element = permissions[key];
+                if (!req.userRoomPermissions[key]) return res.status(400).json({
+                    code: "access_denied",
+                    message: "You cannot manage permissions you don't have."
+                });
+                if (key.includes("__proto__")) return res.status(400).json({
+                    code: "invalid_input",
+                    message: "Possible prototype pollution attack detected."
+                });
+                if (typeof element != 'boolean') return res.status(400).json({
+                    code: "invalid_input",
+                    message: `All values must be booleans. (permission \`${key}\`)`
+                });
+
+                room.rolePermissions[role_name][key] = element;
+            }
+        }
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: {
+                    rolePermissions: room.rolePermissions
+                }
+            }
+        );
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not serve your request."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRoomPermission("setRoomPhoto"), async (req, res) => {
+    try {
+        const {
+            id,
+            image_id
+        } = req.params;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const image_collection = db.collection('images');
+
+        const image = await image_collection.findOne(
+            {
+                _id: {
+                    $eq: parseInt(image_id),
+                    $exists: true
+                }
+            }
+        );
+
+        if (image == null) return res.status(404).json({
+            code: "not_found",
+            message: "No image exists with that ID!"
+        });
+
+        if (image.takenInRoomId != id) return res.status(400).json({
+            code: "invalid_input",
+            message: "That image was not taken in this room!"
+        });
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: {
+                    "cover_image_id": image_id
+                }
+            }
+        );
+
+        res.status(200).json({
+            code: "success",
+            message: "Successfully set room image!"
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't process your request."
+        });
+        throw ex;
     }
 });
 

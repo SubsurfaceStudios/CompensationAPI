@@ -409,8 +409,20 @@ async function updateRoom(room) {
     if(typeof room.homeSubroomId != 'string') room.homeSubroomId = "home";
     if(typeof room.rolePermissions != 'object') {
         room.rolePermissions = {
-            "everyone": {
+            "owner": {
                 "viewAndJoin": true,
+                "createVersions": true,
+                "setPublicVersion": true,
+                "viewSettings": true,
+                "viewPermissions": true,
+                "managePermissions": true,
+                "useCreationTool": true,
+                "mutePlayers": true,
+                "kickPlayers": true,
+                "setRoomPhoto": true,
+            },
+            "everyone": {
+                "viewAndJoin": false,
                 "createVersions": false,
                 "setPublicVersion": false,
                 "viewSettings": false,
@@ -418,7 +430,8 @@ async function updateRoom(room) {
                 "managePermissions": false,
                 "useCreationTool": false,
                 "mutePlayers": false,
-                "kickPlayers": false
+                "kickPlayers": false,
+                "setRoomPhoto": true,
             }
         };
     } else {
@@ -426,7 +439,7 @@ async function updateRoom(room) {
             const key = Object.keys(room.rolePermissions)[i];
             var value = room.rolePermissions[key];
 
-            if(typeof value.viewAndJoin != 'boolean') value.viewAndJoin = true;
+            if(typeof value.viewAndJoin != 'boolean') value.viewAndJoin = false;
             if(typeof value.createVersions != 'boolean') value.createVersions = false;
             if(typeof value.setPublicVersion != 'boolean') value.setPublicVersion = false;
             if(typeof value.viewSettings != 'boolean') value.viewSettings = false;
@@ -435,6 +448,7 @@ async function updateRoom(room) {
             if(typeof value.useCreationTool != 'boolean') value.useCreationTool = false;
             if(typeof value.mutePlayers != 'boolean') value.mutePlayers = false;
             if(typeof value.kickPlayers != 'boolean') value.kickPlayers = false;
+            if(typeof value.setRoomPhoto != 'boolean') value.setRoomPhoto = false;
 
             room.rolePermissions[key] = value;
         }

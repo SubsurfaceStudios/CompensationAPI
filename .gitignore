@@ -7,3 +7,6 @@ nginx.conf
 data/audit.json
 admin.json
 keys/
+
+# IDE stuff
+.vscode/*

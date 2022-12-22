@@ -1236,6 +1236,11 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
             role_name
         } = req.params;
 
+        if (role_name.includes("__proto__")) return res.status(400).json({
+            code: "invalid_input",
+            message: "Possible prototype pollution attack detected."
+        });
+
         const {
             /** @type {Object.<string, boolean>} */
             permissions

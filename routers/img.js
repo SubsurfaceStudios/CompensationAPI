@@ -106,6 +106,9 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         MetaData.infoPath = `/img/${MetaData._id}/info`;
         MetaData.filePath = `/img/${MetaData._id}`;
 
+        MetaData.takenInRoomId = room_id;
+        MetaData.room.id = room_id;
+
         MetaData.social.tags = JSON.parse(tags);
 
         if (req.query.visibility == "unlisted") MetaData.visibility = "unlisted";

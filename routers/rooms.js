@@ -1371,6 +1371,42 @@ router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRo
     }
 });
 
+router.get("/room/:id/verify-subroom-link/:to", authenticateToken, canViewRoom, async (req, res) => {
+    try {
+        const { id, to } = req.params;
+
+        const room = await require('../index')
+            .mongoClient
+            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms')
+            .findOne({
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            });
+        
+        if (!room.subrooms[to])
+            return res.status(404).json({
+                code: "not_found",
+                message: "No subroom with that ID exists!",
+                valid: false
+            });
+        else return res.status(200).json({
+            code: "success",
+            message: "This subroom link is valid.",
+            valid: false
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred while processing your request.",
+            valid: false
+        });
+        throw ex;
+    }
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

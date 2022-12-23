@@ -5,12 +5,45 @@ const WebSocket = require('ws');
 const { MatchmakingModes } = require('../matchmaking');
 const { WebSocketV2_MessageTemplate } = require("../../index");
 const { auditLog } = require('../../helpers');
+
+/**
+ * @typedef Connection
+ * @property {WebSocket.Socket} socket
+ * @property {number} version
+ * @property {string} instanceId
+ * @property {string} roomId
+ * @property {string} subroomId
+ * @property {string} globalInstanceId
+ * @property {string} joinCode
+ */
+
+/**
+ * @type {Object.<string, Connection>}
+ */
 var ws_connected_clients = {};
+
 exports.ws_connected_clients = ws_connected_clients;
+
+/**
+ * @typedef ConnectedUserData
+ * @property {string} uid
+ * @property {string} username
+ * @property {string} nickname
+ * @property {boolean} isAuthenticated
+ * @property {string[]} tags
+ * @property {boolean} isDeveloper
+ * @property {boolean} isCreativeToolsBetaProgramMember
+ * @property {string} matchmaking_InstanceId
+ * @property {string} matchmaking_RoomId
+ * @property {string} matchmaking_GlobalInstanceId
+ */
 
 const WebSocketServerV2 = new WebSocket.Server({ noServer: true });
 exports.WebSocketServerV2 = WebSocketServerV2;
 WebSocketServerV2.on('connection', (Socket) => {
+    /**
+     * @type {ConnectedUserData}
+     */
     var ConnectedUserData = {
         uid: null,
         username: "",

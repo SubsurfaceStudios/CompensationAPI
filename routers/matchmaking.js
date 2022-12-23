@@ -48,9 +48,42 @@ router.get("/:room_id/:subroom_id/all-instances", middleware.authenticateDevelop
     }
 });
 
+router.get("/my-instance-info", middleware.authenticateToken, async (req, res) => {
+    try {
+        /**
+         * @type {import('./ws/WebSocketServerV2').Connection}
+         */
+        const data = require('./ws/WebSocketServerV2').ws_connected_clients[req.user.id];
+        if (!data) return res.status(404).json({
+            code: "not_found",
+            message: "You are not online."
+        });
 
+        const instance = await GetInstanceById(data.roomId, data.instanceId);
+        if (!instance) return res.status(404).json({
+            code: "not_found",
+            message: "You are not in a room."
+        });
 
-// yes this is literally just an enum
+        return res.status(200).json({
+            private: instance.MatchmakingMode == MatchmakingModes.Private,
+            instance_id: instance.InstanceId,
+            room_id: instance.RoomId,
+            subroom_id: instance.SubroomId,
+            age: instance.Age
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
+});
+
+/**
+ * @enum {number}
+ */
 const MatchmakingModes = {
     Public: 0,
     Unlisted: 1,
@@ -58,19 +91,30 @@ const MatchmakingModes = {
     Locked: 3
 };
 
-// YES, I'M AWARE
-// The fact that this system is entirely in-memory and therefore volatile is INTENTIONAL.
-// By design, when the API goes down, all users are removed from the game due to their websockets disconnecting.
-// This prevents failed API calls and cheating by faking a websocket connection.
-// HOWEVER - This also means that instances created by Photon will slowly be removed from the room list when all users are disconnected.
-// This means that the RoomSessions dictionary will be OUT OF DATE if it persists.
-// Therefore, it is in memory. This allows for both faster read/writes, better class implementation, more intellisense options,
-// and preventing the aforementioned persistence issues.
-
-// "Well, just make it so Photon Instances never expire, and you can persist as long as you like"
-// THIS IS A WASTE OF RESOURCES. It may also incur additional fees from Photon.
+/**
+ * @name RoomSession
+ * @property {string} RoomId
+ * @property {string} SubroomId
+ * @property {MatchmakingModes} MatchmakingMode
+ * @property {string[]} Players
+ * @property {number} MaxPlayers
+ * @property {number} Age
+ * @property {number} AgeWithoutPlayer
+ * @property {number} TTL
+ * @property {boolean} Persistent
+ * @property {boolean} FlaggedForRemoval
+ * @property {string} InstanceId
+ * @property {string} JoinCode
+ * @property {string} GlobalInstanceId
+ */
 class RoomSession {
+    /**
+     * @type {string}
+     */
     RoomId = "0"; // The room the instance is in.
+    /**
+     * @type {string}
+     */
     SubroomId = "home";
 
     // Options:
@@ -78,19 +122,52 @@ class RoomSession {
     // * unlisted
     // * private
     // * locked
+    /**
+     * @type {MatchmakingModes}
+     */
     MatchmakingMode; // How players can access this instance.
 
+    /**
+     * @type {string[]}
+     */
     Players = []; // The current players inside the instance.
+    /**
+     * @type {number}
+     */
     MaxPlayers; // The maximum number of players the instance can contain.
+    /**
+     * @type {number}
+     */
     Age; // Age of the instance.
+    /**
+     * @type {number}
+     */
     AgeWithoutPlayer;
-    TTL = 300*1000;
+    /**
+     * @type {number}
+     */
+    TTL = 300 * 1000;
+    /**
+     * @type {boolean}
+     */
     Persistent;
+    /**
+     * @type {boolean}
+     */
     FlaggedForRemoval;
      
+    /**
+     * @type {string}
+     */
     InstanceId;
+    /**
+     * @type {string}
+     */
     JoinCode;
 
+    /**
+     * @type {string}
+     */
     GlobalInstanceId;
 
     #eventLoopHandle = null;
@@ -171,12 +248,15 @@ class RoomSession {
         this.JoinCode = `CVR_ROOM.${this.RoomId}.INSTANCE.${this.InstanceId}`;
 
         // global instance handling
-        this.GlobalInstanceId = GlobalInstanceId === null ? uuid.v1() : GlobalInstanceId;
+        this.GlobalInstanceId = GlobalInstanceId == null ? uuid.v1() : GlobalInstanceId;
 
         if(typeof GlobalRoomInstances[RoomId] != 'object') GlobalRoomInstances[RoomId] = {};
 
+        var x = {};
+        x[SubroomId] = this.InstanceId;
+
         if(typeof GlobalRoomInstances[RoomId][this.GlobalInstanceId] != 'object') 
-            GlobalRoomInstances[RoomId][this.GlobalInstanceId] = {SubroomId: this.InstanceId};
+            GlobalRoomInstances[RoomId][this.GlobalInstanceId] = x;
         else 
             GlobalRoomInstances[RoomId][this.GlobalInstanceId][SubroomId] = this.InstanceId;
 
@@ -184,6 +264,9 @@ class RoomSession {
     }
 }
 
+/**
+ * @type {Object.<string, RoomSession[]>}
+ */
 var SubroomInstances = Object.create(null);
 
 // this will mock the data structure above, but at runtime
@@ -205,6 +288,12 @@ async function CleanupInstances() {
     }
 }
 
+/**
+ * @async
+ * @name GetInstances
+ * @param {string} RoomId - The ID of the room instance table to look up.
+ * @returns {RoomSession[]}
+ */
 async function GetInstances(RoomId = null) {
     if(RoomId === null) {
         var instances = [];

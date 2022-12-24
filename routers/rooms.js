@@ -1395,7 +1395,7 @@ router.get("/room/:id/verify-subroom-link/:to", authenticateToken, canViewRoom, 
         else return res.status(200).json({
             code: "success",
             message: "This subroom link is valid.",
-            valid: false
+            valid: true
         });
     } catch (ex) {
         res.status(500).json({

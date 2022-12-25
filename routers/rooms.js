@@ -1323,6 +1323,76 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
     }
 });
 
+router.post("/room/:id/roles/:role_name/delete", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+    try {
+        const { id, role_name } = req.params;
+
+        // Reserved role names
+        if (["owner", "everyone"].includes(role_name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "You cannot delete a reserved role. (i.e 'owner' or 'everyone')"
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        var $unset = {};
+        $unset[`rolePermissions.${role_name}`] = true;
+
+        const room = await collection.findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+
+        /**
+         * @type {Object.<string, boolean}
+         */
+        var $set = {};
+        /**
+         * @type {string[]}
+         */
+        var users = [];
+
+        const keys = Object.keys(room.userPermissions);
+        for (let i = 0; i < keys.length; i++) {
+            const role = keys[i];
+            if (role != role_name) continue;
+            $set[`userPermissions.${keys[i]}`] = "everyone";
+            users.push(keys[i]);
+        }
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $unset: $unset,
+                $set: $set
+            }
+        );
+
+        for (let i = 0; i < users.length; i++) {
+            const uid = users[i];
+            require('./ws/WebSocketServerV2').ws_connected_clients[uid]?.socket.emit('permission-update');
+        }
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we couldn't serve your request."
+        });
+    }
+});
+
 router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRoomPermission("setRoomPhoto"), async (req, res) => {
     try {
         const {

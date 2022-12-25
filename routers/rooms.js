@@ -1393,6 +1393,76 @@ router.post("/room/:id/roles/:role_name/delete", authenticateToken, requiresRoom
     }
 });
 
+router.post("/room/:id/user/:user_id/set-role/:role_name", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+    try {
+        const { id, user_id, role_name } = req.params;
+
+        if (role_name == "owner") return res.status(403).json({
+            code: "access_denied",
+            message: "The 'owner' role cannot be manually assigned. Contact support if you're trying to transfer a room."
+        });
+
+        if (user_id == req.user.id) return res.status(403).json({
+            code: "access_denied",
+            message: "You cannot set your own role."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        
+        const room = await db.collection('rooms').findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+
+        if (user_id == room.creator_id) return res.status(403).json({
+            code: "access_denied",
+            message: "You cannot set the role of the Room Creator."
+        });
+
+        const current_role = room.rolePermissions[user_id] ?? "everyone";
+        
+        if (current_role == "owner") return res.status(403).json({
+            code: "access_denied",
+            message: "You cannot set the role of the Room Owner."
+        });
+
+        const update = {};
+
+        if (role_name == "everyone") {
+            update.$unset = {};
+            update.$unset[`rolePermissions.${user_id}`] = true;
+        } else {
+            update.$set = {};
+            update.$set[`rolePermissions.${user_id}`] = role_name;
+        }
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            update
+        );
+
+        require('./ws/WebSocketServerV2').ws_connected_clients[user_id]?.socket.emit('permission-update', id);
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
+});
+
 router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRoomPermission("setRoomPhoto"), async (req, res) => {
     try {
         const {

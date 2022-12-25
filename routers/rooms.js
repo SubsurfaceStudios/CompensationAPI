@@ -1227,6 +1227,38 @@ router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, re
     }
 });
 
+router.get('/room/:id/permissions', authenticateToken, requiresRoomPermission("viewPermissions"), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        const room = await db.collection('rooms').findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+
+        delete room.rolePermissions.owner; // The owner role can't be mutated, so there's no reason to display it.
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful.",
+            data: {
+                users: room.userPermissions,
+                roles: room.rolePermissions
+            }
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
+});
+
 router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
     try {
         const {
@@ -1618,7 +1650,7 @@ function requiresRoomPermission(permission) {
     
         const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
     
-        if(!req.user.developer && rolePermissions[role][permission]) {
+        if(!req.user.developer && !rolePermissions[role][permission] && role != "owner") {
             return res.status(404).json({
                 "code": "room_not_found",
                 "message": "Access denied."

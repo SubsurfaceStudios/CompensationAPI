@@ -1302,6 +1302,14 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
             }
         );
 
+        const keys = Object.keys(room.userPermissions);
+
+        for (let i = 0; i < keys.length; i++) {
+            if (room.userPermissions[keys[i]] != role_name) continue;
+
+            require('./ws/WebSocketServerV2').ws_connected_clients[keys[i]]?.socket.emit('permission-update', id);
+        }
+
         res.status(200).json({
             code: "success",
             message: "The operation was successful."

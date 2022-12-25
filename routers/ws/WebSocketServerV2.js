@@ -697,6 +697,32 @@ WebSocketServerV2.on('connection', (Socket) => {
         };
         Socket.send(JSON.stringify(send, null, 5));
     });
+    Socket.on('permission-update', async (roomId) => {
+        if (roomId != ConnectedUserData.matchmaking_RoomId) return;
+
+        const db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const room = await db.collection('rooms').findOne(
+            {
+                _id: {
+                    $eq: roomId,
+                    $exists: true
+                }
+            }
+        );
+
+        const role = room.userPermissions[ConnectedUserData.uid] ?? "everyone";
+        const permissions = room.rolePermissions[role];
+
+        const send = {
+            code: "permission_update",
+            data: {
+                room_id: roomId,
+                new_permissions: permissions
+            }
+        };
+
+        Socket.send(JSON.stringify(send));
+    });
     Socket.on('close', async (code, reason) => {
         console.log(`Socket closed with code ${code} and reason ${reason}`);
         if (!ConnectedUserData.isAuthenticated)

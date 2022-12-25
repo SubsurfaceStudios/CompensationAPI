@@ -1245,10 +1245,8 @@ router.get('/room/:id/permissions', authenticateToken, requiresRoomPermission("v
         res.status(200).json({
             code: "success",
             message: "The operation was successful.",
-            data: {
-                users: room.userPermissions,
-                roles: room.rolePermissions
-            }
+            users: room.userPermissions,
+            roles: room.rolePermissions
         });
     } catch (ex) {
         res.status(500).json({

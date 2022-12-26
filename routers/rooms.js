@@ -207,7 +207,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     }
 });
 
-router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, canViewRoom, async (req, res) => {
+router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, requiresRoomPermission("createVersions"), async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const input_metadata = req.body;
@@ -273,11 +273,6 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, can
             "message": "The `collaborators` parameter of your version metadata is not specified or is invalid."
         });
 
-        if(!(await hasPermission(req.user.id, id, 'createVersions'))) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have permission to create versions of this room."
-        });
-
         const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
         const room = await collection.findOne({_id: {$eq: id, $exists: true}});
 
@@ -308,7 +303,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, can
         throw ex;
     }
 });
-router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateToken, canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateToken, requiresRoomPermission("createVersions"), async (req, res) => {
     try {
         var {id, subroom_id, version_id} = req.params;
         const base_64_data = req.body;
@@ -317,11 +312,6 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         if(isNaN(version_id)) return res.status(400).json({
             "code": "invalid_parameter",
             "message": "Parameter `version` is invalid, must be parsable as Integer."
-        });
-
-        if(!(await hasPermission(req.user.id, id, "createVersions"))) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have permission to perform the CreateVersion operation."
         });
 
         const collection = require('../index')
@@ -384,18 +374,13 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         throw ex;
     }
 });
-router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, requiresRoomPermission("setPublicVersion"), async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const {id: version_id} = req.body;
         if(typeof version_id != 'string') return res.status(400).json({
             "code": "invalid_input",
             "message": "Parameter `new_id` is unset. Please specify a new publicVersionId."
-        });
-
-        if(!(await hasPermission(req.user.id, id, "setPublicVersion"))) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have permission to perform this action."
         });
 
         const client = require('../index').mongoClient;
@@ -493,7 +478,7 @@ router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageT
     }
 });
 
-router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission("manageTags"), async (req, res) => {
+router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission("manageContentFlags"), async (req, res) => {
     try {
         const { flags } = req.body;
         const { id } = req.params;
@@ -887,13 +872,9 @@ router.get('/room/:id/my-permissions', authenticateToken, canViewRoom, async (re
     }
 });
 
-router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canViewRoom, async (req, res) => {
+router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, requiresRoomPermission("createVersions"), async (req, res) => {
     try {
         const { subroom_id } = req.params;
-        if(!req.userRoomPermissions["createVersions"]) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have access to the version registry of this room."
-        });
         if(!Object.keys(req.room.subrooms).includes(subroom_id)) return res.status(404).json({
             "code": "nonexistent_subroom",
             "message": "No subroom on record was found with that ID."
@@ -1159,7 +1140,7 @@ router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"
     }
 });
 
-router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, res) => {
+router.put('/room/:id/roles/new', authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
     try {
         const {
             /** @type {string} */
@@ -1169,11 +1150,6 @@ router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, re
             /** @type {string} */
             name
         } = req.body;
-
-        if (!req.userRoomPermissions["managePermissions"]) return res.status(403).json({
-            code: "permission_denied",
-            message: "You do not have permission to manage permissions on this room."
-        });
 
         if (typeof name != 'string') return res.status(400).json({
             code: "invalid_input",
@@ -1605,6 +1581,12 @@ router.get("/all-permissions", async (req, res) => {
             "Can players kick other players?",
         "mutePlayers": 
             "Can players mute other players?",
+        "manageSubrooms":
+            "Can players update, delete, and create subrooms on this room?",
+        "editDescription":
+            "Can players edit the description of this room?",
+        "manageTags":
+            "Can players edit the tags of this room?",
         "manageContentFlags": 
             "Can players edit the room's content flags?",
         "setRoomPhoto": 
@@ -1689,6 +1671,9 @@ function requiresRoomPermission(permission) {
     };
 }
 
+
+// This function should have a use somewhere.
+// eslint-disable-next-line no-unused-vars
 async function hasPermission(user_id, room_id, permission) {
     const client = require('../index').mongoClient;
     var room = await client

@@ -615,8 +615,8 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
                             "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
                             "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=yellow>suspended</color> by the Compensation Social moderation team.
 
-                            For more information, please see
-                            <color=#FF5566>https://compensationvr.tk/about/suspension</color>`
+For more information, please see
+<color=#FF5566>https://compensationvr.tk/about/suspension</color>`
                         }
                     }
                 }
@@ -741,10 +741,10 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
                             "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
                             "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=#FF5566>Terminated</color> by the Compensation Social moderation team.
 
-                            For more information, please see
-                            <color=#FF5566>https://compensationvr.tk/about/terminated</color>
-                            
-                            You can appeal this decision on our Discord, the link is available at the page above.`
+For more information, please see
+<color=#FF5566>https://compensationvr.tk/about/terminated</color>
+
+You can appeal this decision on our Discord, the link is available at the page above.`
                         }
                     }
                 }

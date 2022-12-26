@@ -1257,7 +1257,7 @@ router.get('/room/:id/permissions', authenticateToken, requiresRoomPermission("v
     }
 });
 
-router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+router.post("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
     try {
         const {
             /** @type {string} */

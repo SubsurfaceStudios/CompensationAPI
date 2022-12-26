@@ -1585,6 +1585,22 @@ router.get("/room/:id/verify-subroom-link/:to", authenticateToken, canViewRoom, 
     }
 });
 
+router.get("/all-permissions", async (req, res) => {
+    return res.status(200).json([
+        "viewAndJoin",
+        "createVersions",
+        "setPublicVersion",
+        "viewSettings",
+        "viewPermissions",
+        "managePermissions",
+        "useCreationTool",
+        "kickPlayers",
+        "mutePlayers",
+        "manageContentFlags",
+        "setRoomPhoto",
+    ]);
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

@@ -1427,7 +1427,7 @@ router.post("/room/:id/user/:user_id/set-role/:role_name", authenticateToken, re
             message: "You cannot set the role of the Room Creator."
         });
 
-        const current_role = room.rolePermissions[user_id] ?? "everyone";
+        const current_role = room.userPermissions[user_id] ?? "everyone";
         
         if (current_role == "owner") return res.status(403).json({
             code: "access_denied",
@@ -1438,10 +1438,10 @@ router.post("/room/:id/user/:user_id/set-role/:role_name", authenticateToken, re
 
         if (role_name == "everyone") {
             update.$unset = {};
-            update.$unset[`rolePermissions.${user_id}`] = true;
+            update.$unset[`userPermissions.${user_id}`] = true;
         } else {
             update.$set = {};
-            update.$set[`rolePermissions.${user_id}`] = role_name;
+            update.$set[`userPermissions.${user_id}`] = role_name;
         }
 
         await db.collection('rooms').updateOne(

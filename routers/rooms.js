@@ -611,7 +611,7 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
                 $push: {
                     "notifications": {
                         template: "room_suspension_notice",
-                        data: {
+                        parameters: {
                             "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
                             "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=yellow>suspended</color> by the Compensation Social moderation team.
 
@@ -737,7 +737,7 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
                 $push: {
                     "notifications": {
                         template: "room_termination_notice",
-                        data: {
+                        parameters: {
                             "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
                             "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=#FF5566>Terminated</color> by the Compensation Social moderation team.
 

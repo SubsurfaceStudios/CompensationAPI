@@ -1586,19 +1586,30 @@ router.get("/room/:id/verify-subroom-link/:to", authenticateToken, canViewRoom, 
 });
 
 router.get("/all-permissions", async (req, res) => {
-    return res.status(200).json([
-        "viewAndJoin",
-        "createVersions",
-        "setPublicVersion",
-        "viewSettings",
-        "viewPermissions",
-        "managePermissions",
-        "useCreationTool",
-        "kickPlayers",
-        "mutePlayers",
-        "manageContentFlags",
-        "setRoomPhoto",
-    ]);
+    return res.status(200).json({
+        "viewAndJoin": 
+            "Can players view information about this room or join?",
+        "createVersions": 
+            "Can players save this room?",
+        "setPublicVersion": 
+            "Can players set the version of the room that is loaded by default?",
+        "viewSettings": 
+            "Can players view the settings of this room at all?",
+        "viewPermissions": 
+            "Can players view the permissions & roles of all users?",
+        "managePermissions": 
+            "Can players edit the permissions & roles of all users?",
+        "useCreationTool": 
+            "Can players use their Creation Tool?",
+        "kickPlayers": 
+            "Can players kick other players?",
+        "mutePlayers": 
+            "Can players mute other players?",
+        "manageContentFlags": 
+            "Can players edit the room's content flags?",
+        "setRoomPhoto": 
+            "Can players set the room's photo?",
+    });
 });
 
 async function canViewRoom(req, res, next) {

@@ -1301,7 +1301,7 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
         for (const key in permissions) {
             if (Object.hasOwnProperty.call(permissions, key)) {
                 const element = permissions[key];
-                if (!req.userRoomPermissions[key]) return res.status(400).json({
+                if (!req.userRoomPermissions[key] && req.userRoomRole != "owner") return res.status(400).json({
                     code: "access_denied",
                     message: "You cannot manage permissions you don't have."
                 });

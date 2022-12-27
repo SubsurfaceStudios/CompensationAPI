@@ -1721,7 +1721,7 @@ router.post("/room/:id/subrooms/:name/delete", authenticateToken, requiresRoomPe
     try {
         const { id, name } = req.params;
 
-        if (!Object.keys(req.room.rolePermissions).includes(name)) return res.status(404).json({
+        if (!Object.keys(req.room.subrooms).includes(name)) return res.status(404).json({
             code: "not_found",
             message: "No role with that name exists on this room."
         });

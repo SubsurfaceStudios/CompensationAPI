@@ -1636,39 +1636,6 @@ router.get("/all-permissions", async (req, res) => {
     });
 });
 
-router.get("/room/:id/subrooms/list", authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
-    try {
-        const { id } = req.params; 
-        
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
-
-        const room = await db.collection('rooms').findOne({
-            _id: {
-                $eq: id,
-                $exists: true
-            }
-        });
-
-        const keys = Object.keys(room.subrooms);
-
-        for (let i = 0; i < keys.length; i++) {
-            delete room.subrooms[keys[i]].versions;
-        }
-
-        return res.status(200).json({
-            code: "success",
-            message: "The operation was successful.",
-            subrooms: room.subrooms
-        });
-    } catch (ex) {
-        res.status(500).json({
-            code: "internal_error",
-            message: "An internal error occurred and we couldn't serve your request."
-        });
-        throw ex;
-    }
-});
-
 router.post("/room/:id/subrooms/:name/create", authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
     try {
         const { id, name } = req.params;

@@ -207,7 +207,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     }
 });
 
-router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, canViewRoom, async (req, res) => {
+router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, requiresRoomPermission("createVersions"), async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const input_metadata = req.body;
@@ -273,11 +273,6 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, can
             "message": "The `collaborators` parameter of your version metadata is not specified or is invalid."
         });
 
-        if(!(await hasPermission(req.user.id, id, 'createVersions'))) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have permission to create versions of this room."
-        });
-
         const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
         const room = await collection.findOne({_id: {$eq: id, $exists: true}});
 
@@ -308,7 +303,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, can
         throw ex;
     }
 });
-router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateToken, canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data', authenticateToken, requiresRoomPermission("createVersions"), async (req, res) => {
     try {
         var {id, subroom_id, version_id} = req.params;
         const base_64_data = req.body;
@@ -317,11 +312,6 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         if(isNaN(version_id)) return res.status(400).json({
             "code": "invalid_parameter",
             "message": "Parameter `version` is invalid, must be parsable as Integer."
-        });
-
-        if(!(await hasPermission(req.user.id, id, "createVersions"))) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have permission to perform the CreateVersion operation."
         });
 
         const collection = require('../index')
@@ -384,18 +374,13 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
         throw ex;
     }
 });
-router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, canViewRoom, async (req, res) => {
+router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken, requiresRoomPermission("setPublicVersion"), async (req, res) => {
     try {
         const {id, subroom_id} = req.params;
         const {id: version_id} = req.body;
         if(typeof version_id != 'string') return res.status(400).json({
             "code": "invalid_input",
             "message": "Parameter `new_id` is unset. Please specify a new publicVersionId."
-        });
-
-        if(!(await hasPermission(req.user.id, id, "setPublicVersion"))) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have permission to perform this action."
         });
 
         const client = require('../index').mongoClient;
@@ -493,7 +478,7 @@ router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageT
     }
 });
 
-router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission("manageTags"), async (req, res) => {
+router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission("manageContentFlags"), async (req, res) => {
     try {
         const { flags } = req.body;
         const { id } = req.params;
@@ -626,12 +611,12 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
                 $push: {
                     "notifications": {
                         template: "room_suspension_notice",
-                        data: {
+                        parameters: {
                             "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
                             "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=yellow>suspended</color> by the Compensation Social moderation team.
 
-                            For more information, please see
-                            <color=#FF5566>https://compensationvr.tk/about/suspension</color>`
+For more information, please see
+<color=#FF5566>https://compensationvr.tk/about/suspension</color>`
                         }
                     }
                 }
@@ -752,14 +737,14 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
                 $push: {
                     "notifications": {
                         template: "room_termination_notice",
-                        data: {
+                        parameters: {
                             "headerText": "<smallcaps><color=red>Urgent Moderation Notice",
                             "bodyText": `We regret to inform you that your room <noparse>"${roomname}"</noparse> has been <color=#FF5566>Terminated</color> by the Compensation Social moderation team.
 
-                            For more information, please see
-                            <color=#FF5566>https://compensationvr.tk/about/terminated</color>
-                            
-                            You can appeal this decision on our Discord, the link is available at the page above.`
+For more information, please see
+<color=#FF5566>https://compensationvr.tk/about/terminated</color>
+
+You can appeal this decision on our Discord, the link is available at the page above.`
                         }
                     }
                 }
@@ -887,13 +872,9 @@ router.get('/room/:id/my-permissions', authenticateToken, canViewRoom, async (re
     }
 });
 
-router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, canViewRoom, async (req, res) => {
+router.get('/room/:id/subrooms/:subroom_id/versions', authenticateToken, requiresRoomPermission("createVersions"), async (req, res) => {
     try {
         const { subroom_id } = req.params;
-        if(!req.userRoomPermissions["createVersions"]) return res.status(403).json({
-            "code": "permission_denied",
-            "message": "You do not have access to the version registry of this room."
-        });
         if(!Object.keys(req.room.subrooms).includes(subroom_id)) return res.status(404).json({
             "code": "nonexistent_subroom",
             "message": "No subroom on record was found with that ID."
@@ -1159,7 +1140,7 @@ router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"
     }
 });
 
-router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, res) => {
+router.put('/room/:id/roles/new', authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
     try {
         const {
             /** @type {string} */
@@ -1169,11 +1150,6 @@ router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, re
             /** @type {string} */
             name
         } = req.body;
-
-        if (!req.userRoomPermissions["managePermissions"]) return res.status(403).json({
-            code: "permission_denied",
-            message: "You do not have permission to manage permissions on this room."
-        });
 
         if (typeof name != 'string') return res.status(400).json({
             code: "invalid_input",
@@ -1227,7 +1203,37 @@ router.put('/room/:id/roles/new', authenticateToken, canViewRoom, async (req, re
     }
 });
 
-router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+router.get('/room/:id/permissions', authenticateToken, requiresRoomPermission("viewPermissions"), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        const room = await db.collection('rooms').findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+
+        delete room.rolePermissions.owner; // The owner role can't be mutated, so there's no reason to display it.
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful.",
+            users: room.userPermissions,
+            roles: room.rolePermissions
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
     try {
         const {
             /** @type {string} */
@@ -1271,7 +1277,7 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
         for (const key in permissions) {
             if (Object.hasOwnProperty.call(permissions, key)) {
                 const element = permissions[key];
-                if (!req.userRoomPermissions[key]) return res.status(400).json({
+                if (!req.userRoomPermissions[key] && req.userRoomRole != "owner" && !req.user.developer) return res.status(400).json({
                     code: "access_denied",
                     message: "You cannot manage permissions you don't have."
                 });
@@ -1302,6 +1308,85 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
             }
         );
 
+        const keys = Object.keys(room.userPermissions);
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+
+        for (let i = 0; i < keys.length; i++) {
+            if (room.userPermissions[keys[i]] != role_name) continue;
+
+            require('./ws/WebSocketServerV2').ws_connected_clients[keys[i]]?.socket.emit('permission-update', id);
+        }
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we could not serve your request."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/roles/:role_name/delete", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+    try {
+        const { id, role_name } = req.params;
+
+        // Reserved role names
+        if (["owner", "everyone"].includes(role_name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "You cannot delete a reserved role. (i.e 'owner' or 'everyone')"
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const collection = db.collection('rooms');
+
+        var $unset = {};
+        $unset[`rolePermissions.${role_name}`] = true;
+
+        const room = await collection.findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+
+        /**
+         * @type {Object.<string, boolean}
+         */
+        var $set = {};
+        /**
+         * @type {string[]}
+         */
+        var users = [];
+
+        const keys = Object.keys(room.userPermissions);
+        for (let i = 0; i < keys.length; i++) {
+            const role = keys[i];
+            if (role != role_name) continue;
+            $set[`userPermissions.${keys[i]}`] = "everyone";
+            users.push(keys[i]);
+        }
+
+        await collection.updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $unset: $unset,
+                $set: $set
+            }
+        );
+
+        for (let i = 0; i < users.length; i++) {
+            const uid = users[i];
+            require('./ws/WebSocketServerV2').ws_connected_clients[uid]?.socket.emit('permission-update');
+        }
+
         res.status(200).json({
             code: "success",
             message: "The operation was successful."
@@ -1309,7 +1394,76 @@ router.put("/room/:id/roles/:role_name/update", authenticateToken, requiresRoomP
     } catch (ex) {
         res.status(500).json({
             code: "internal_error",
-            message: "An internal error occurred and we could not serve your request."
+            message: "An internal server error occurred and we couldn't serve your request."
+        });
+    }
+});
+
+router.post("/room/:id/user/:user_id/set-role/:role_name", authenticateToken, requiresRoomPermission("managePermissions"), async (req, res) => {
+    try {
+        const { id, user_id, role_name } = req.params;
+
+        if (role_name == "owner") return res.status(403).json({
+            code: "access_denied",
+            message: "The 'owner' role cannot be manually assigned. Contact support if you're trying to transfer a room."
+        });
+
+        if (user_id == req.user.id) return res.status(403).json({
+            code: "access_denied",
+            message: "You cannot set your own role."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        
+        const room = await db.collection('rooms').findOne({
+            _id: {
+                $eq: id,
+                $exists: true
+            }
+        });
+
+        if (user_id == room.creator_id) return res.status(403).json({
+            code: "access_denied",
+            message: "You cannot set the role of the Room Creator."
+        });
+
+        const current_role = room.userPermissions[user_id] ?? "everyone";
+        
+        if (current_role == "owner") return res.status(403).json({
+            code: "access_denied",
+            message: "You cannot set the role of the Room Owner."
+        });
+
+        const update = {};
+
+        if (role_name == "everyone") {
+            update.$unset = {};
+            update.$unset[`userPermissions.${user_id}`] = true;
+        } else {
+            update.$set = {};
+            update.$set[`userPermissions.${user_id}`] = role_name;
+        }
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            update
+        );
+
+        require('./ws/WebSocketServerV2').ws_connected_clients[user_id]?.socket.emit('permission-update', id);
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
         });
         throw ex;
     }
@@ -1369,6 +1523,75 @@ router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRo
         });
         throw ex;
     }
+});
+
+router.get("/room/:id/verify-subroom-link/:to", authenticateToken, canViewRoom, async (req, res) => {
+    try {
+        const { id, to } = req.params;
+
+        const room = await require('../index')
+            .mongoClient
+            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .collection('rooms')
+            .findOne({
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            });
+        
+        if (!room.subrooms[to])
+            return res.status(404).json({
+                code: "not_found",
+                message: "No subroom with that ID exists!",
+                valid: false
+            });
+        else return res.status(200).json({
+            code: "success",
+            message: "This subroom link is valid.",
+            valid: true
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred while processing your request.",
+            valid: false
+        });
+        throw ex;
+    }
+});
+
+router.get("/all-permissions", async (req, res) => {
+    return res.status(200).json({
+        "viewAndJoin": 
+            "Can players view information about this room or join?",
+        "createVersions": 
+            "Can players save this room?",
+        "setPublicVersion": 
+            "Can players set the version of the room that is loaded by default?",
+        "viewSettings": 
+            "Can players view the settings of this room at all?",
+        "viewPermissions": 
+            "Can players view the permissions & roles of all users?",
+        "managePermissions": 
+            "Can players edit the permissions & roles of all users?",
+        "useCreationTool": 
+            "Can players use their Creation Tool?",
+        "kickPlayers": 
+            "Can players kick other players?",
+        "mutePlayers": 
+            "Can players mute other players?",
+        "manageSubrooms":
+            "Can players update, delete, and create subrooms on this room?",
+        "editDescription":
+            "Can players edit the description of this room?",
+        "manageTags":
+            "Can players edit the tags of this room?",
+        "manageContentFlags": 
+            "Can players edit the room's content flags?",
+        "setRoomPhoto": 
+            "Can players set the room's photo?",
+    });
 });
 
 async function canViewRoom(req, res, next) {
@@ -1434,7 +1657,7 @@ function requiresRoomPermission(permission) {
     
         const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
     
-        if(!req.user.developer && rolePermissions[role][permission]) {
+        if(!req.user.developer && !rolePermissions[role][permission] && role != "owner") {
             return res.status(404).json({
                 "code": "room_not_found",
                 "message": "Access denied."
@@ -1448,6 +1671,9 @@ function requiresRoomPermission(permission) {
     };
 }
 
+
+// This function should have a use somewhere.
+// eslint-disable-next-line no-unused-vars
 async function hasPermission(user_id, room_id, permission) {
     const client = require('../index').mongoClient;
     var room = await client

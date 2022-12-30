@@ -5,12 +5,45 @@ const WebSocket = require('ws');
 const { MatchmakingModes } = require('../matchmaking');
 const { WebSocketV2_MessageTemplate } = require("../../index");
 const { auditLog } = require('../../helpers');
+
+/**
+ * @typedef Connection
+ * @property {WebSocket.Socket} socket
+ * @property {number} version
+ * @property {string} instanceId
+ * @property {string} roomId
+ * @property {string} subroomId
+ * @property {string} globalInstanceId
+ * @property {string} joinCode
+ */
+
+/**
+ * @type {Object.<string, Connection>}
+ */
 var ws_connected_clients = {};
+
 exports.ws_connected_clients = ws_connected_clients;
+
+/**
+ * @typedef ConnectedUserData
+ * @property {string} uid
+ * @property {string} username
+ * @property {string} nickname
+ * @property {boolean} isAuthenticated
+ * @property {string[]} tags
+ * @property {boolean} isDeveloper
+ * @property {boolean} isCreativeToolsBetaProgramMember
+ * @property {string} matchmaking_InstanceId
+ * @property {string} matchmaking_RoomId
+ * @property {string} matchmaking_GlobalInstanceId
+ */
 
 const WebSocketServerV2 = new WebSocket.Server({ noServer: true });
 exports.WebSocketServerV2 = WebSocketServerV2;
 WebSocketServerV2.on('connection', (Socket) => {
+    /**
+     * @type {ConnectedUserData}
+     */
     var ConnectedUserData = {
         uid: null,
         username: "",
@@ -663,6 +696,32 @@ WebSocketServerV2.on('connection', (Socket) => {
             authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
         };
         Socket.send(JSON.stringify(send, null, 5));
+    });
+    Socket.on('permission-update', async (roomId) => {
+        if (roomId != ConnectedUserData.matchmaking_RoomId) return;
+
+        const db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const room = await db.collection('rooms').findOne(
+            {
+                _id: {
+                    $eq: roomId,
+                    $exists: true
+                }
+            }
+        );
+
+        const role = room.userPermissions[ConnectedUserData.uid] ?? "everyone";
+        const permissions = room.rolePermissions[role];
+
+        const send = {
+            code: "permission_update",
+            data: {
+                room_id: roomId,
+                new_permissions: permissions
+            }
+        };
+
+        Socket.send(JSON.stringify(send));
     });
     Socket.on('close', async (code, reason) => {
         console.log(`Socket closed with code ${code} and reason ${reason}`);

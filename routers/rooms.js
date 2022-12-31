@@ -19,10 +19,20 @@ const AuditEventType = {
     RoomCreate: "room_created",
     /** Logged when a player creates a new subroom. */
     SubroomCreate: "subroom_created",
+    /** Logged when a player deletes a subroom. */
+    SubroomDelete: "subroom_deleted",
+    /** Logged when a player updates the max player count of a subroom. */
+    SubroomMaxPlayerUpdate: "subroom_max_players_updated",
+    /** Logged when a player sets the home subroom of this room. */
+    HomeSubroomSet: "home_subroom_updated",
     /** Logged when a user updates another user's role within this room. */
     UserRoleUpdate: "user_roles_updated",
+    /** Logged when a player creates a new role. */
+    RoleCreated: "role_created",
     /** Logged when a user updates the permissions of a role. */
     RolePermissionsUpdate: "role_permissions_updated",
+    /** Logged when a player deletes a role. */
+    RoleDeleted: "role_deleted",
     /** Logged when a user updates the tags for this room. */
     TagUpdate: "tags_updated",
     /** Logged when a user updates the description for this room. */
@@ -1190,6 +1200,13 @@ router.put('/room/:id/roles/new', authenticateToken, requiresRoomPermission("man
             }
         );
 
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.RoleCreated,
+            'previous_value': null,
+            'new_value': name,
+            'note': null
+        });
+
         return res.status(200).json({
             code: "success",
             message: "Successfully created role."
@@ -1310,6 +1327,13 @@ router.post("/room/:id/roles/:role_name/update", authenticateToken, requiresRoom
 
         const keys = Object.keys(room.userPermissions);
 
+        await roomAuditLog(id, req.user.id, {
+            'previous_value': req.room.rolePermissions[role_name],
+            'new_value': room.rolePermissions[role_name],
+            'type': AuditEventType.RolePermissionsUpdate,
+            'note': null
+        });
+
         res.status(200).json({
             code: "success",
             message: "The operation was successful."
@@ -1381,6 +1405,13 @@ router.post("/room/:id/roles/:role_name/delete", authenticateToken, requiresRoom
                 $set: $set
             }
         );
+
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.RoleDeleted,
+            'previous_value': room.rolePermissions[role_name],
+            'new_value': null,
+            'note': null
+        });
 
         for (let i = 0; i < users.length; i++) {
             const uid = users[i];
@@ -1455,6 +1486,13 @@ router.post("/room/:id/user/:user_id/set-role/:role_name", authenticateToken, re
         );
 
         require('./ws/WebSocketServerV2').ws_connected_clients[user_id]?.socket.emit('permission-update', id);
+
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.UserRoleUpdate,
+            'previous_value': current_role,
+            'new_value': role_name,
+            'note': null
+        });
 
         res.status(200).json({
             code: "success",
@@ -1582,9 +1620,13 @@ router.get("/all-permissions", async (req, res) => {
         "mutePlayers": 
             "Can players mute other players?",
         "manageSubrooms":
-            "Can players update, delete, and create subrooms on this room?",
+            "Can players update and create subrooms on this room?",
+        "deleteSubrooms":
+            "Can players delete subrooms on this room?",
         "editDescription":
             "Can players edit the description of this room?",
+        "setHomeSubroom":
+            "Can players set the home subroom of this room?",
         "manageTags":
             "Can players edit the tags of this room?",
         "manageContentFlags": 
@@ -1592,6 +1634,235 @@ router.get("/all-permissions", async (req, res) => {
         "setRoomPhoto": 
             "Can players set the room's photo?",
     });
+});
+
+router.post("/room/:id/subrooms/:name/create", authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
+    try {
+        const { id, name } = req.params;
+        const { note } = req.body;
+
+        const room = req.room;
+        
+        if (typeof note != 'undefined' && typeof note != 'string') return res.status(400).json({
+            code: "invalid_input",
+            message: "Invalid note. Note must be either a String or undefined."
+        });
+
+        if (Object.keys(room.subrooms).includes(name)) return res.status(400).json({
+            code: "invalid_input",
+            message: "A subroom with that name already exists."
+        });
+        
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        const $set = Object.create(null);
+
+        $set[`subrooms.${name}`] = {
+            publicVersionId: 0,
+            maxPlayers: 20,
+            versions: [
+                {
+                    baseSceneIndex: 15,
+                    spawn: {
+                        position: {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        },
+                        rotation: {
+                            x: 0,
+                            y: 0,
+                            z: 0,
+                            w: 0
+                        }
+                    },
+                    shortHandCommitMessage: "Initial Commit",
+                    longHandCommitMessage: "Initial Commit - Auto-Generated for your convenience by the Compensation Social API.",
+                    author: req.user.id,
+                    collaborators: [],
+                    associated_file: false
+                }
+            ]
+        };
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: $set
+            }
+        );
+
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.SubroomCreate,
+            'previous_value': null,
+            'new_value': null,
+            'note': note ? note : null
+        });
+
+        res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/subrooms/:name/delete", authenticateToken, requiresRoomPermission("deleteSubrooms"), async (req, res) => {
+    try {
+        const { id, name } = req.params;
+
+        if (!Object.keys(req.room.subrooms).includes(name)) return res.status(404).json({
+            code: "not_found",
+            message: "No role with that name exists on this room."
+        });
+
+        if (name == req.room.homeSubroomId) return res.status(400).json({
+            code: "invalid_input",
+            message: "You cannot delete the home subroom of a room."
+        });
+
+        var $unset = {};
+        $unset[`subrooms.${name}`] = true;
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $unset: $unset
+            }
+        );
+
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.SubroomDelete,
+            'previous_value': req.room.subrooms[name],
+            'new_value': null,
+            'note': null
+        });
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/subrooms/:name/set-max-players/:count", authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
+    try {
+        const { id, name, count } = req.params;
+
+        if (!Object.keys(req.room.subrooms).includes(name)) return res.status(404).json({
+            code: "not_found",
+            message: "No subroom with that name exists on this room."
+        });
+
+        if (isNaN(parseInt(count))) return res.status(400).json({
+            code: "invalid_input",
+            message: "Could not parse URL parameter `count` as integer."
+        });
+
+        var $set = {};
+
+        $set[`subrooms.${name}.maxPlayers`] = parseInt(count);
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: $set
+            }
+        );
+
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.SubroomMaxPlayerUpdate,
+            'previous_value': req.room.subrooms[name].maxPlayers,
+            'new_value': parseInt(count),
+            'note': null
+        });
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal error occurred and we couldn't process your request."
+        });
+        throw ex;
+    }
+});
+
+router.post("/room/:id/set-home-subroom/:name", authenticateToken, requiresRoomPermission("setHomeSubroom"), async (req, res) => {
+    try {
+        const { id, name } = req.params;
+
+        if (!Object.keys(req.room.subrooms).includes(name)) return res.status(404).json({
+            code: "not_found",
+            message: "No subroom with that name exists on this room."
+        });
+
+        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+
+        await db.collection('rooms').updateOne(
+            {
+                _id: {
+                    $eq: id,
+                    $exists: true
+                }
+            },
+            {
+                $set: {
+                    homeSubroomId: name
+                }
+            }
+        );
+
+        await roomAuditLog(id, req.user.id, {
+            'type': AuditEventType.HomeSubroomSet,
+            'previous_value': req.room.homeSubroomId,
+            'new_value': name,
+            'note': null
+        });
+
+        return res.status(200).json({
+            code: "success",
+            message: "The operation was successful."
+        });
+    } catch (ex) {
+        res.status(500).json({
+            code: "internal_error",
+            message: "An internal server error occurred and we couldn't serve your request."
+        });
+        throw ex;
+    }
 });
 
 async function canViewRoom(req, res, next) {

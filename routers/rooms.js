@@ -1035,7 +1035,7 @@ router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, 
     }
 });
 
-router.post('/new', authenticateTokenAndTag("Creative Tools Beta Program Member"), async (req, res) => {
+router.post('/new', authenticateToken, async (req, res) => {
     try {
         const { name } = req.body;
 

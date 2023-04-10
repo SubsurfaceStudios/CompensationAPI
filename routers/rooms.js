@@ -1864,6 +1864,16 @@ router.post("/room/:id/set-home-subroom/:name", authenticateToken, requiresRoomP
     }
 });
 
+// TODO: This is a stud implementation, so far just
+//       returning HTTP 501 Not Implemented. This is
+//       mostly just to reserve the name.
+router.put("/room/:id/subroom/:name/upload-bundle", authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
+    return res.status(501).json({
+        code: "not_implemented",
+        message: "This feature is not yet implemented."
+    });
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

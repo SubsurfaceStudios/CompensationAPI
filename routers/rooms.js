@@ -1874,6 +1874,16 @@ router.put("/room/:id/subroom/:name/upload-bundle", authenticateToken, requiresR
     });
 });
 
+// TODO: This is also a stud implementation, so far just
+//       returning HTTP 501 Not Implemented. This will
+//       likely be implemented shortly.
+router.get("/room/:id/subroom/:name/download-bundle", authenticateToken, requiresRoomPermission("viewAndJoin"), async (req, res) => {
+    return res.status(501).json({
+        code: "not_implemented",
+        message: "This feature is not yet implemented."
+    });
+});
+
 async function canViewRoom(req, res, next) {
     // Input validation
     const client = require('../index').mongoClient;

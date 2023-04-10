@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag, authenticateDeveloperToken} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');

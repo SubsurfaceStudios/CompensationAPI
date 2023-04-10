@@ -410,7 +410,6 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
 
         const str = `subrooms.${subroom_id}.publicVersionId`;
 
-        // this is a painful workaround to fix javascript's assfuckery -Rose
         var setFilter = {};
         setFilter[str] = version_id;
 

@@ -214,7 +214,11 @@ async function getAccountCount() {
     return count - 1;
 }
 
-
+/**
+ * Logs an audit event, used for security investigations and verifying user reports.
+ * @param {String} message The audit event to log.
+ * @param {Boolean} isRaw Whether or not to wrap the text in a code block for Discord webhooks.
+ */
 function auditLog(message, isRaw) {
     const file = fs.readFileSync("./data/audit.json");
     let data = JSON.parse(file);

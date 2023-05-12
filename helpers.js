@@ -31,6 +31,11 @@ module.exports = {
     check: check
 };
 
+/**
+ * Pulls the full account data of a player.
+ * @param {String} id The account ID of the player whose data should be retrieved.
+ * @returns {Object} The player's account data.
+ */
 async function PullPlayerData(id) {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     const account = await db.collection('accounts').findOne({_id: {$eq: id, $exists: true}});

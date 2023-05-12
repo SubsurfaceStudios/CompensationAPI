@@ -124,10 +124,10 @@ const client = new MongoClient(uri, {
     useUnifiedTopology: true
 });
 
-client.connect(async (error) => {
-    if(error) {
-        console.error(`Failed to connect to MongoDB - fatal\n` + error);
-        helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
+client.connect().then(async (client) => {
+    if (!client) {
+        console.error(`Failed to connect to MongoDB - fatal\n`);
+        helpers.auditLog(`Failed to connect to MongoDB - fatal\n`, false);
         process.exit(1);
     }
     
@@ -139,7 +139,7 @@ client.connect(async (error) => {
     
     const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
     
-    if(typeof firebaseAuthUser.user.uid == 'undefined') {
+    if (typeof firebaseAuthUser.user.uid == 'undefined') {
         helpers.auditLog('Failed to connect to Firebase - fatal');
         console.error('Failed to connect to Firebase - fatal');
         process.exit(1);
@@ -149,7 +149,7 @@ client.connect(async (error) => {
     server.on("upgrade", (request, socket, head) => {
         console.log(`WebSocket request made to ${request.url}, handling.`);
         
-        switch(request.url) {
+        switch (request.url) {
             case "/ws":
                 wss_v1.handleUpgrade(request, socket, head, (ws) => {
                     wss_v1.emit('connection', ws, request);
@@ -168,7 +168,7 @@ client.connect(async (error) => {
             default:
                 socket.destroy();
                 return;
-            }
+        }
     });
     console.log('WebSockets initialized.');
     
@@ -184,6 +184,8 @@ client.connect(async (error) => {
     exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
     exports.WebSocketServerV2 = WebSocketServerV2;
     exports.wss_v1 = wss_v1;
+
+    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
     
     process.on('beforeExit', () => {
         helpers.auditLog("Server exit.", false);
@@ -199,6 +201,4 @@ client.connect(async (error) => {
         
         setTimeout(() => process.exit(), 250);
     });
-
-    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
 });

@@ -207,21 +207,4 @@ client.connect(async (error) => {
         
         setTimeout(() => process.exit(), 250);
     });
-
-    if (config.enable_load_logging) {
-        load_log();
-        setInterval(load_log, 15 * 5 * 60 * 1000);        // Every 15 minutes.
-    }
-    
-    function load_log() {
-        
-        let clients = require('./routers/ws/WebSocketServerV2').ws_connected_clients;
-
-        if (Object.keys(clients).length > 0)
-            auditLog(`At least 1 player online, current player count: ${Object.keys(clients).length}`);
-        
-        let loads = loadavg();
-        if(loads[0] > 0.5 || loads[1] > 0.5 || loads[2] > 0.5)
-            auditLog(`\nAbnormally high load (>50%), load averages for the last few minutes:\n\t1 Minute: ${loads[0]}\n\t5 Minutes: ${loads[1]}\n\t15 Minutes: ${loads[1]}`);
-    }
 });

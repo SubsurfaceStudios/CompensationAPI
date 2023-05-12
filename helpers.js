@@ -295,6 +295,8 @@ function auditLog(message, isRaw) {
     const final = JSON.stringify(data, null, "   ");
     fs.writeFileSync("./data/audit.json", final);
 
+    console.log(log);
+
     if(!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return console.log("Failed to send webhook audit - either the AUDIT_SERVER_ID or the AUDIT_WEBHOOK_URI has not been set.");
     const globalAuditMessage = 
           isRaw ? 

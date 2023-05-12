@@ -37,6 +37,11 @@ async function PullPlayerData(id) {
     return account;
 }
 
+/**
+ * Completely overwrites a player's account file/document.
+ * @param {String} id The ID of the player whose data should be updated.
+ * @param {Object} data The full data of the specified player's account
+ */
 async function PushPlayerData(id, data) {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     await db.collection('accounts').replaceOne({_id: {$eq: id, $exists: true}}, data, {upsert: true});

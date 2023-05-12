@@ -42,6 +42,13 @@ async function PushPlayerData(id, data) {
     await db.collection('accounts').replaceOne({_id: {$eq: id, $exists: true}}, data, {upsert: true});
 }
 
+/**
+ * Sends a notification to a player. This does not send them a WebSocket message.
+ * @param {String} id The ID of the player to notify.
+ * @param {String} template The template to use for the notification.
+ * @param {Object} params The parameters of this notification. (Template specific.)
+ * @returns 
+ */
 async function NotifyPlayer(id, template, params) {
     if(!(Object.values(notificationTemplates).includes(template))) return false;
     var data = await PullPlayerData(id);

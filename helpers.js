@@ -257,6 +257,14 @@ function MergeArraysWithoutDuplication(a, b) {
     return a.concat(b.filter((item) => a.indexOf(item) < 0));
 }
 
+/**
+ * Called when a player is reported, used to perform administrative actions and potentially ban the player.
+ * @param {Object} reportData Information about the report event.
+ * @param {Number} reportData.timestamp The timestamp of the report.
+ * @param {String} reportData.reportingUser The ID of the user who reported the player.
+ * @param {String} reportData.reportedUser The ID of the user who was reported.
+ * @param {String} reportData.reason The reason for the report.
+ */
 async function onPlayerReportedCallback(reportData) {
     var reportedData = await PullPlayerData(reportData.reportedUser);
     var reportingData = await PullPlayerData(reportData.reportingUser);

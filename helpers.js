@@ -297,7 +297,7 @@ function auditLog(message, isRaw) {
 
     console.log(log);
 
-    if(!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return console.log("Failed to send webhook audit - either the AUDIT_SERVER_ID or the AUDIT_WEBHOOK_URI has not been set.");
+    if (!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return;
     const globalAuditMessage = 
           isRaw ? 
               `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\n${message}` : 

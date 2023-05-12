@@ -198,7 +198,7 @@ client.connect(async (error) => {
     });
                     
     process.on('uncaughtException', (exception) => {
-        helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``, false);
+        helpers.auditLog(`Uncaught exception in server.\nException:\n\`\`\`${exception}\`\`\``, false);
         console.error(exception);
     });
 

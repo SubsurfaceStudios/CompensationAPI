@@ -82,6 +82,12 @@ async function ArePlayersFriends(player1, player2) {
           data2.private.friends.includes(player1);
 }
 
+/**
+ * Checks whether one of the players has the other in their favorite friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @returns {Boolean} Whether or not the players are favorite friends.
+ */
 async function ArePlayersFavoriteFriends(player1, player2) {
     var data = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);

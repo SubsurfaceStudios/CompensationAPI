@@ -23,6 +23,9 @@ const answers = [
     "q"
 ];
 
+/**
+ * The main entry point of the program.
+ */
 function main() {
     rl.question("\n\n\n\n\n\nPlease select an option.\n\n1. (REMOVED) Legacy Updater\n2. Update MongoDB accounts.\n3. Migrate account data to MongoDB.\n4. Update all rooms.\n5. Update a specific room.\n6. Migrate item data to MongoDB.\n7. Purge audit logs.\nBan : Ban a player using their id and a duration.\n\n\nQ to quit.\n\n", async (res) => {
         if(!answers.includes(res)) {

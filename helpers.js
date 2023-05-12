@@ -198,6 +198,11 @@ async function ClearPlayerNotification(id, IndexOrData) {
     await PushPlayerData(id, data);
 }
 
+/**
+ * Retrieves the account ID associated with the given username.
+ * @param {String} username The username of the account to fetch.
+ * @returns {String|null} The ID of the account associated with that username.
+ */
 async function getUserID(username) {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     const all = await db.collection('accounts').find({}).toArray();

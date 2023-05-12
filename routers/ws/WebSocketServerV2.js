@@ -133,7 +133,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             var final_send = WebSocketV2_MessageTemplate;
             final_send.code = "authentication_success";
             final_send.data = {
-                message: tokenData.id !== "2" ? `Welcome back to Compensation VR.\nYou have ${playerData.notifications.length} unread notifications.` : `welcome back dumbfuck\nread your notifications you've got 9999.`
+                message: `Welcome back to Compensation VR.\nYou have ${playerData.notifications.length} unread notifications.`
             };
 
             ws_connected_clients[ConnectedUserData.uid] = {

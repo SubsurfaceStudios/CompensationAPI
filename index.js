@@ -4,7 +4,6 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
-const { loadavg } = require('node:os');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",
@@ -117,14 +116,7 @@ app.get("/api/dingus", async(req, res) => {
 
 const server = app.listen(config.PORT, '0.0.0.0');
 
-
-
-helpers.auditLog("Server Init", false);
-console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
-
-
 const { MongoClient } = require('mongodb');
-const { auditLog } = require('./helpers');
 
 const uri = process.env.MONGOOSE_CONNECTION_STRING;
 const client = new MongoClient(uri, {
@@ -132,10 +124,10 @@ const client = new MongoClient(uri, {
     useUnifiedTopology: true
 });
 
-client.connect(async (error) => {
-    if(error) {
-        console.error(`Failed to connect to MongoDB - fatal\n` + error);
-        helpers.auditLog(`Failed to connect to MongoDB - fatal\n` + error, false);
+client.connect().then(async (client) => {
+    if (!client) {
+        console.error(`Failed to connect to MongoDB - fatal\n`);
+        helpers.auditLog(`Failed to connect to MongoDB - fatal\n`, false);
         process.exit(1);
     }
     
@@ -147,7 +139,7 @@ client.connect(async (error) => {
     
     const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
     
-    if(typeof firebaseAuthUser.user.uid == 'undefined') {
+    if (typeof firebaseAuthUser.user.uid == 'undefined') {
         helpers.auditLog('Failed to connect to Firebase - fatal');
         console.error('Failed to connect to Firebase - fatal');
         process.exit(1);
@@ -157,12 +149,7 @@ client.connect(async (error) => {
     server.on("upgrade", (request, socket, head) => {
         console.log(`WebSocket request made to ${request.url}, handling.`);
         
-        switch(request.url) {
-            case "/ws":
-                wss_v1.handleUpgrade(request, socket, head, (ws) => {
-                    wss_v1.emit('connection', ws, request);
-                });
-                return;
+        switch (request.url) {
             case "/ws-v2":
                 WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
                     WebSocketServerV2.emit('connection', ws, request);
@@ -176,7 +163,7 @@ client.connect(async (error) => {
             default:
                 socket.destroy();
                 return;
-            }
+        }
     });
     console.log('WebSockets initialized.');
     
@@ -187,48 +174,24 @@ client.connect(async (error) => {
 
     const { WebSocketServerV2 } = require("./routers/ws/WebSocketServerV2");
     const { MessagingGatewayServerV1 } = require("./routers/ws/MessagingGatewayServerV1");
-    const { wss_v1 } = require("./routers/ws/WebSocketServerLegacy");
 
     exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
     exports.WebSocketServerV2 = WebSocketServerV2;
-    exports.wss_v1 = wss_v1;
+
+    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
     
     process.on('beforeExit', () => {
         helpers.auditLog("Server exit.", false);
     });
                     
     process.on('uncaughtException', (exception) => {
-        helpers.auditLog(`Uncaught exception in server.\nException: \`\`\`${exception}\`\`\``, false);
+        helpers.auditLog(`Uncaught exception in server.\nException:\n\`\`\`${exception}\`\`\``, false);
         console.error(exception);
     });
 
     process.on('SIGINT', () => {
-        var Instances = matchmaking.GetInstances("*");
-        
-        if(Instances.length > 1) { // Maximum length of ONE because of the default instance for intellisense testing.
-            console.log("Server kill command rejected - there are players online with instances active.\nWait for the instances to close or use SIGKILL / SIGTERM");
-            return;
-        }
-        
         helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)", false);
         
         setTimeout(() => process.exit(), 250);
     });
-
-    if (config.enable_load_logging) {
-        load_log();
-        setInterval(load_log, 15 * 5 * 60 * 1000);        // Every 15 minutes.
-    }
-    
-    function load_log() {
-        
-        let clients = require('./routers/ws/WebSocketServerV2').ws_connected_clients;
-
-        if (Object.keys(clients).length > 0)
-            auditLog(`At least 1 player online, current player count: ${Object.keys(clients).length}`);
-        
-        let loads = loadavg();
-        if(loads[0] > 0.5 || loads[1] > 0.5 || loads[2] > 0.5)
-            auditLog(`\nAbnormally high load (>50%), load averages for the last few minutes:\n\t1 Minute: ${loads[0]}\n\t5 Minutes: ${loads[1]}\n\t15 Minutes: ${loads[1]}`);
-    }
 });

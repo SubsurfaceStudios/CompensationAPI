@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {authenticateToken, authenticateToken_optional, authenticateTokenAndTag, authenticateDeveloperToken} = require('../middleware');
+const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
@@ -410,7 +410,6 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
 
         const str = `subrooms.${subroom_id}.publicVersionId`;
 
-        // this is a painful workaround to fix javascript's assfuckery -Rose
         var setFilter = {};
         setFilter[str] = version_id;
 
@@ -1863,6 +1862,26 @@ router.post("/room/:id/set-home-subroom/:name", authenticateToken, requiresRoomP
         });
         throw ex;
     }
+});
+
+// TODO: This is a stud implementation, so far just
+//       returning HTTP 501 Not Implemented. This is
+//       mostly just to reserve the name.
+router.put("/room/:id/subroom/:name/upload-bundle", authenticateToken, requiresRoomPermission("manageSubrooms"), async (req, res) => {
+    return res.status(501).json({
+        code: "not_implemented",
+        message: "This feature is not yet implemented."
+    });
+});
+
+// TODO: This is also a stud implementation, so far just
+//       returning HTTP 501 Not Implemented. This will
+//       likely be implemented shortly.
+router.get("/room/:id/subroom/:name/download-bundle", authenticateToken, requiresRoomPermission("viewAndJoin"), async (req, res) => {
+    return res.status(501).json({
+        code: "not_implemented",
+        message: "This feature is not yet implemented."
+    });
 });
 
 async function canViewRoom(req, res, next) {

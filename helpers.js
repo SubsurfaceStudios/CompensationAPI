@@ -1,6 +1,5 @@
 require('dotenv').config();
 const fs = require('fs');
-const request = require('request');
 const config = require('./config.json');
 
 const notificationTemplates = {
@@ -23,7 +22,6 @@ module.exports = {
     AddFriend: AddFriend,
     AddFavoriteFriend: AddFavoriteFriend,
     AddAcquaintance: AddAcquaintance,
-    ClearPlayerNotification: ClearPlayerNotification,
     getUserID: getUserID,
     getAccountCount: getAccountCount,
     auditLog: auditLog,
@@ -33,17 +31,34 @@ module.exports = {
     check: check
 };
 
+/**
+ * Pulls the full account data of a player.
+ * @param {String} id The account ID of the player whose data should be retrieved.
+ * @returns {Object} The player's account data.
+ */
 async function PullPlayerData(id) {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     const account = await db.collection('accounts').findOne({_id: {$eq: id, $exists: true}});
     return account;
 }
 
+/**
+ * Completely overwrites a player's account file/document.
+ * @param {String} id The ID of the player whose data should be updated.
+ * @param {Object} data The full data of the specified player's account
+ */
 async function PushPlayerData(id, data) {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     await db.collection('accounts').replaceOne({_id: {$eq: id, $exists: true}}, data, {upsert: true});
 }
 
+/**
+ * Sends a notification to a player. This does not send them a WebSocket message.
+ * @param {String} id The ID of the player to notify.
+ * @param {String} template The template to use for the notification.
+ * @param {Object} params The parameters of this notification. (Template specific.)
+ * @returns 
+ */
 async function NotifyPlayer(id, template, params) {
     if(!(Object.values(notificationTemplates).includes(template))) return false;
     var data = await PullPlayerData(id);
@@ -59,6 +74,12 @@ async function NotifyPlayer(id, template, params) {
     return true;
 }
 
+/**
+ * Checks whether the specified players have the other in their acquaintance, friend, or favorite friend lists.
+ * @param {String} player1 The ID of the first player.
+ * @param {String} player2 The ID of the second player.
+ * @returns {Boolean} Whether or not the players are any type of friend.
+ */
 async function ArePlayersAnyFriendType(player1, player2) {
     var data = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -70,6 +91,12 @@ async function ArePlayersAnyFriendType(player1, player2) {
           data2.private.favoriteFriends.includes(player1);
 }
 
+/**
+ * Checks whether one of the players has the other in their acquaintances list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @returns {Boolean} Whether or not the players are acquaintances.
+ */
 async function ArePlayersAcquantances(player1, player2) {
     var data = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -77,6 +104,12 @@ async function ArePlayersAcquantances(player1, player2) {
           data2.private.acquaintances.includes(player1);
 }
 
+/**
+ * Checks whether one of the players has the other in their friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @returns {Boolean} Whether or not the players are friends.
+ */
 async function ArePlayersFriends(player1, player2) {
     var data = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -84,6 +117,12 @@ async function ArePlayersFriends(player1, player2) {
           data2.private.friends.includes(player1);
 }
 
+/**
+ * Checks whether one of the players has the other in their favorite friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @returns {Boolean} Whether or not the players are favorite friends.
+ */
 async function ArePlayersFavoriteFriends(player1, player2) {
     var data = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -91,6 +130,12 @@ async function ArePlayersFavoriteFriends(player1, player2) {
           data2.private.favoriteFriends.includes(player1);
 }
 
+/**
+ * Removes a player from another player's acquaintance list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not to remove the acquaintance from both players.
+ */
 async function RemoveAcquaintance(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -105,6 +150,12 @@ async function RemoveAcquaintance(player1, player2, both) {
     await PushPlayerData(player2, data2);
 }
 
+/**
+ * Removes a player from another player's friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not to remove the friend from both players.
+ */
 async function RemoveFriend(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -119,6 +170,12 @@ async function RemoveFriend(player1, player2, both) {
     await PushPlayerData(player2, data2);
 }
 
+/**
+ * Removes a player from another player's favorite friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not to remove the favorite friend from both players.
+ */
 async function RemoveFavoriteFriend(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -133,6 +190,12 @@ async function RemoveFavoriteFriend(player1, player2, both) {
     await PushPlayerData(player2, data2);
 }
 
+/**
+ * Adds a player to another player's acquaintances list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not the addition is mutual.
+ */
 async function AddAcquaintance(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -148,6 +211,12 @@ async function AddAcquaintance(player1, player2, both) {
     }
 }
 
+/**
+ * Adds a player to another player's friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not the addition is mutual.
+ */
 async function AddFriend(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -163,6 +232,12 @@ async function AddFriend(player1, player2, both) {
     }
 }
 
+/**
+ * Adds a player to another player's favorite friends list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not the addition is mutual.
+ */
 async function AddFavoriteFriend(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);
@@ -178,27 +253,11 @@ async function AddFavoriteFriend(player1, player2, both) {
     }
 }
 
-async function ClearPlayerNotification(id, IndexOrData) {
-    var data = await PullPlayerData(id);
-
-
-    var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
-
-    if(mode === "id") {
-        data.notifications = data.notifications.splice(IndexOrData);
-    } else {
-        if(data.notifications.includes(IndexOrData)) {
-            while (data.notifications.includes(IndexOrData)) {
-                var index = data.notifications.findIndex(item => item === IndexOrData);
-                if(index > 0) data.notifications = data.notifications.splice(index);
-                else break;
-            }
-        }
-    }
-
-    await PushPlayerData(id, data);
-}
-
+/**
+ * Retrieves the account ID associated with the given username.
+ * @param {String} username The username of the account to fetch.
+ * @returns {String|null} The ID of the account associated with that username.
+ */
 async function getUserID(username) {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     const all = await db.collection('accounts').find({}).toArray();
@@ -209,13 +268,21 @@ async function getUserID(username) {
     return null;
 }
 
+/**
+ * Fetches the number of accounts in the database.
+ * @returns {Number} The total number of accounts in the database.
+ */
 async function getAccountCount() {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     const count = await db.collection('accounts').countDocuments();
     return count - 1;
 }
 
-
+/**
+ * Logs an audit event, used for security investigations and verifying user reports.
+ * @param {String} message The audit event to log.
+ * @param {Boolean} isRaw Whether or not to wrap the text in a code block for Discord webhooks.
+ */
 function auditLog(message, isRaw) {
     const file = fs.readFileSync("./data/audit.json");
     let data = JSON.parse(file);
@@ -228,18 +295,46 @@ function auditLog(message, isRaw) {
     const final = JSON.stringify(data, null, "   ");
     fs.writeFileSync("./data/audit.json", final);
 
-    if(!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return console.log("Failed to send webhook audit - either the AUDIT_SERVER_ID or the AUDIT_WEBHOOK_URI has not been set.");
+    console.log(log);
+
+    if (!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return;
     const globalAuditMessage = 
           isRaw ? 
               `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\n${message}` : 
-              `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
-    request.post(process.env.AUDIT_WEBHOOK_URI, {json: {"content": globalAuditMessage}});
+            `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
+    
+    fetch(
+        process.env.AUDIT_WEBHOOK_URI,
+        {
+            'method': 'POST',
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': JSON.stringify({
+                'content': globalAuditMessage
+            })
+        }
+    );
 }
 
-function MergeArraysWithoutDuplication(array1, array2) {
-    return array1.concat(array2.filter((item) => array1.indexOf(item) < 0));
+/**
+ * Merges two arrays without duplication.
+ * @param {any[]} a 
+ * @param {any[]} b 
+ * @returns {any[]} The union of both arrays with no duplicates.
+ */
+function MergeArraysWithoutDuplication(a, b) {
+    return a.concat(b.filter((item) => a.indexOf(item) < 0));
 }
 
+/**
+ * Called when a player is reported, used to perform administrative actions and potentially ban the player.
+ * @param {Object} reportData Information about the report event.
+ * @param {Number} reportData.timestamp The timestamp of the report.
+ * @param {String} reportData.reportingUser The ID of the user who reported the player.
+ * @param {String} reportData.reportedUser The ID of the user who was reported.
+ * @param {String} reportData.reason The reason for the report.
+ */
 async function onPlayerReportedCallback(reportData) {
     var reportedData = await PullPlayerData(reportData.reportedUser);
     var reportingData = await PullPlayerData(reportData.reportingUser);
@@ -265,6 +360,14 @@ async function onPlayerReportedCallback(reportData) {
     }
 }
 
+/**
+ * Bans a player from the game for the specified duration.
+ * @param {String} id The ID of the player to ban.
+ * @param {String} reason The reason for the ban.
+ * @param {Number} duration The duration of the ban in hours.
+ * @param {Boolean} moderator Did a moderator ban the player?
+ * @returns 
+ */
 async function BanPlayer(id, reason, duration, moderator) {
     let data = await PullPlayerData(id);
 
@@ -284,6 +387,12 @@ async function BanPlayer(id, reason, duration, moderator) {
     clients[id].socket.close();
 }
 
+/**
+ * Checks a string for potential profanity. This is not a foolproof method, and should not be used as a replacement for human moderation.
+ * Susceptible to the [Scunthorpe Problem](https://en.wikipedia.org/wiki/Scunthorpe_problem).
+ * @param {String} string The string to check for potential profanity.
+ * @returns {Boolean} Whether or not the string contains the potential for profanity.
+ */
 function check(string) {
     const words = require('./data/badwords/array');
     const tlc = string.toLowerCase();

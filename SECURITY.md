@@ -6,7 +6,7 @@ Please only report security vulnerabilities found in the most recent version of 
 Other than that, almost everything security or authentication related is free game.
 
 When testing anything with even a chance to be destructive, PLEASE clone or fork the repo and test it locally! If you need help with this, 
-reach out to Rose932#1454 on Discord and I'll be more than happy to provide dummy or falsified data!
+reach out to bubby932#2316 on Discord and I'll be more than happy to provide dummy or falsified data!
 If you do cause damages while destructively testing, you may be subject to punishment or account suspension, and you might not recieve any bounty rewards.
 
 ## Reporting a Vulnerability

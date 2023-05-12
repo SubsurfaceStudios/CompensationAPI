@@ -345,7 +345,7 @@ router.post("/create", accountCreationLimit, async (req, res) => {
     const collection = db.collection("servers");
 
     var server = await collection.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
-    if(server === null) return helpers.auditLog("The official server was not found. This is a critical error. How did you manage to fuck this up so badly?", false);
+    if(server === null) return helpers.auditLog("The official server was not found. This is a critical error.", false);
 
     server.users[id] = {};
 

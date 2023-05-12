@@ -62,7 +62,6 @@ router.route("/channels/:channel_id/messages")
                 const message = await collection.findOne({_id: {$exists: true, $eq: channel.messages[index]}});
                 if(message !== null) send.push(message);
                 else {
-                    helpers.auditLog(`ah fuck yea the fuckin servers r broken again <@533872282393903105> go fuckin fix it dumbass`, true);
                     continue;
                 }
             }

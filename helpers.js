@@ -317,7 +317,12 @@ async function BanPlayer(id, reason, duration, moderator) {
     clients[id].socket.close();
 }
 
-
+/**
+ * Checks a string for potential profanity. This is not a foolproof method, and should not be used as a replacement for human moderation.
+ * Susceptible to the [Scunthorpe Problem](https://en.wikipedia.org/wiki/Scunthorpe_problem).
+ * @param {String} string The string to check for potential profanity.
+ * @returns {Boolean} Whether or not the string contains the potential for profanity.
+ */
 function check(string) {
     const words = require('./data/badwords/array');
     const tlc = string.toLowerCase();

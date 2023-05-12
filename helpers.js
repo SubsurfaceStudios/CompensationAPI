@@ -57,6 +57,12 @@ async function NotifyPlayer(id, template, params) {
     return true;
 }
 
+/**
+ * Checks whether the specified players have the other in their acquaintance, friend, or favorite friend lists.
+ * @param {String} player1 The ID of the first player.
+ * @param {String} player2 The ID of the second player.
+ * @returns {Boolean} Whether or not the players are any type of friend.
+ */
 async function ArePlayersAnyFriendType(player1, player2) {
     var data = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);

@@ -69,6 +69,10 @@ function main() {
     });
 }
 
+/**
+ * Moves all accounts from the disk to the database. This is a legacy operation.
+ * @returns {Promise<void>} An awaitable promise of the operation.
+ */
 function MigrateAllAccounts() {
     if(!fs.existsSync("./data/accounts")) {
         console.log("No local account data to migrate - you are all clean!");

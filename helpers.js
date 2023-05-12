@@ -22,7 +22,6 @@ module.exports = {
     AddFriend: AddFriend,
     AddFavoriteFriend: AddFavoriteFriend,
     AddAcquaintance: AddAcquaintance,
-    ClearPlayerNotification: ClearPlayerNotification,
     getUserID: getUserID,
     getAccountCount: getAccountCount,
     auditLog: auditLog,
@@ -175,27 +174,6 @@ async function AddFavoriteFriend(player1, player2, both) {
         data2.private.favoriteFriends.push(player1);
         await PushPlayerData(player2, data2);
     }
-}
-
-async function ClearPlayerNotification(id, IndexOrData) {
-    var data = await PullPlayerData(id);
-
-
-    var mode = ( typeof(IndexOrData) == 'number' ) ? "id" : "data";
-
-    if(mode === "id") {
-        data.notifications = data.notifications.splice(IndexOrData);
-    } else {
-        if(data.notifications.includes(IndexOrData)) {
-            while (data.notifications.includes(IndexOrData)) {
-                var index = data.notifications.findIndex(item => item === IndexOrData);
-                if(index > 0) data.notifications = data.notifications.splice(index);
-                else break;
-            }
-        }
-    }
-
-    await PushPlayerData(id, data);
 }
 
 /**

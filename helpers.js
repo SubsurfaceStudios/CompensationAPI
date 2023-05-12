@@ -247,8 +247,14 @@ function auditLog(message, isRaw) {
     );
 }
 
-function MergeArraysWithoutDuplication(array1, array2) {
-    return array1.concat(array2.filter((item) => array1.indexOf(item) < 0));
+/**
+ * Merges two arrays without duplication.
+ * @param {any[]} a 
+ * @param {any[]} b 
+ * @returns {any[]} The union of both arrays with no duplicates.
+ */
+function MergeArraysWithoutDuplication(a, b) {
+    return a.concat(b.filter((item) => a.indexOf(item) < 0));
 }
 
 async function onPlayerReportedCallback(reportData) {

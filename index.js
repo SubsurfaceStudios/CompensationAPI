@@ -203,13 +203,6 @@ client.connect(async (error) => {
     });
 
     process.on('SIGINT', () => {
-        var Instances = matchmaking.GetInstances("*");
-        
-        if(Instances.length > 1) { // Maximum length of ONE because of the default instance for intellisense testing.
-            console.log("Server kill command rejected - there are players online with instances active.\nWait for the instances to close or use SIGKILL / SIGTERM");
-            return;
-        }
-        
         helpers.auditLog("Server killed from command line. Exiting in 0.25 seconds. (250ms)", false);
         
         setTimeout(() => process.exit(), 250);

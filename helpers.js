@@ -89,6 +89,12 @@ async function ArePlayersFavoriteFriends(player1, player2) {
           data2.private.favoriteFriends.includes(player1);
 }
 
+/**
+ * Removes a player from another player's acquaintance list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not to remove the acquaintance from both players.
+ */
 async function RemoveAcquaintance(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);

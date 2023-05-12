@@ -4,7 +4,6 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const firebaseAuth = require('firebase/auth');
-const { loadavg } = require('node:os');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",
@@ -117,14 +116,7 @@ app.get("/api/dingus", async(req, res) => {
 
 const server = app.listen(config.PORT, '0.0.0.0');
 
-
-
-helpers.auditLog("Server Init", false);
-console.log(`API is ready at http://localhost:${config.PORT}/ \n:D`);
-
-
 const { MongoClient } = require('mongodb');
-const { auditLog } = require('./helpers');
 
 const uri = process.env.MONGOOSE_CONNECTION_STRING;
 const client = new MongoClient(uri, {

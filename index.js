@@ -150,11 +150,6 @@ client.connect().then(async (client) => {
         console.log(`WebSocket request made to ${request.url}, handling.`);
         
         switch (request.url) {
-            case "/ws":
-                wss_v1.handleUpgrade(request, socket, head, (ws) => {
-                    wss_v1.emit('connection', ws, request);
-                });
-                return;
             case "/ws-v2":
                 WebSocketServerV2.handleUpgrade(request, socket, head, (ws) => {
                     WebSocketServerV2.emit('connection', ws, request);
@@ -179,11 +174,9 @@ client.connect().then(async (client) => {
 
     const { WebSocketServerV2 } = require("./routers/ws/WebSocketServerV2");
     const { MessagingGatewayServerV1 } = require("./routers/ws/MessagingGatewayServerV1");
-    const { wss_v1 } = require("./routers/ws/WebSocketServerLegacy");
 
     exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
     exports.WebSocketServerV2 = WebSocketServerV2;
-    exports.wss_v1 = wss_v1;
 
     helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
     

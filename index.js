@@ -199,4 +199,6 @@ client.connect(async (error) => {
         
         setTimeout(() => process.exit(), 250);
     });
+
+    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
 });

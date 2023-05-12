@@ -290,6 +290,14 @@ async function onPlayerReportedCallback(reportData) {
     }
 }
 
+/**
+ * Bans a player from the game for the specified duration.
+ * @param {String} id The ID of the player to ban.
+ * @param {String} reason The reason for the ban.
+ * @param {Number} duration The duration of the ban in hours.
+ * @param {Boolean} moderator Did a moderator ban the player?
+ * @returns 
+ */
 async function BanPlayer(id, reason, duration, moderator) {
     let data = await PullPlayerData(id);
 
@@ -308,6 +316,7 @@ async function BanPlayer(id, reason, duration, moderator) {
     if(!Object.keys(clients).includes(id)) return;
     clients[id].socket.close();
 }
+
 
 function check(string) {
     const words = require('./data/badwords/array');

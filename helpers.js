@@ -131,6 +131,12 @@ async function RemoveFavoriteFriend(player1, player2, both) {
     await PushPlayerData(player2, data2);
 }
 
+/**
+ * Adds a player to another player's acquaintances list.
+ * @param {String} player1 The ID of player A.
+ * @param {String} player2 The ID of player B.
+ * @param {Boolean} both Whether or not the addition is mutual.
+ */
 async function AddAcquaintance(player1, player2, both) {
     var data1 = await PullPlayerData(player1);
     var data2 = await PullPlayerData(player2);

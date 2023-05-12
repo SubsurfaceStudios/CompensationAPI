@@ -1,6 +1,5 @@
 require('dotenv').config();
 const fs = require('fs');
-const request = require('request');
 const config = require('./config.json');
 
 const notificationTemplates = {
@@ -232,8 +231,20 @@ function auditLog(message, isRaw) {
     const globalAuditMessage = 
           isRaw ? 
               `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\n${message}` : 
-              `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
-    request.post(process.env.AUDIT_WEBHOOK_URI, {json: {"content": globalAuditMessage}});
+            `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
+    
+    fetch(
+        process.env.AUDIT_WEBHOOK_URI,
+        {
+            'method': 'POST',
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': JSON.stringify({
+                'content': globalAuditMessage
+            })
+        }
+    );
 }
 
 function MergeArraysWithoutDuplication(array1, array2) {

@@ -208,6 +208,10 @@ async function getUserID(username) {
     return null;
 }
 
+/**
+ * Fetches the number of accounts in the database.
+ * @returns {Number} The total number of accounts in the database.
+ */
 async function getAccountCount() {
     const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
     const count = await db.collection('accounts').countDocuments();

@@ -225,7 +225,7 @@ router.get("/:id/info", async (req, res) => {
 
 router.get("/:id", fetch_rate_limit, async (req, res) => {
     try {
-        if(config.disable_image_fetch && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
+        if(config.disable_image_fetch && !req.user?.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
         // Setup of parameters
         var {id} = req.params;
         var {base64} = req.query;

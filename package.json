@@ -21,7 +21,7 @@
     "express-rate-limit": "^6.7.0",
     "express-slow-down": "^1.6.0",
     "firebase": "^9.21.0",
-    "firebase-admin": "^11.8.0",
+    "firebase-admin": "^11.9.0",
     "fuse.js": "^6.5.3",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.5.0",

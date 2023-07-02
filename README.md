@@ -1,16 +1,16 @@
-# VigorXRAPI
+# Compensation Social API
+This was the repository containing all API code for the Compensation Social official servers.
+It has since been archived due to the official servers being shut down. If you wish to host
+your own server, we recommend creating a fork of this repository and continuing from there.
+  
+Best of luck, and we hope you enjoy Compensation Social!
 
-This is the GitHub repository containing all source code of the Compensation VR API, developed by the Subsurface Studios API team.
+# Website
 
-You MAY:
+[compensationvr.tk](https://compensationvr.tk)
 
-- Clone this repository to run a private instance for vulnerability testing.
-- Clone this repository to run a private instance for in-game destructive testing.
-- Fork this repository to work on a feature you intend to contribute.
-
-## [Official API Documentation](https://documenter.getpostman.com/view/19193793/UVXkoaij)  
-This is the official & supported documentation of the API, kept up to date with the latest version of Compensation VR and it's features.  
-Maintained by [bubby932 on GitHub](https://github.com/bubby932) / [Rose932 on Discord](https://discord.com/users/345581925311971328)
-
-## Code Scanning Status
-[![CodeQL](https://github.com/bubby932/VigorXRAPI/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/bubby932/VigorXRAPI/actions/workflows/codeql-analysis.yml)
+# Creators
+We are [Subsurface Studios](https://subsurface.az-raven.com)! We are a group of independent
+developers working to make better games for all. We work to test our games more rigorously,
+invest more time and energy, and generally create more polished experiences than those around
+us. For more information, check out https://subsurface.az-raven.com.

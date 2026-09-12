@@ -29,6 +29,11 @@
 			"storageBucket": "YOUR-PROJECT-ID.appspot.com",
 			"messagingSenderId": "YOUR-SENDER-ID",
 			"appId": "YOUR-APP-ID"
+		},
+
+		// Replace this with your Firebase admin config object.
+		"firebase_admin_config": {
+			// Insert your firebase admin config object instead of this blank one.
 		}
 	},
 

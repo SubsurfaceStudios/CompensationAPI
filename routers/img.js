@@ -5,11 +5,11 @@ const express = require('express');
 // const firebaseStorage = require('firebase/storage');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { Storage } = require('firebase-admin/storage');
-const serviceAccount = require('../admin.json');
 
 const NodeCache = require('node-cache');
 
 const config = helpers.config;
+const serviceAccount = config.images.firebase_admin_config;
 const { default: rateLimit } = require('express-rate-limit');
 
 router.use(express.text({limit: config.images.max_size ?? "10mb"}));

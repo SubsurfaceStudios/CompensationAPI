@@ -75,8 +75,8 @@ const imgCache = new NodeCache({
 router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {
     if((config.images.disable_upload ?? false) && !req.user.developer) return res.status(409).send({"message": "Access denied - image uploads have been disabled by the system administrator.", "code": "uploads_disabled"});
     try {
-        var {others, room_id, tags} = req.query;
-        if(req.headers['content-type'] !== 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
+        var { others, room_id, tags } = req.query;
+        if(!req.body) return res.status(400).send("You did not send encoded photo data.");
         if(typeof room_id != 'string') return res.status(400).send("Room ID not specified.");
         if(typeof others != 'string') others = '[]';
         if(typeof tags != 'string' || !(JSON.parse(tags) instanceof Array)) tags = '[ "photo" ]';

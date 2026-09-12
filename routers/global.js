@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const middleware = require('../middleware');
+const { config } = require('../helpers');
 
 
 router.route("/:key")
@@ -8,7 +9,7 @@ router.route("/:key")
         try {
             const { key } = req.params;
      
-            const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
+            const collection = mongoClient.db(config.database.mongodb_database_name).collection("global");
 
             const doc = await collection.findOne({_id: {$eq: key, $exists: true}});
 
@@ -25,7 +26,7 @@ router.route("/:key")
             const { key } = req.params;
             const { value } = req.body;
 
-            const collection = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("global");
+            const collection = mongoClient.db(config.database.mongodb_database_name).collection("global");
 
             await collection.updateOne(
                 {

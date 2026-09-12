@@ -80,7 +80,7 @@ app.get("/", async (req, res) => {
 app.get("/api/versioncheck/:platform/:version_id", async (req, res) => {
     let {platform, version_id} = req.params;
     
-    let conf = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection('global').findOne({_id: {$eq: "VersionCheckConfig", $exists: true}});
+    let conf = await client.db(config.database.mongodb_database_name).collection('global').findOne({_id: {$eq: "VersionCheckConfig", $exists: true}});
     if(conf == null) {
         res.status(500).json({
             "code": "internal_error",
@@ -118,7 +118,7 @@ const server = app.listen(config.port ?? 8080, '0.0.0.0');
 
 const { MongoClient } = require('mongodb');
 
-const uri = process.env.MONGOOSE_CONNECTION_STRING;
+const uri = config.database.mongodb_connection_string;
 const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -137,7 +137,7 @@ client.connect().then(async (client) => {
     
     const auth = firebaseAuth.getAuth();
     
-    const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
+    const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, config.images.firebase_email, config.images.firebase_password);
     
     if (typeof firebaseAuthUser.user.uid == 'undefined') {
         helpers.auditLog('Failed to connect to Firebase - fatal');

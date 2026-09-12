@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
+const config = helpers.config;
 const middleware = require('../middleware');
 
 router.route("/item/:id/info")
@@ -26,7 +27,7 @@ router.route("/item/:id/info")
     .put(middleware.authenticateDeveloperToken, async (req, res) => {
         var id = await require('../index')
             .mongoClient
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('items')
             .countDocuments({});
         await PushItem(id.toString(), req.body);
@@ -157,7 +158,7 @@ router.post("/currency/transfer", middleware.authenticateToken, async (req, res)
 router.get("/item/all", async (req, res) => {
     const client = require('../index.js').mongoClient;
     const list = 
-		await client.db(process.env.MONGOOSE_DATABASE_NAME)
+		await client.db(config.database.mongodb_database_name)
             .collection("items")
             .find({})
             .toArray();
@@ -203,7 +204,7 @@ router.post("/item/equip", middleware.authenticateToken, async (req, res) => {
 
 router.get("/items/featured", async (req, res) => {
     try {
-        let db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        let db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         let data = await db.collection('global').findOne({ _id: { $eq: "featured_items", $exists: true } });
 
         if (data == null || !Array.isArray(data?.data))
@@ -225,13 +226,13 @@ router.get("/items/featured", async (req, res) => {
 //#region functions 
 
 async function PullItem(id) {
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     const item = db.collection('items').findOne({_id: {$eq: id, $exists: true}});
     return item;
 }
 
 async function PushItem(id, data) {
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     const collection = db.collection('items');
 
     // replace the old item with the inputted data.

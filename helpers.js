@@ -49,7 +49,7 @@ module.exports = {
  * @returns {Object} The player's account data.
  */
 async function PullPlayerData(id) {
-    const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('./index').mongoClient.db(config.database.mongodb_database_name);
     const account = await db.collection('accounts').findOne({_id: {$eq: id, $exists: true}});
     return account;
 }
@@ -60,7 +60,7 @@ async function PullPlayerData(id) {
  * @param {Object} data The full data of the specified player's account
  */
 async function PushPlayerData(id, data) {
-    const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('./index').mongoClient.db(config.database.mongodb_database_name);
     await db.collection('accounts').replaceOne({_id: {$eq: id, $exists: true}}, data, {upsert: true});
 }
 
@@ -271,7 +271,7 @@ async function AddFavoriteFriend(player1, player2, both) {
  * @returns {String|null} The ID of the account associated with that username.
  */
 async function getUserID(username) {
-    const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('./index').mongoClient.db(config.database.mongodb_database_name);
     const all = await db.collection('accounts').find({}).toArray();
     username = username.toLowerCase();
     for(const item of all) {
@@ -285,7 +285,7 @@ async function getUserID(username) {
  * @returns {Number} The total number of accounts in the database.
  */
 async function getAccountCount() {
-    const db = require('./index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('./index').mongoClient.db(config.database.mongodb_database_name);
     const count = await db.collection('accounts').countDocuments();
     return count - 1;
 }
@@ -309,14 +309,14 @@ function auditLog(message, isRaw) {
 
     console.log(log);
 
-    if (!process.env.AUDIT_SERVER_ID || !process.env.AUDIT_WEBHOOK_URI) return;
+    if (!config.debug.discord_webhook_url || !config.debug.discord_webhook_id) return;
     const globalAuditMessage = 
           isRaw ? 
-              `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\n${message}` : 
-            `API audit log from server.\nID: \`${process.env.AUDIT_SERVER_ID}\`\nMessage:\`${message}\``;
+              `API audit log from server.\nID: \`${config.debug.discord_webhook_id}\`\nMessage:\n${message}` : 
+            `API audit log from server.\nID: \`${config.debug.discord_webhook_id}\`\nMessage:\`${message}\``;
     
     fetch(
-        process.env.AUDIT_WEBHOOK_URI,
+        config.debug.discord_webhook_url,
         {
             'method': 'POST',
             'headers': {

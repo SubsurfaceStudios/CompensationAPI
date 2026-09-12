@@ -84,7 +84,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         var timestamp = Date.now();
         var TakenByData = await helpers.PullPlayerData(req.user.id);
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         var collection = db.collection("configuration");
 
         var doc = await collection.findOne({_id: 'ImageCount'});
@@ -168,7 +168,7 @@ router.get('/:id/embed', (req, res) => {
      </head>
      </html>`;
 
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     var collection = db.collection("images");
 
     collection.findOne({_id: id}).then(doc => {
@@ -211,7 +211,7 @@ router.get("/:id/info", async (req, res) => {
         return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
     }
 
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     var collection = db.collection("images");
 
     try {
@@ -242,7 +242,7 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         }
 
         // Open database
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         // Validate collection
         var collection = db.collection("configuration");

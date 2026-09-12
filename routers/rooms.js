@@ -4,7 +4,7 @@ const Fuse = require('fuse.js');
 const express = require('express');
 const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
-const { auditLog, PullPlayerData } = require('../helpers');
+const { auditLog, PullPlayerData, config } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
 const { WebSocketV2_MessageTemplate } = require('../index');
 
@@ -83,7 +83,7 @@ router.route("/room/:room_id/info")
             const {room_id} = req.params;
 
             const {mongoClient} = require('../index');
-            const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = mongoClient.db(config.database.mongodb_database_name);
 
             const room_collection = db.collection("rooms");
 
@@ -124,7 +124,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
             var {room_id, subroom_id, version_id} = req.params;
 
             const {mongoClient: client} = require('../index');
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
 
             const room_collection = db.collection("rooms");
 
@@ -164,7 +164,7 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
     const {mode, query} = req.query;
     const {mongoClient: client} = require('../index');
 
-    const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = client.db(config.database.mongodb_database_name);
     const rooms_collection = db.collection("rooms");
 
     var all = await rooms_collection.find({}, {sort: {visits: 1}}).toArray();
@@ -283,7 +283,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, req
             "message": "The `collaborators` parameter of your version metadata is not specified or is invalid."
         });
 
-        const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
+        const collection = require('../index').mongoClient.db(config.database.mongodb_database_name).collection('rooms');
         const room = await collection.findOne({_id: {$eq: id, $exists: true}});
 
         if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).json({
@@ -326,7 +326,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
 
         const collection = require('../index')
             .mongoClient
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('rooms');
 
         const room = await collection.findOne({_id: {$eq: id, $exists: true}});
@@ -394,7 +394,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
         });
 
         const client = require('../index').mongoClient;
-        const room = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms').findOne({_id: {$eq: id, $exists: true}});
+        const room = await client.db(config.database.mongodb_database_name).collection('rooms').findOne({_id: {$eq: id, $exists: true}});
         if(room == null) return res.status(404).json({
             "code": "room_not_found",
             "message": "That room does not exist."
@@ -414,7 +414,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/public', authenticateToken,
         setFilter[str] = version_id;
 
 
-        await client.db(process.env.MONGOOSE_DATABASE_NAME)
+        await client.db(config.database.mongodb_database_name)
             .collection('rooms')
             .updateOne(
                 {_id: {$eq: id, $exists: true}},
@@ -457,7 +457,7 @@ router.post('/room/:id/tags', authenticateToken, requiresRoomPermission("manageT
             });
         }
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         await db.collection('rooms')
             .updateOne(
@@ -504,7 +504,7 @@ router.post('/room/:id/content_flags', authenticateToken, requiresRoomPermission
             });
         }
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         await roomAuditLog(
             id,
@@ -559,7 +559,7 @@ router.post('/room/:id/moderation-suspend', authenticateDeveloperToken, async (r
             message: "Note must be either unspecified or a string."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         const collection = db.collection('rooms');
 
         const room = await collection.findOne({
@@ -661,7 +661,7 @@ router.post("/room/:id/moderation-terminate", authenticateDeveloperToken, async 
             message: "Note must be either unspecified or a string."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         const collection = db.collection('rooms');
 
         const room = await collection.findOne({
@@ -788,7 +788,7 @@ router.post('/room/:id/description', authenticateToken, requiresRoomPermission("
             message: "Cannot set description of room to anything other than a string."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         await db.collection('rooms')
             .updateOne(
@@ -835,7 +835,7 @@ router.get('/room/:id/subrooms/list', authenticateToken, requiresRoomPermission(
     try {
         const { id } = req.params;
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         const subrooms = (await db.collection('rooms')
             .find(
@@ -936,7 +936,7 @@ router.post('/room/:id/report', ReportRateLimit, authenticateToken, async (req, 
             message: "One or more parameters of your request are invalid."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         const collection = db.collection('rooms');
 
         await collection.updateOne(
@@ -1038,7 +1038,7 @@ router.post('/new', authenticateToken, async (req, res) => {
     try {
         const { name } = req.body;
 
-        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+        const coll = require('../index').mongoClient.db(config.database.mongodb_database_name).collection("rooms");
 
         
         if(typeof name != 'string') return res.status(400).json({
@@ -1165,7 +1165,7 @@ router.put('/room/:id/roles/new', authenticateToken, requiresRoomPermission("man
             message: "Body field 'name' must be a string."
         });
 
-        const collection = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection('rooms');
+        const collection = require('../index').mongoClient.db(config.database.mongodb_database_name).collection('rooms');
 
         if (["owner", "everyone"].includes(name)) return res.status(400).json({
             code: "invalid_input",
@@ -1223,7 +1223,7 @@ router.get('/room/:id/permissions', authenticateToken, requiresRoomPermission("v
     try {
         const { id } = req.params;
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         const room = await db.collection('rooms').findOne({
             _id: {
@@ -1273,7 +1273,7 @@ router.post("/room/:id/roles/:role_name/update", authenticateToken, requiresRoom
             message: "You cannot edit the permissions of the 'owner' role."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         const collection = db.collection('rooms');
 
         const room = await collection.findOne(
@@ -1362,7 +1362,7 @@ router.post("/room/:id/roles/:role_name/delete", authenticateToken, requiresRoom
             message: "You cannot delete a reserved role. (i.e 'owner' or 'everyone')"
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         const collection = db.collection('rooms');
 
         var $unset = {};
@@ -1443,7 +1443,7 @@ router.post("/room/:id/user/:user_id/set-role/:role_name", authenticateToken, re
             message: "You cannot set your own role."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         
         const room = await db.collection('rooms').findOne({
             _id: {
@@ -1513,7 +1513,7 @@ router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRo
             image_id
         } = req.params;
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         const image_collection = db.collection('images');
 
         const image = await image_collection.findOne(
@@ -1568,7 +1568,7 @@ router.get("/room/:id/verify-subroom-link/:to", authenticateToken, canViewRoom, 
 
         const room = await require('../index')
             .mongoClient
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('rooms')
             .findOne({
                 _id: {
@@ -1652,7 +1652,7 @@ router.post("/room/:id/subrooms/:name/create", authenticateToken, requiresRoomPe
             message: "A subroom with that name already exists."
         });
         
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         const $set = Object.create(null);
 
@@ -1733,7 +1733,7 @@ router.post("/room/:id/subrooms/:name/delete", authenticateToken, requiresRoomPe
         var $unset = {};
         $unset[`subrooms.${name}`] = true;
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         await db.collection('rooms').updateOne(
             {
@@ -1785,7 +1785,7 @@ router.post("/room/:id/subrooms/:name/set-max-players/:count", authenticateToken
 
         $set[`subrooms.${name}.maxPlayers`] = parseInt(count);
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         await db.collection('rooms').updateOne(
             {
@@ -1828,7 +1828,7 @@ router.post("/room/:id/set-home-subroom/:name", authenticateToken, requiresRoomP
             message: "No subroom with that name exists on this room."
         });
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         await db.collection('rooms').updateOne(
             {
@@ -1895,7 +1895,7 @@ async function canViewRoom(req, res, next) {
 
     // Fetch room
     var room = await client
-        .db(process.env.MONGOOSE_DATABASE_NAME)
+        .db(config.database.mongodb_database_name)
         .collection('rooms')
         .findOne({_id: {$eq: id, $exists: true}});
     if(room == null) return res.status(404).json({
@@ -1934,7 +1934,7 @@ function requiresRoomPermission(permission) {
     
         // Fetch room
         var room = await client
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('rooms')
             .findOne({_id: {$eq: id, $exists: true}});
         if(room == null) return res.status(404).json({
@@ -1967,7 +1967,7 @@ function requiresRoomPermission(permission) {
 async function hasPermission(user_id, room_id, permission) {
     const client = require('../index').mongoClient;
     var room = await client
-        .db(process.env.MONGOOSE_DATABASE_NAME)
+        .db(config.database.mongodb_database_name)
         .collection('rooms')
         .findOne({ _id: { $eq: room_id, $exists: true } });
     
@@ -1996,7 +1996,7 @@ async function hasPermission(user_id, room_id, permission) {
  */
 async function roomAuditLog(room_id, user_id, event) {
     const client = require('../index').mongoClient;
-    const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = client.db(config.database.mongodb_database_name);
     const collection = db.collection("room_audit");
     
     var event = {

@@ -9,7 +9,7 @@ const EXCEPTION_LOGGING_PUBLIC_KEY = new RSA().importKey(readFileSync(config.err
 
 router.get("/account-count", async (req, res) => {
     const {mongoClient} = require('../index');
-    const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = mongoClient.db(config.database.mongodb_database_name);
     const size = await db.collection("accounts").countDocuments({});
     res.status(200).send(`${size}`);
 });
@@ -51,7 +51,7 @@ router.put("/exception-report", authenticateToken, async (req, res) => {
 
         const client = require('../index').mongoClient;
         await client
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('exception_reports')
             .insertOne({
                 data: encrypted

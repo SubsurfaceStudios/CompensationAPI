@@ -19,7 +19,17 @@
 		"max_size": "10mb",
 
 		// Replace this with your Firebase bucket URL.
-		"firebase_bucket_url": "YOUR-BUCKET-HERE.appspot.com"
+		"firebase_bucket_url": "YOUR-BUCKET-HERE.appspot.com",
+
+		// Replace this with your Firebase client config object.
+		"firebase_client_config": {
+			"apiKey": "YOUR-API-KEY",
+			"authDomain": "YOUR-PROJECT-ID.firebaseapp.com",
+			"projectId": "YOUR-PROJECT-ID",
+			"storageBucket": "YOUR-PROJECT-ID.appspot.com",
+			"messagingSenderId": "YOUR-SENDER-ID",
+			"appId": "YOUR-APP-ID"
+		}
 	},
 
 	// Settings for debugging / developing the API itself.

@@ -133,7 +133,7 @@ client.connect().then(async (client) => {
     
     console.log("MongoDB Connection Established.");
     
-    require('firebase/app').initializeApp(require('./env').firebaseConfig);
+    require('firebase/app').initializeApp(config.images.firebase_client_config);
     
     const auth = firebaseAuth.getAuth();
     

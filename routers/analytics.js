@@ -1,16 +1,15 @@
 const router = require('express').Router();
-const { PullPlayerData } = require('../helpers');
+const { PullPlayerData, config } = require('../helpers');
 const { authenticateToken } = require('../middleware');
 const { GetInstances } = require('./matchmaking');
 const { readFileSync } = require('node:fs');
 const RSA = require('node-rsa');
-const cfg = require('../config.json');
 
-const EXCEPTION_LOGGING_PUBLIC_KEY = new RSA().importKey(readFileSync(cfg.exception_logging_publickey_path).toString('utf-8'), cfg.exception_logging_publickey_format);
+const EXCEPTION_LOGGING_PUBLIC_KEY = new RSA().importKey(readFileSync(config.error_reporting.public_key_path).toString('utf-8'), config.error_reporting.public_key_format);
 
 router.get("/account-count", async (req, res) => {
     const {mongoClient} = require('../index');
-    const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = mongoClient.db(config.database.mongodb_database_name);
     const size = await db.collection("accounts").countDocuments({});
     res.status(200).send(`${size}`);
 });
@@ -52,7 +51,7 @@ router.put("/exception-report", authenticateToken, async (req, res) => {
 
         const client = require('../index').mongoClient;
         await client
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('exception_reports')
             .insertOne({
                 data: encrypted

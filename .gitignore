@@ -1,11 +1,6 @@
 node_modules
-.env
-config.json
-src
-env.js
-nginx.conf
+config.jsonc
 data/audit.json
-admin.json
 keys/
 
 # IDE stuff

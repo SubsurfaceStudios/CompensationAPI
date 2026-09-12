@@ -4,7 +4,7 @@ const middleware = require('../../middleware');
 const WebSocket = require('ws');
 const { MatchmakingModes } = require('../matchmaking');
 const { WebSocketV2_MessageTemplate } = require("../../index");
-const { auditLog } = require('../../helpers');
+const { auditLog, config } = require('../../helpers');
 
 /**
  * @typedef Connection
@@ -154,7 +154,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             if (typeof ParsedContent.data.roomId != 'string' || typeof ParsedContent.data.subroomId != 'string')
                 return;
 
-            var db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+            var db = require('../../index').mongoClient.db(config.database.mongodb_database_name);
             var collection = db.collection("rooms");
 
             var room = await collection.findOne({ _id: { $eq: ParsedContent.data.roomId, $exists: true } });
@@ -288,7 +288,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             // eslint-disable-next-line no-redeclare
-            var db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+            var db = require('../../index').mongoClient.db(config.database.mongodb_database_name);
             // eslint-disable-next-line no-redeclare
             var collection = db.collection("rooms");
 
@@ -359,7 +359,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 return;
 
             // eslint-disable-next-line no-redeclare
-            var db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+            var db = require('../../index').mongoClient.db(config.database.mongodb_database_name);
             // eslint-disable-next-line no-redeclare
             var collection = db.collection("rooms");
 
@@ -512,7 +512,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
 
             // eslint-disable-next-line no-redeclare
-            var collection = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+            var collection = require('../../index').mongoClient.db(config.database.mongodb_database_name).collection("rooms");
             var room = await collection.findOne({ _id: { $eq: ConnectedUserData.matchmaking_RoomId, $exists: true } });
 
             // eslint-disable-next-line no-redeclare
@@ -586,7 +586,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
 
             // eslint-disable-next-line no-redeclare
-            var collection = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("rooms");
+            var collection = require('../../index').mongoClient.db(config.database.mongodb_database_name).collection("rooms");
             var room = await collection.findOne({ _id: { $eq: ConnectedUserData.matchmaking_RoomId, $exists: true } });
 
             // eslint-disable-next-line no-redeclare
@@ -656,7 +656,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         var instance = (await MatchmakingAPI.GetInstances(roomId)).filter(x => x.JoinCode == joinCode)[0];
         var roomData = await require('../../index')
             .mongoClient
-            .db(process.env.MONGOOSE_DATABASE_NAME)
+            .db(config.database.mongodb_database_name)
             .collection('rooms')
             .findOne({ _id: { $eq: roomId, $exists: true } });
         instance.AddPlayer(ConnectedUserData.uid);
@@ -672,7 +672,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         ws_connected_clients[ConnectedUserData.uid].globalInstanceId = instance.GlobalInstanceId;
         ws_connected_clients[ConnectedUserData.uid].joinCode = instance.JoinCode;
 
-        var room = await require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME)
+        var room = await require('../../index').mongoClient.db(config.database.mongodb_database_name)
             .collection('rooms')
             .findOne({_id: {$exists: true, $eq: instance.RoomId}});
 
@@ -700,7 +700,7 @@ WebSocketServerV2.on('connection', (Socket) => {
     Socket.on('permission-update', async (roomId) => {
         if (roomId != ConnectedUserData.matchmaking_RoomId) return;
 
-        const db = require('../../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../../index').mongoClient.db(config.database.mongodb_database_name);
         const room = await db.collection('rooms').findOne(
             {
                 _id: {

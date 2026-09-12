@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
+const { config } = helpers;
 const middleware = require('../middleware');
 const uuid = require('uuid');
 
@@ -25,7 +26,7 @@ router.route("/channels/:channel_id/messages")
 
             const {channel_id} = req.params;
 
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
             var collection = db.collection("channels");
 
             const channel = await collection.findOne({'_id': {$exists: true, $eq: channel_id}});
@@ -80,7 +81,7 @@ router.route("/channels/:channel_id/messages")
             if(typeof content != 'string') return res.status(400).send({message: "invalid_message_content"});
             const {channel_id} = req.params;
 	
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
             var collection = db.collection("channels");
 	
             const channel = await collection.findOne({'_id': {$exists: true, $eq: channel_id}});
@@ -133,7 +134,7 @@ router.route("/channels/:channel_id/info")
         const {channel_id} = req.params;
 
         const client = require('../index').mongoClient;
-        const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = client.db(config.database.mongodb_database_name);
         var collection = db.collection("channels");
 
         const channel = await collection.findOne({'_id': {$exists: true, $eq: channel_id}});
@@ -171,7 +172,7 @@ router.route("/messages/:message_id")
 
             const {message_id} = req.params;
 
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
             var collection = db.collection("messages");
 
             const message = await collection.findOne({'_id': {$exists: true, $eq: message_id}});
@@ -207,7 +208,7 @@ router.route("/messages/:message_id")
 
             const {message_id} = req.params;
 
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
             var collection = db.collection("messages");
 
             const message = await collection.findOne({'_id': {$exists: true, $eq: message_id}});
@@ -252,7 +253,7 @@ router.route("/messages/:message_id")
 
             const {message_id} = req.params;
 
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
             var collection = db.collection("messages");
 
             const message = await collection.findOne({'_id': {$exists: true, $eq: message_id}});
@@ -300,7 +301,7 @@ router.route("/servers/:server_id/channels")
 
             const client = require('../index').mongoClient;
 
-            const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+            const db = client.db(config.database.mongodb_database_name);
 
             const server_collection = db.collection("servers");
 
@@ -327,7 +328,7 @@ router.route("/servers/:server_id/name")
         const {server_id} = req.params;
 
         const client = require('../index').mongoClient;
-        const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = client.db(config.database.mongodb_database_name);
 
         const server_collection = db.collection("servers");
 
@@ -345,7 +346,7 @@ router.route("/servers/:server_id/description")
         const {server_id} = req.params;
 
         const client = require('../index').mongoClient;
-        const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = client.db(config.database.mongodb_database_name);
 
         const server_collection = db.collection("servers");
 
@@ -363,7 +364,7 @@ router.route("/servers/:server_id/users")
         const {server_id} = req.params;
         const client = require('../index').mongoClient;
 
-        const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = client.db(config.database.mongodb_database_name);
         const server_collection = db.collection("servers");
 
         const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});
@@ -380,7 +381,7 @@ router.route("/servers/:server_id/icon_id")
         const {server_id} = req.params;
         const client = require('../index').mongoClient;
 
-        const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = client.db(config.database.mongodb_database_name);
         const server_collection = db.collection("servers");
 
         const server_data = await server_collection.findOne({_id: {$eq: server_id, $exists: true}});

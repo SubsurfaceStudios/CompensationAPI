@@ -5,20 +5,20 @@ const express = require('express');
 // const firebaseStorage = require('firebase/storage');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { Storage } = require('firebase-admin/storage');
-const serviceAccount = require('../admin.json');
 
 const NodeCache = require('node-cache');
 
-const config = require('../config.json');
+const config = helpers.config;
+const serviceAccount = config.images.firebase_admin_config;
 const { default: rateLimit } = require('express-rate-limit');
 
-router.use(express.text({limit: config.max_image_size}));
+router.use(express.text({limit: config.images.max_size ?? "10mb"}));
 
 router.use(express.urlencoded({extended: false}));
 
 const app = initializeApp({
     credential: cert(serviceAccount),
-    storageBucket: config.firebase_bucket_url
+    storageBucket: config.images.firebase_bucket_url
 });
 
 const imageMetadataTemplate = {
@@ -73,7 +73,7 @@ const imgCache = new NodeCache({
 });
 
 router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {
-    if(config.disable_image_upload && !req.user.developer) return res.status(409).send({"message": "Access denied - image uploads have been disabled by the system administrator.", "code": "uploads_disabled"});
+    if((config.images.disable_upload ?? false) && !req.user.developer) return res.status(409).send({"message": "Access denied - image uploads have been disabled by the system administrator.", "code": "uploads_disabled"});
     try {
         var {others, room_id, tags} = req.query;
         if(req.headers['content-type'] !== 'text/plain' || typeof req.body == 'undefined') return res.status(400).send("You did not send encoded photo data.");
@@ -84,7 +84,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         var timestamp = Date.now();
         var TakenByData = await helpers.PullPlayerData(req.user.id);
 
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
         var collection = db.collection("configuration");
 
         var doc = await collection.findOne({_id: 'ImageCount'});
@@ -168,7 +168,7 @@ router.get('/:id/embed', (req, res) => {
      </head>
      </html>`;
 
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     var collection = db.collection("images");
 
     collection.findOne({_id: id}).then(doc => {
@@ -200,7 +200,7 @@ router.get('/:id/embed', (req, res) => {
 });
 
 router.get("/:id/info", async (req, res) => {
-    if(config.disable_image_fetch && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
+    if((config.images.disable_fetch ?? false) && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
     var {id} = req.params;
     if(typeof id != 'string') return res.status(400).send("You did not specify an image ID.");
     try {
@@ -211,7 +211,7 @@ router.get("/:id/info", async (req, res) => {
         return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
     }
 
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     var collection = db.collection("images");
 
     try {
@@ -225,7 +225,7 @@ router.get("/:id/info", async (req, res) => {
 
 router.get("/:id", fetch_rate_limit, async (req, res) => {
     try {
-        if(config.disable_image_fetch && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
+        if((config.images.disable_fetch ?? false) && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
         // Setup of parameters
         var {id} = req.params;
         var {base64} = req.query;
@@ -242,7 +242,7 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         }
 
         // Open database
-        const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         // Validate collection
         var collection = db.collection("configuration");
@@ -259,7 +259,7 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         if (typeof base64 == 'undefined' || base64 !== 'true') {
             var ImageBuffer;
 
-            if(!imgCache.has(id) || config.disable_image_caching) {
+            if(!imgCache.has(id) || (config.images.disable_caching ?? false)) {
                 const storage = new Storage(app);
                 storage.maxOperationRetryTime = 5 * 1000;
                 storage.maxUploadRetryTime = 10 * 1000;
@@ -285,14 +285,14 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
             });
             res.end(ImageBuffer);
 
-            if(!imgCache.has(id) && !config.disable_image_caching) {
+            if(!imgCache.has(id) && !(config.images.disable_caching ?? false)) {
                 imgCache.set(id, ImageBuffer);
                 console.log(`Request submitted for uncached image ${id}, cached.`);
             } else console.log(`Request submitted for cached image ${id}.`);
         } else {
             // eslint-disable-next-line no-redeclare
             var ImageBuffer;
-            if(!imgCache.has(id) || config.disable_image_caching) {
+            if(!imgCache.has(id) || (config.images.disable_caching ?? false)) {
                 const storage = new Storage(app);
                 storage.maxOperationRetryTime = 5 * 1000;
                 storage.maxUploadRetryTime = 10 * 1000;
@@ -312,7 +312,7 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
             var ImageBase64String = Buffer.from(ImageBuffer).toString('base64');
 
             res.status(200).contentType('text/plain').send(ImageBase64String);
-            if(!imgCache.has(id) && !config.disable_image_caching) {
+            if(!imgCache.has(id) && !(config.images.disable_caching ?? false)) {
                 imgCache.set(id, ImageBuffer);
                 console.log(`Request submitted for uncached image ${id}, cached.`);
             } else console.log(`Request submitted for cached image ${id}.`);

@@ -1,8 +1,10 @@
 require('dotenv').config();
+
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
+const config = helpers.config;
 const firebaseAuth = require('firebase/auth');
 
 const WebSocketV2_MessageTemplate = {
@@ -30,8 +32,6 @@ app.use(fileUpload({
     createParentPath: true,
     limit: '50mb'
 }));
-
-const config = require('./config.json');
 
 //#region routers
 
@@ -80,7 +80,7 @@ app.get("/", async (req, res) => {
 app.get("/api/versioncheck/:platform/:version_id", async (req, res) => {
     let {platform, version_id} = req.params;
     
-    let conf = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection('global').findOne({_id: {$eq: "VersionCheckConfig", $exists: true}});
+    let conf = await client.db(config.database.mongodb_database_name).collection('global').findOne({_id: {$eq: "VersionCheckConfig", $exists: true}});
     if(conf == null) {
         res.status(500).json({
             "code": "internal_error",
@@ -114,11 +114,11 @@ app.get("/api/dingus", async(req, res) => {
 
 //#endregion
 
-const server = app.listen(config.PORT, '0.0.0.0');
+const server = app.listen(config.port ?? 8080, '0.0.0.0');
 
 const { MongoClient } = require('mongodb');
 
-const uri = process.env.MONGOOSE_CONNECTION_STRING;
+const uri = config.database.mongodb_connection_string;
 const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -133,11 +133,11 @@ client.connect().then(async (client) => {
     
     console.log("MongoDB Connection Established.");
     
-    require('firebase/app').initializeApp(require('./env').firebaseConfig);
+    require('firebase/app').initializeApp(config.images.firebase_client_config);
     
     const auth = firebaseAuth.getAuth();
     
-    const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, process.env.FIREBASE_EMAIL, process.env.FIREBASE_API_SECRET);
+    const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, config.images.firebase_email, config.images.firebase_password);
     
     if (typeof firebaseAuthUser.user.uid == 'undefined') {
         helpers.auditLog('Failed to connect to Firebase - fatal');
@@ -178,7 +178,7 @@ client.connect().then(async (client) => {
     exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
     exports.WebSocketServerV2 = WebSocketServerV2;
 
-    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
+    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.port ?? 8080}/ \n:D`, false);
     
     process.on('beforeExit', () => {
         helpers.auditLog("Server exit.", false);

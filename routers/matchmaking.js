@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const uuid = require('uuid');
 const middleware = require('../middleware');
+const { config } = require('../helpers');
 
 router.get("/:room_id/:subroom_id/public-instances", middleware.authenticateToken, async (req, res) => {
     try {     
@@ -274,7 +275,7 @@ var GlobalRoomInstances = Object.create(null);
 
 setInterval(CleanupInstances, 300 * 1000);
 
-if (require('../config.json').debug_trace_instances) {
+if (config.debug.trace_instances ?? false) {
     setInterval(LogInstanceTable, 30 * 1000);
 }
 

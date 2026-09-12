@@ -3,7 +3,7 @@ const helpers = require('../helpers');
 const middleware = require('../middleware');
 const regex = require('../data/badwords/regexp');
 const { authenticateDeveloperToken, authenticateToken_optional } = require('../middleware');
-const { PullPlayerData, PushPlayerData, check } = require('../helpers');
+const { PullPlayerData, PushPlayerData, check, config } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
 const { WebSocketV2_MessageTemplate } = require('../index');
@@ -300,7 +300,7 @@ router.get("/search", async (req, res) => {
     if(typeof case_sensitive != 'string') case_sensitive = false;
     else case_sensitive = case_sensitive === 'true' ? true : false;
 
-    const db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     const all = await db.collection('accounts').find({}).toArray();
 
     switch (type) {
@@ -439,7 +439,7 @@ router.post('/set-pfp/:id', middleware.authenticateToken, async (req, res) => {
 
         var { id } = req.params;
 
-        var image_meta = await client.db(process.env.MONGOOSE_DATABASE_NAME).collection("images").findOne({ _id: { $eq: parseInt(id), $exists: true } });
+        var image_meta = await client.db(config.database.mongodb_database_name).collection("images").findOne({ _id: { $eq: parseInt(id), $exists: true } });
 
         if (image_meta == null) return res.status(404).json({
             code: "image_not_found",

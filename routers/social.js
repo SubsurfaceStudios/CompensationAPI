@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
+const { config } = helpers;
 const middleware = require('../middleware');
 const notificationTemplates = {
     invite: "invite",
@@ -13,7 +14,7 @@ router.get("/imgfeed", middleware.authenticateToken_optional, async (req, res) =
         var { count, reverse, offset, filter } = req.query;
 
         const client = require('../index').mongoClient;
-        const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+        const db = client.db(config.database.mongodb_database_name);
         const image_collection = db.collection("images");
           
         if (filter == "mine" && !req.user) return res.status(400).json({
@@ -98,7 +99,7 @@ router.get("/takenby", async (req, res) => {
 
         // True if any value present, otherwise false.
 
-        var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        var db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         var collection = db.collection("images");
         var filtered_images = await collection.find({'takenBy.id': target}).toArray();
@@ -149,7 +150,7 @@ router.get("/takenwith", async (req, res) => {
             offset = 0;
         }
 
-        var db = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+        var db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
         var collection = db.collection("images");
         var filtered_images = await collection.find({others: {$all: [target]}}).toArray();

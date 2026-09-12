@@ -1,7 +1,6 @@
 const router = require('express').Router();
-const { PullPlayerData, PushPlayerData } = require('../helpers');
+const { PullPlayerData, PushPlayerData, config } = require('../helpers');
 const middleware = require('../middleware');
-const config = require('../config.json');
 const { execSync } = require('node:child_process');
 const { authenticateTokenAndTag } = require('../middleware');
 const { v1 } = require('uuid');
@@ -56,7 +55,7 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
 router.post("/pull-origin", async (req, res) => {
     try {
         let Authentication = req.headers.authorization.split(' ')[1];
-        let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
+        let key = config.debug.webhook_git_pull_secret;
 
         if(Authentication?.length != key?.length || Authentication != key) return res.status(403).json({
             code: "invalid_secret",
@@ -89,7 +88,7 @@ router.get("/quality-control/test-cases", authenticateTokenAndTag("QA Tester"), 
 
         const client = require('../index').mongoClient;
 
-        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+        const cases = client.db(config.database.mongodb_database_name).collection("test_cases");
 
         const filters = filter.split("|");
 
@@ -121,7 +120,7 @@ router.post("/quality-control/test-case/:_id/relinquish", authenticateTokenAndTa
 
         const client = require('../index').mongoClient;
 
-        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+        const cases = client.db(config.database.mongodb_database_name).collection("test_cases");
 
         var result = await cases.findOne(
             {
@@ -169,7 +168,7 @@ router.post("/quality-control/test-case/:_id/assign-self", authenticateTokenAndT
 
         const client = require('../index').mongoClient;
 
-        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+        const cases = client.db(config.database.mongodb_database_name).collection("test_cases");
 
         var result = await cases.findOne(
             {
@@ -217,7 +216,7 @@ router.post("/quality-control/test-case/:_id/set-status/:active", authenticateTo
 
         const client = require('../index').mongoClient;
 
-        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+        const cases = client.db(config.database.mongodb_database_name).collection("test_cases");
 
         var result = await cases.findOne(
             {
@@ -263,7 +262,7 @@ router.put("/quality-control/submit-test-case", authenticateTokenAndTag("QA Test
 
         const client = require('../index').mongoClient;
 
-        const cases = client.db(process.env.MONGOOSE_DATABASE_NAME).collection("test_cases");
+        const cases = client.db(config.database.mongodb_database_name).collection("test_cases");
 
         if (typeof header != 'string' || typeof description != 'string') return res.status(400).json({
             code: "invalid_input",

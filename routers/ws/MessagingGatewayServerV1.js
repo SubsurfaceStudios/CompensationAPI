@@ -1,6 +1,7 @@
 const middleware = require('../../middleware');
 const WebSocket = require('ws');
 const { mongoClient, WebSocketV2_MessageTemplate } = require("../../index");
+const { config } = require('../../helpers');
 
 const MessagingGatewayServerV1 = new WebSocket.Server({ noServer: true });
 exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
@@ -14,7 +15,7 @@ MessagingGatewayServerV1.on('connection', async (stream) => {
         isDeveloper: false,
         isCreativeToolsBetaProgramMember: false
     };
-    const db = mongoClient.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = mongoClient.db(config.database.mongodb_database_name);
     const server_collection = db.collection("servers");
     const message_collection = db.collection("messages");
 

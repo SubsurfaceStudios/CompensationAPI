@@ -1,0 +1,95 @@
+{
+	// What port should the API listen on?
+	// Default: 8080
+	"port": 8080,
+
+	// Configuration for the database used by the API.
+	// Right now, only MongoDB is supported. Sorry.
+	"database": {
+		// The URL used to connect to the MongoDB instance.
+		"mongodb_connection_string": "mongodb+srv://YOUR-CONNECTION-STRING-HERE",
+		// The database in MongoDB that should be used.
+		"mongodb_database_name": "YOUR-DATABASE-NAME"
+	},
+
+	// All options relating to the image / photo system.
+	"images": {
+		// Completely disables image fetching, will return an error status.
+		// Default: false
+		"disable_fetch": false,
+		// Disables the in-memory cache. Useful on memory-constrained systems.
+		// Default: false
+		"disable_caching": false,
+		// Prevents users from uploading images entirely.
+		// Default: false
+		"disable_upload": false,
+		// The maximum size of uploaded images.
+		// Default: "10mb"
+		"max_size": "10mb",
+
+		// Replace this with your Firebase bucket URL.
+		"firebase_bucket_url": "YOUR-BUCKET-URL.appspot.com",
+
+		// Replace this with your Firebase client config object.
+		"firebase_client_config": {
+			// YOUR CLIENT CONFIG
+		},
+
+		// Replace this with your Firebase admin config object.
+		"firebase_admin_config": {
+			// YOUR ADMIN CONFIG
+		},
+
+		// The email and password used to sign in with Firebase.
+		"firebase_email": "YOUR-FIREBASE-DUMMY-ACCOUNT-EMAIL",
+		"firebase_password": "YOUR-FIREBASE-DUMMY-ACCOUNT-PASSWORD"
+	},
+
+	// Settings for debugging / developing the API itself.
+	"debug": {
+		// Logs the level of server load to the audit log very frequently.
+		// Default: false
+		"enable_load_logging": false,
+		// Prints a tabulated display of all live matchmaking instances
+		// every few minutes.
+		// Default: false
+		"trace_instances": false,
+		// The identifier for this specific CVR server instance, used in the
+		// Discord webhook on audit logs. Leave blank, and the webhook won't
+		// be invoked.
+		"discord_webhook_id": "My CVR Server :)",
+		// The URL that should be called to send a Discord webhook. Leave blank
+		// to prevent the webhook from being called.
+		"discord_webhook_url": "https://discord.com/YOUR-WEBHOOK-URL-HERE",
+		// The secret that should be used to verify Git webhooks.
+		"webhook_git_pull_secret": "YOUR-GIT-PULL-SECRET"
+	},
+
+	// Used to configure the Automatic Error Reporting (AER) system.
+	"error_reporting": {
+		// An absolute or relative path to a public key for encrypting
+		// all received error reports.
+		"public_key_path": "/PATH/TO/YOUR/KEY.pub",
+		// The format of the public key.
+		"public_key_format": "openssh-public"
+	},
+
+	// Settings related to in-game moderation.
+	"moderation": {
+		// After how many reports should we automatically time out a player?
+		// Default: 3
+		"timeout_after_reports": 3
+	},
+
+	// Config related to the authentication process (login, 2FA, etc)
+	"authentication": {
+		// The secret used to sign all JWTs.
+		"token_secret": "YOUR-TOKEN-SIGNING-SECRET-HERE",
+		// Twilio account SID, used for 2FA.
+		"twilio_account_sid": "YOUR-TWILIO-ACCOUNT-SID-HERE",
+		// Twilio auth token, used for 2FA.
+		"twilio_auth_token": "YOUR-TWILIO-AUTH-TOKEN-HERE",
+		// Twilio service SID, used for 2FA.
+		"twilio_service_sid": "YOUR-TWILIO-SERVICE-SID-HERE"
+	}
+}

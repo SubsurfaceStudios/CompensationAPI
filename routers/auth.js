@@ -1,16 +1,14 @@
 require('dotenv').config();
 const router = require('express').Router();
-const helpers = require('../helpers');
 const middleware = require('../middleware');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PullPlayerData, check, PushPlayerData} = require('../helpers');
-const config = require('../config.json');
-
+const helpers = require('../helpers');
+const { PullPlayerData, check, PushPlayerData, config} = helpers;
 const {default: rateLimit} = require('express-rate-limit');
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
+const accountSid = config.authentication.twilio_account_sid;
+const authToken = config.authentication.twilio_auth_token;
 const client = require('twilio')(accountSid, authToken);
 
 // Users can now only create 1 account per day.
@@ -23,7 +21,7 @@ const accountCreationLimit = rateLimit({
 
 router.get('/photon-info', async (req, res) => {
     try {
-        const coll = require('../index').mongoClient.db(process.env.MONGOOSE_DATABASE_NAME).collection("configuration");
+        const coll = require('../index').mongoClient.db(config.database.mongodb_database_name).collection("configuration");
 
         const data = await coll.findOne(
             {
@@ -52,7 +50,7 @@ router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
         const data = await helpers.PullPlayerData(req.user.id);
         if(data.auth.mfa_enabled || data.auth.mfa_enabled === "unverified") return res.status(400).send("Two factor authentication is already enabled on this account!");
 
-        client.verify.services(process.env.TWILIO_SERVICE_SID)
+        client.verify.services(config.authentication.twilio_service_sid)
             .entities(`COMPENSATION-VR-ACCOUNT-ID-${req.user.id}`)
             .newFactors
             .create({
@@ -122,18 +120,6 @@ router.post("/login", async (req, res) => {
     const passwordMatches = bcrypt.compareSync(password, HASHED_PASSWORD);
 
     if(!passwordMatches) {
-        if(typeof data.auth.logins != 'object') data.auth.logins = [];
-        const attempt = {
-            SUCCESS: false,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
         return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
     }
 
@@ -141,19 +127,6 @@ router.post("/login", async (req, res) => {
         const element = data.auth.bans[index];
           
         if(element.endTS > Date.now()) {
-            if(typeof data.auth.logins != 'object') data.auth.logins = [];
-            const attempt = {
-                SUCCESS: false,
-                IP: req.ip,
-                TIME: Date.now(),
-                HWID: hwid,
-                TWO_FACTOR_CODE: two_factor_code
-            };
-            if(data.auth.logins.length < config.max_logged_logins) {
-                data.auth.logins.push(attempt);
-                // eslint-disable-next-line no-await-in-loop
-                await helpers.PushPlayerData(userID, data);
-            }
             return res.status(403).send({
                 message: "USER IS BANNED", 
                 endTimeStamp: element.endTS, 
@@ -169,23 +142,11 @@ router.post("/login", async (req, res) => {
 
     const user = {username: username, id: userID, developer: developer};
 
-    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
+    const accessToken = jwt.sign(user, config.authentication.token_secret, { expiresIn: "30m" });
 
     if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) {
-        const attempt = {
-            SUCCESS: true,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
-
         const mongo = require('../index').mongoClient;
-        const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+        const coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
         coll.insertOne({
             date_time: new Date(),
             type: "LOGIN"
@@ -194,21 +155,8 @@ router.post("/login", async (req, res) => {
     }
 
     if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled === 'unverified') {
-        if(typeof data.auth.logins != 'object') data.auth.logins = [];
-        const attempt = {
-            SUCCESS: true,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
-
         const mongo = require('../index').mongoClient;
-        const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+        const coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
         coll.insertOne({
             date_time: new Date(),
             type: "LOGIN"
@@ -219,18 +167,6 @@ router.post("/login", async (req, res) => {
     }
 
     if(typeof two_factor_code != 'string') {
-        if(typeof data.auth.logins != 'object') data.auth.logins = [];
-        const attempt = {
-            SUCCESS: false,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
         if(typeof hwid != 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
         if(data.auth.multi_factor_authenticated_logins.length < 1) return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
@@ -243,7 +179,7 @@ router.post("/login", async (req, res) => {
 
         if (MatchingLogins.length > 0) {
             const mongo = require('../index').mongoClient;
-            const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+            const coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
             coll.insertOne({
                 date_time: new Date(),
                 type: "LOGIN"
@@ -267,7 +203,7 @@ router.post("/login", async (req, res) => {
             await helpers.PushPlayerData(userID, data);
                 
             var mongo = require('../index').mongoClient;
-            var coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
+            var coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
             coll.insertOne({
                 date_time: new Date(),
                 type: "LOGIN"
@@ -301,7 +237,7 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 
     const user = {username: data.public.username, id: req.user.id, developer: developer};
 
-    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
+    const accessToken = jwt.sign(user, config.authentication.token_secret, { expiresIn: "30m" });
     return res.status(200).json({ userID: req.user.id, username: data.public.username, accessToken: accessToken});
 });
 
@@ -341,7 +277,7 @@ router.post("/create", accountCreationLimit, async (req, res) => {
     res.sendStatus(200);
 
     const client = require('../index').mongoClient;
-    const db = client.db(process.env.MONGOOSE_DATABASE_NAME);
+    const db = client.db(config.database.mongodb_database_name);
     const collection = db.collection("servers");
 
     var server = await collection.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
@@ -417,7 +353,7 @@ router.get("/password-update", middleware.authenticateDeveloperToken, async (req
 
 async function Verify2faUser(user_id, code, callback) {
     var data = await helpers.PullPlayerData(user_id);
-    client.verify.services(process.env.TWILIO_SERVICE_SID)
+    client.verify.services(config.authentication.twilio_service_sid)
         .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
         .factors(data.auth.mfa_factor_sid)
         .update({authPayload: code})
@@ -428,7 +364,7 @@ async function Verify2faUser(user_id, code, callback) {
 
 async function Verify2faCode(user_id, code, callback) {
     var data = await helpers.PullPlayerData(user_id);
-    client.verify.services(process.env.TWILIO_SERVICE_SID)
+    client.verify.services(config.authentication.twilio_service_sid)
         .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
         .challenges
         .create({authPayload: code, factorSid: data.auth.mfa_factor_sid})

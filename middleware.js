@@ -1,4 +1,5 @@
 const helpers = require('./helpers');
+const config = helpers.config;
 const jwt = require('jsonwebtoken');
 
 module.exports = {
@@ -18,7 +19,7 @@ async function authenticateToken(req, res, next) {
     //then we need to authenticate that token in this middleware and return a user
     try
     {
-        const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const tokenData = jwt.verify(token, config.authentication.token_secret);
         req.user = tokenData;
 
         const data = await helpers.PullPlayerData(tokenData.id);
@@ -56,7 +57,7 @@ async function authenticateDeveloperToken(req, res, next) {
     //then we need to authenticate that token in this middleware and return a user
     try
     {
-        const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const tokenData = jwt.verify(token, config.authentication.token_secret);
         req.user = tokenData;
 
         const data = await helpers.PullPlayerData(tokenData.id);
@@ -90,7 +91,7 @@ function authenticateTokenAndTag(tag) {
         if (typeof token != 'string') return res.sendStatus(401);
 
         try {
-            const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const tokenData = jwt.verify(token, config.authentication.token_secret);
             req.user = tokenData;
 
             const data = await helpers.PullPlayerData(tokenData.id);
@@ -123,7 +124,7 @@ async function authenticateToken_internal(token) {
     //then we need to authenticate that token in this middleware and return a user
     try
     {
-        const tokenData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const tokenData = jwt.verify(token, config.authentication.token_secret);
 
         const playerData = await helpers.PullPlayerData(tokenData.id);
         if(playerData === null) return {success: false, tokenData: tokenData, playerData: null, reason: "player_not_found"};

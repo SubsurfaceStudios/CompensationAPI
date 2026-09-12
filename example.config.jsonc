@@ -1,0 +1,51 @@
+{
+	// What port should the API listen on?
+	// Default: 8080
+	"port": 8080,
+
+	// All options relating to the image / photo system.
+	"images": {
+		// Completely disables image fetching, will return an error status.
+		// Default: false
+		"disable_fetch": false,
+		// Disables the in-memory cache. Useful on memory-constrained systems.
+		// Default: false
+		"disable_caching": false,
+		// Prevents users from uploading images entirely.
+		// Default: false
+		"disable_upload": false,
+		// The maximum size of uploaded images.
+		// Default: "10mb"
+		"max_size": "10mb",
+
+		// Replace this with your Firebase bucket URL.
+		"firebase_bucket_url": "YOUR-BUCKET-HERE.appspot.com"
+	},
+
+	// Settings for debugging / developing the API itself.
+	"debug": {
+		// Logs the level of server load to the audit log very frequently.
+		// Default: false
+		"enable_load_logging": false,
+		// Prints a tabulated display of all live matchmaking instances
+		// every few minutes.
+		// Default: false
+		"trace_instances": false
+	},
+
+	// Used to configure the Automatic Error Reporting (AER) system.
+	"error_reporting": {
+		// An absolute or relative path to a public key for encrypting
+		// all received error reports.
+		"public_key_path": "./keys/YOUR_EXCEPTION_KEY.key.pub",
+		// The format of the public key.
+		"public_key_format": "openssh-public"
+	},
+
+	// Settings related to in-game moderation.
+	"moderation": {
+		// After how many reports should we automatically time out a player?
+		// Default: 3
+		"timeout_after_reports": 3
+	}
+}

@@ -1,8 +1,10 @@
 require('dotenv').config();
+
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
+const config = helpers.config;
 const firebaseAuth = require('firebase/auth');
 
 const WebSocketV2_MessageTemplate = {
@@ -30,8 +32,6 @@ app.use(fileUpload({
     createParentPath: true,
     limit: '50mb'
 }));
-
-const config = require('./config.json');
 
 //#region routers
 
@@ -114,7 +114,7 @@ app.get("/api/dingus", async(req, res) => {
 
 //#endregion
 
-const server = app.listen(config.PORT, '0.0.0.0');
+const server = app.listen(config.port ?? 8080, '0.0.0.0');
 
 const { MongoClient } = require('mongodb');
 
@@ -178,7 +178,7 @@ client.connect().then(async (client) => {
     exports.MessagingGatewayServerV1 = MessagingGatewayServerV1;
     exports.WebSocketServerV2 = WebSocketServerV2;
 
-    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.PORT}/ \n:D`, false);
+    helpers.auditLog(`Server Init, API is ready at http://127.0.0.1:${config.port ?? 8080}/ \n:D`, false);
     
     process.on('beforeExit', () => {
         helpers.auditLog("Server exit.", false);

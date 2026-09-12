@@ -1,6 +1,5 @@
 require('dotenv').config();
 const fs = require('fs');
-const config = require('./config.json');
 
 const notificationTemplates = {
     invite: "invite",
@@ -8,27 +7,40 @@ const notificationTemplates = {
     messageRecieved: "messageRecieved"
 };
 
+const jsonc = require('jsonc-parser');
+let parseErrors = [];
+const config = jsonc.parse(
+    require('node:fs').readFileSync("config.jsonc", "ascii"),
+    parseErrors,
+    {
+        allowEmptyContent: true,
+        allowTrailingComma: true,
+        disallowComments: false,
+    }
+);
+
 module.exports = {
-    PullPlayerData: PullPlayerData,
-    PushPlayerData: PushPlayerData,
-    NotifyPlayer: NotifyPlayer,
-    ArePlayersAnyFriendType: ArePlayersAnyFriendType,
-    ArePlayersAcquantances: ArePlayersAcquantances,
-    ArePlayersFriends: ArePlayersFriends,
-    ArePlayersFavoriteFriends: ArePlayersFavoriteFriends,
-    RemoveAcquaintance: RemoveAcquaintance,
-    RemoveFriend: RemoveFriend,
-    RemoveFavoriteFriend: RemoveFavoriteFriend,
-    AddFriend: AddFriend,
-    AddFavoriteFriend: AddFavoriteFriend,
-    AddAcquaintance: AddAcquaintance,
-    getUserID: getUserID,
-    getAccountCount: getAccountCount,
-    auditLog: auditLog,
-    MergeArraysWithoutDuplication: MergeArraysWithoutDuplication,
-    BanPlayer: BanPlayer,
-    onPlayerReportedCallback: onPlayerReportedCallback,
-    check: check
+    PullPlayerData,
+    PushPlayerData,
+    NotifyPlayer,
+    ArePlayersAnyFriendType,
+    ArePlayersAcquantances,
+    ArePlayersFriends,
+    ArePlayersFavoriteFriends,
+    RemoveAcquaintance,
+    RemoveFriend,
+    RemoveFavoriteFriend,
+    AddFriend,
+    AddFavoriteFriend,
+    AddAcquaintance,
+    getUserID,
+    getAccountCount,
+    auditLog,
+    MergeArraysWithoutDuplication,
+    BanPlayer,
+    onPlayerReportedCallback,
+    check,
+    config,
 };
 
 /**
@@ -354,9 +366,9 @@ async function onPlayerReportedCallback(reportData) {
             reportingData.auth.reportedUsers.splice(index);
             await PushPlayerData(reportData.reportingUser, reportingData);
         }
-    } else if (reportedData.auth.recievedReports.length >= config.timeout_at_report_count) {
-        await BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.timeout_at_report_count} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
-        auditLog(`!! MODERATION ACTION !! User ${reportingData.nickname} (@${reportedData.username}) was timed out for 6 hours for recieving ${config.timeout_at_report_count} reports. Please investigate!`);
+    } else if (reportedData.auth.recievedReports.length >= config.moderation?.timeout_after_reports ?? 3) {
+        await BanPlayer(reportData.reportedUser, `Automated timeout for recieving ${config.moderation?.timeout_after_reports ?? 3} or more reports. This timeout will not affect your moderation history unless it is found to be 100% justified.`, 6, reportData.reportingUser);
+        auditLog(`!! MODERATION ACTION !! User "${reportingData.nickname}" (@${reportedData.username}) was timed out for 6 hours for recieving ${config.moderation?.timeout_after_reports ?? 3} reports. Please investigate!`);
     }
 }
 

@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const { PullPlayerData, PushPlayerData } = require('../helpers');
 const middleware = require('../middleware');
-const config = require('../config.json');
 const { execSync } = require('node:child_process');
 const { authenticateTokenAndTag } = require('../middleware');
 const { v1 } = require('uuid');
@@ -56,7 +55,7 @@ router.post("/accounts/:id/inventory-item", middleware.authenticateDeveloperToke
 router.post("/pull-origin", async (req, res) => {
     try {
         let Authentication = req.headers.authorization.split(' ')[1];
-        let key = config.development_mode ? process.env.DEV_PULL_SECRET : process.env.PRODUCTION_PULL_SECRET;
+        let key = process.env.PRODUCTION_PULL_SECRET; // fixme change to PULL_SECRET
 
         if(Authentication?.length != key?.length || Authentication != key) return res.status(403).json({
             code: "invalid_secret",

@@ -5,8 +5,6 @@ const middleware = require('../middleware');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PullPlayerData, check, PushPlayerData} = require('../helpers');
-const config = require('../config.json');
-
 const {default: rateLimit} = require('express-rate-limit');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -122,18 +120,6 @@ router.post("/login", async (req, res) => {
     const passwordMatches = bcrypt.compareSync(password, HASHED_PASSWORD);
 
     if(!passwordMatches) {
-        if(typeof data.auth.logins != 'object') data.auth.logins = [];
-        const attempt = {
-            SUCCESS: false,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
         return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
     }
 
@@ -141,19 +127,6 @@ router.post("/login", async (req, res) => {
         const element = data.auth.bans[index];
           
         if(element.endTS > Date.now()) {
-            if(typeof data.auth.logins != 'object') data.auth.logins = [];
-            const attempt = {
-                SUCCESS: false,
-                IP: req.ip,
-                TIME: Date.now(),
-                HWID: hwid,
-                TWO_FACTOR_CODE: two_factor_code
-            };
-            if(data.auth.logins.length < config.max_logged_logins) {
-                data.auth.logins.push(attempt);
-                // eslint-disable-next-line no-await-in-loop
-                await helpers.PushPlayerData(userID, data);
-            }
             return res.status(403).send({
                 message: "USER IS BANNED", 
                 endTimeStamp: element.endTS, 
@@ -172,18 +145,6 @@ router.post("/login", async (req, res) => {
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
 
     if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) {
-        const attempt = {
-            SUCCESS: true,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
-
         const mongo = require('../index').mongoClient;
         const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
         coll.insertOne({
@@ -194,19 +155,6 @@ router.post("/login", async (req, res) => {
     }
 
     if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled === 'unverified') {
-        if(typeof data.auth.logins != 'object') data.auth.logins = [];
-        const attempt = {
-            SUCCESS: true,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
-
         const mongo = require('../index').mongoClient;
         const coll = mongo.db(process.env.MONGOOSE_DATABASE_NAME).collection("analytics");
         coll.insertOne({
@@ -219,18 +167,6 @@ router.post("/login", async (req, res) => {
     }
 
     if(typeof two_factor_code != 'string') {
-        if(typeof data.auth.logins != 'object') data.auth.logins = [];
-        const attempt = {
-            SUCCESS: false,
-            IP: req.ip,
-            TIME: Date.now(),
-            HWID: hwid,
-            TWO_FACTOR_CODE: two_factor_code
-        };
-        if(data.auth.logins.length < config.max_logged_logins) {
-            data.auth.logins.push(attempt);
-            await helpers.PushPlayerData(userID, data);
-        }
         if(typeof hwid != 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
 
         if(data.auth.multi_factor_authenticated_logins.length < 1) return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});

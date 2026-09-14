@@ -2,11 +2,11 @@ const router = require('express').Router();
 const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
-const { getStorage } = require('firebase-admin/storage');
 const { v1 } = require('uuid');
-const { auditLog, PullPlayerData, config } = require('../helpers');
+const { auditLog, PullPlayerData, config, S3 } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
 const { WebSocketV2_MessageTemplate } = require('../index');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
 // Base URL: /api/rooms/...
 
@@ -143,11 +143,8 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });
 
-            const storage = getStorage();
-            const file = storage.bucket().file(`rooms/${room_id}/subrooms/${subroom_id}/versions/${version_id}.bin`);
-            
-            var arrayBuffer = await file.download();
-            var buffer = Buffer.from(arrayBuffer[0].buffer);
+            const fetchResponse = await fetch(subroom.versions[version_id].blobUrl);
+            var buffer = Buffer.from(await fetchResponse.arrayBuffer());
                
             res.writeHead(200, {
                 'Content-Type': 'application/octet-stream',
@@ -360,18 +357,20 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
             });
         }
 
-        const storage = getStorage();
-        var file = storage
-            .bucket()
-            .file(`rooms/${id}/subrooms/${subroom_id}/versions/${version_id}.bin`)
-            .createWriteStream({
-                'contentType': "application/octet-stream"
-            });
+        const filename = `${v1()}.json`;
+        const blobUrl = `${config.rooms.domain}/${filename}`;
 
-        file.end(buffer);
+        const uploadCommand = new PutObjectCommand({
+            Key: filename,
+            Bucket: config.rooms.s3_bucket,
+            Body: buffer,
+            ContentType: "application/json",
+        });
+        await S3.send(uploadCommand);
 
         var updateFilter = {$set: {}};
         updateFilter.$set[`subrooms.${subroom_id}.versions.${version_id}.associated_file`] = true;
+        updateFilter.$set[`subrooms.${subroom_id}.versions.${version_id}.blobUrl`] = blobUrl;
 
         await collection.updateOne({_id: {$eq: id, $exists: true}}, updateFilter);
 

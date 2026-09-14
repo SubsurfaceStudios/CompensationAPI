@@ -12,6 +12,16 @@
 		"mongodb_database_name": "YOUR-DATABASE-NAME"
 	},
 
+	// Configuration for blob storage (S3-compatible)
+	"blob": {
+		// The S3-compatible endpoint URL that should be used.
+		"s3_endpoint_url": "https://YOUR-S3-ENDPOINT-HERE",
+		// The access key ID that should be used with the S3-compatible API.
+		"s3_access_key_id":"YOUR-S3-ACCESS-KEY-ID-HERE",
+		// The secret access key that should be used with the S3-compatible API.
+		"s3_secret_access_key": "YOUR-S3-SECRET-ACCESS-KEY-HERE"
+	},
+
 	// All options relating to the image / photo system.
 	"images": {
 		// Completely disables image fetching, will return an error status.
@@ -27,22 +37,18 @@
 		// Default: "10mb"
 		"max_size": "10mb",
 
-		// Replace this with your Firebase bucket URL.
-		"firebase_bucket_url": "YOUR-BUCKET-URL.appspot.com",
+		// The S3(-compatible) bucket that should be used for storing images.
+		"s3_bucket": "MyCVRImageBucket",
+		// The domain that can be used to access the bucket.
+		"domain": "https://YOUR-PUBLIC-IMAGE-BUCKET-DOMAIN-HERE"
+	},
 
-		// Replace this with your Firebase client config object.
-		"firebase_client_config": {
-			// YOUR CLIENT CONFIG
-		},
-
-		// Replace this with your Firebase admin config object.
-		"firebase_admin_config": {
-			// YOUR ADMIN CONFIG
-		},
-
-		// The email and password used to sign in with Firebase.
-		"firebase_email": "YOUR-FIREBASE-DUMMY-ACCOUNT-EMAIL",
-		"firebase_password": "YOUR-FIREBASE-DUMMY-ACCOUNT-PASSWORD"
+	// Configuration relating to custom rooms.
+	"rooms": {
+		// The S3(-compatible) bucket that should be used for storing rooms.
+		"s3_bucket": "MyCVRRoomBucket",
+		// The domain that can be used to access the bucket.
+		"domain": "https://YOUR-PUBLIC-ROOM-BUCKET-DOMAIN-HERE"
 	},
 
 	// Settings for debugging / developing the API itself.

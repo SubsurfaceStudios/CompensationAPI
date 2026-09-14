@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { S3Client } = require("@aws-sdk/client-s3");
 
 const notificationTemplates = {
     invite: "invite",
@@ -17,6 +18,15 @@ const config = jsonc.parse(
         disallowComments: false,
     }
 );
+
+const S3 = new S3Client({
+    region: "auto",
+    endpoint: config.blob.s3_endpoint_url,
+    credentials: {
+        accessKeyId: config.blob.s3_access_key_id,
+        secretAccessKey: config.blob.s3_secret_access_key
+    }
+});
 
 module.exports = {
     PullPlayerData,
@@ -40,6 +50,7 @@ module.exports = {
     onPlayerReportedCallback,
     check,
     config,
+    S3,
 };
 
 /**

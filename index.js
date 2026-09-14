@@ -3,7 +3,6 @@ const fileUpload = require('express-fileupload');
 const RateLimit = require('express-rate-limit');
 const helpers = require('./helpers');
 const config = helpers.config;
-const firebaseAuth = require('firebase/auth');
 
 const WebSocketV2_MessageTemplate = {
     code: "string",
@@ -130,20 +129,6 @@ client.connect().then(async (client) => {
     }
     
     console.log("MongoDB Connection Established.");
-    
-    require('firebase/app').initializeApp(config.images.firebase_client_config);
-    
-    const auth = firebaseAuth.getAuth();
-    
-    const firebaseAuthUser = await firebaseAuth.signInWithEmailAndPassword(auth, config.images.firebase_email, config.images.firebase_password);
-    
-    if (typeof firebaseAuthUser.user.uid == 'undefined') {
-        helpers.auditLog('Failed to connect to Firebase - fatal');
-        console.error('Failed to connect to Firebase - fatal');
-        process.exit(1);
-    }
-    
-    console.log('Firebase Connection Established.');
     server.on("upgrade", (request, socket, head) => {
         console.log(`WebSocket request made to ${request.url}, handling.`);
         

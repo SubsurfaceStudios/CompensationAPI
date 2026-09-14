@@ -2,28 +2,20 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
 const express = require('express');
-// const firebaseStorage = require('firebase/storage');
-const { initializeApp, cert } = require('firebase-admin/app');
-const { Storage } = require('firebase-admin/storage');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const NodeCache = require('node-cache');
 
 const config = helpers.config;
-const serviceAccount = config.images.firebase_admin_config;
 const { default: rateLimit } = require('express-rate-limit');
+const { v1 } = require('uuid');
 
 router.use(express.text({limit: config.images.max_size ?? "10mb"}));
 
 router.use(express.urlencoded({extended: false}));
 
-const app = initializeApp({
-    credential: cert(serviceAccount),
-    storageBucket: config.images.firebase_bucket_url
-});
-
 const imageMetadataTemplate = {
     _id: 'undefined',
-    internalPathRef: '/images/undefined.jpg',
     takenBy: {
         id: '0',
         nickname: 'DEVTEST',
@@ -36,8 +28,6 @@ const imageMetadataTemplate = {
         creator: '0',
         name: 'Apartment'
     },
-    infoPath: '/img/0/info',
-    filePath: '/img/0',
     takenOn: {
         unixTimestamp: 0,
         humanReadable: 'Thu, 01 Jan 1970'
@@ -49,7 +39,8 @@ const imageMetadataTemplate = {
             'photo'
         ]
     },
-    visibility: "public"
+    visibility: "public",
+    blobUrl: "https://example.com"
 };
 
 const uploadRateLimit = rateLimit({
@@ -103,11 +94,13 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
 
         MetaData.others = JSON.parse(others);
         MetaData.internalPathRef = `images/${MetaData._id}.jpg`;
-        MetaData.infoPath = `/img/${MetaData._id}/info`;
-        MetaData.filePath = `/img/${MetaData._id}`;
 
         MetaData.takenInRoomId = room_id;
         MetaData.room.id = room_id;
+
+        const filename = `${v1()}.jpg`;
+        const url = `${config.images.domain}/${filename}`;
+        MetaData.blobUrl = url;
 
         MetaData.social.tags = JSON.parse(tags);
 
@@ -126,12 +119,15 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         const buff = Buffer.from(req.body, 'base64');
 
 
-        // Upload image to firebase.
-        const storage = new Storage(app);
-        var file = storage.bucket().file(MetaData.internalPathRef).createWriteStream({
-            "contentType": "image/jpg"
+        // Upload image to S3-compatible storage.
+
+        const uploadCommand = new PutObjectCommand({
+            Key: filename,
+            Bucket: config.images.s3_bucket,
+            Body: buff,
+            ContentType: "image/jpg"
         });
-        file.end(buff);
+        await helpers.S3.send(uploadCommand);
 
         helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\nhttps://api.compensationvr.tk/img/${MetaData._id}`, true);
 
@@ -164,7 +160,7 @@ router.get('/:id/embed', (req, res) => {
      <meta content="Taken by ###nick### (@###user###) on ###time### ###tags###" property="og:description">
      <meta name="theme-color" content="#9702f4">
      <meta content="summary_large_image" name="twitter:card">
-     <meta http-equiv="refresh" content="0; URL=https://api.compensationvr.tk/img/${id}">
+     <meta http-equiv="refresh" content="0; URL=###img###">
      </head>
      </html>`;
 
@@ -180,7 +176,7 @@ router.get('/:id/embed', (req, res) => {
             '###user###': doc.takenBy.username,
             '###time###': doc.takenOn.humanReadable,
             '###tags###': doc.social.tags.map(e => '#' + e).join(' '),
-            '###img###': 'https://api.compensationvr.tk/img/' + id
+            '###img###': config.images.domain + id
         })) {
             // escape html to prevent xss
             replacement = replacement.replace(/&/g, "&amp;")
@@ -259,21 +255,9 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         if (typeof base64 == 'undefined' || base64 !== 'true') {
             var ImageBuffer;
 
-            if(!imgCache.has(id) || (config.images.disable_caching ?? false)) {
-                const storage = new Storage(app);
-                storage.maxOperationRetryTime = 5 * 1000;
-                storage.maxUploadRetryTime = 10 * 1000;
-                const ref = storage.bucket().file(ImageInfo.internalPathRef);
-
-                const exists = (await ref.exists())[0];
-
-                if (!exists) return res.status(404).json({
-                    code: "image_not_found",
-                    message: "No image exists with that ID. Typo?"
-                });
-
-                var a = await ref.download();
-                ImageBuffer = Buffer.from(a[0].buffer);
+            if (!imgCache.has(id) || (config.images.disable_caching ?? false)) {
+                const imageResponse = await fetch(ImageInfo.blobUrl);
+                ImageBuffer = Buffer.from(await imageResponse.arrayBuffer());
             } else {
                 ImageBuffer = imgCache.get(id);
             }
@@ -293,19 +277,8 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
             // eslint-disable-next-line no-redeclare
             var ImageBuffer;
             if(!imgCache.has(id) || (config.images.disable_caching ?? false)) {
-                const storage = new Storage(app);
-                storage.maxOperationRetryTime = 5 * 1000;
-                storage.maxUploadRetryTime = 10 * 1000;
-                const ref = storage.bucket().file(ImageInfo.internalPathRef);
-
-                const exists = (await ref.exists())[0];
-
-                if (!exists) return res.status(404).json({
-                    code: "image_not_found",
-                    message: "No image exists with that ID. Typo?"
-                });
-
-                ImageBuffer = Buffer.from(await ref.download()).buffer;
+                const imageResponse = await fetch(ImageInfo.blobUrl);
+                ImageBuffer = await imageResponse.arrayBuffer();
             } else {
                 ImageBuffer = imgCache.get(id);
             }

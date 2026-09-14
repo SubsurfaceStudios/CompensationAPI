@@ -32,6 +32,11 @@ router.get("/imgfeed", middleware.authenticateToken_optional, async (req, res) =
                 visibility: {
                     $ne: "unlisted"
                 }
+            },
+            {
+                sort: {
+                    "takenOn.unixTimestamp": 1
+                }
             }
         ).toArray();
         const image_count = all_images.length;

@@ -199,6 +199,9 @@ router.get("/search", authenticateToken_optional, async (req, res) => {
 
     switch(mode) {
     case "search":
+        if (!query) {
+            return res.status(200).json(results);
+        }
         var fuse = new Fuse(results, {
             includeScore: false,
             keys: ["name"],

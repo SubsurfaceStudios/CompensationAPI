@@ -129,7 +129,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         });
         await helpers.S3.send(uploadCommand);
 
-        helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\nhttps://api.compensationvr.tk/img/${MetaData._id}`, true);
+        helpers.auditLog(`Image with ID ${MetaData._id} has been uploaded to the API. Moderator intervention advised to ensure SFW.\nPERMALINK:\n${url}`, true);
 
         // Finalize request
         res.status(200).send("Successfully uploaded image.");

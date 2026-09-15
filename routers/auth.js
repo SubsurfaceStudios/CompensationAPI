@@ -4,11 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helpers = require('../helpers');
 const { PullPlayerData, check, PushPlayerData, config} = helpers;
-const {default: rateLimit} = require('express-rate-limit');
+const { default: rateLimit } = require('express-rate-limit');
 
-const accountSid = config.authentication.twilio_account_sid;
-const authToken = config.authentication.twilio_auth_token;
-const client = require('twilio')(accountSid, authToken);
+const { generateSecret, verify, generateURI } = require('otplib');
 
 // Users can now only create 1 account per day.
 const accountCreationLimit = rateLimit({
@@ -47,21 +45,26 @@ router.get('/photon-info', async (req, res) => {
 router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
     try {
         const data = await helpers.PullPlayerData(req.user.id);
-        if(data.auth.mfa_enabled || data.auth.mfa_enabled === "unverified") return res.status(400).send("Two factor authentication is already enabled on this account!");
+        if(data.auth.mfa_enabled) return res.status(400).send("Two factor authentication is already enabled on this account!");
 
-        client.verify.services(config.authentication.twilio_service_sid)
-            .entities(`COMPENSATION-VR-ACCOUNT-ID-${req.user.id}`)
-            .newFactors
-            .create({
-                friendlyName: `${data.public.username}`,
-                factorType: 'totp'
-            })
-            .then(async new_factor => {
-                res.status(200).send(new_factor.binding);
-                data.auth.mfa_enabled = "unverified";
-                data.auth.mfa_factor_sid = new_factor.sid;
-                await helpers.PushPlayerData(req.user.id, data);
-            });
+        const secret = generateSecret();
+        const uri = generateURI({
+            issuer: "Compensation VR",
+            label: req.user.username,
+            secret
+        });
+        
+        data.auth.mfa_enabled = true;
+        data.auth.mfa_verified = false;
+        data.auth.mfa_secret = secret;
+        await helpers.PushPlayerData(req.user.id, data);
+        
+        res.status(200).json({
+            code: "success",
+            message: "Successfully enabled 2FA. Use /api/auth/verify-2fa to ensure it is actually required on login.",
+            secret,
+            uri,
+        });
     }
     catch (ex) {
         res.status(500).send("Failed to enable MFA.");
@@ -70,21 +73,19 @@ router.post('/enable-2fa', middleware.authenticateToken, async (req, res) => {
 });
 
 router.post('/verify-2fa', middleware.authenticateToken, async (req, res) => {
-    var {code} = req.body;
+    var { code } = req.body;
     if(typeof code != 'string') return res.status(400).send("Your 2FA code is undefined or is not a string. Check your Content-Type header and request body.");
 
-    var _data = await PullPlayerData(req.user.id);
-    if(_data.auth.mfa_enabled != 'unverified') return res.status(400).send("Your account is not currently awaiting verification.");
+    var data = await PullPlayerData(req.user.id);
+    if(!data.auth.mfa_enabled || data.auth.mfa_verified) return res.status(400).send("Your account is not currently awaiting verification.");
 
-    Verify2faUser(req.user.id, code, async success => {
-        if(success) {
-            var data = await helpers.PullPlayerData(req.user.id);
-            data.auth.mfa_enabled = true;
-            await helpers.PushPlayerData(req.user.id, data);
+    data.auth.mfa_verified = true;
 
-            return res.sendStatus(200);
-        }
-        else return res.status(401).send("Failed to verify code. Please double check you entered a fully up to date token.");
+    await helpers.PushPlayerData(req.user.id, data);
+
+    return res.status(200).json({
+        code: "success",
+        message: "Successfully verified 2FA code. A TOTP code will now be required on every login attempt."
     });
 });
 
@@ -94,7 +95,8 @@ router.post('/remove-2fa', middleware.authenticateToken, async (req, res) => {
     if(!data.auth.mfa_enabled) return res.status(400).send("Your account does not have 2FA enabled or pending.");
 
     data.auth.mfa_enabled = false;
-    data.auth.mfa_factor_sid = "undefined";
+    data.auth.mfa_verified = false;
+    data.auth.mfa_secret = null;
 
     await helpers.PushPlayerData(req.user.id, data);
     res.sendStatus(200);
@@ -105,10 +107,17 @@ router.post("/login", async (req, res) => {
     //so first things first we need to check the username and password
     //and if those are correct we generate a token
 
-    const { username, password, two_factor_code, hwid} = req.body;
+    const { username, password, two_factor_code } = req.body;
 
     const userID = await helpers.getUserID(username);
-    if(userID === null) return res.status(404).send({message: "User not found!", failureCode: "5"});
+    if (userID === null) {
+        return res.status(404).json({
+            code: "no_user_found",
+            message: "There is no registered CVR user with that username.",
+            // for backwards compat
+            failureCode: "5"
+        });
+    }
 
     //now we read the correct user file for the authorization data
     const data = await helpers.PullPlayerData(userID);
@@ -119,7 +128,12 @@ router.post("/login", async (req, res) => {
     const passwordMatches = bcrypt.compareSync(password, HASHED_PASSWORD);
 
     if(!passwordMatches) {
-        return res.status(403).send({message: "Incorrect password!", failureCode: "6"});
+        return res.status(403).send({
+            code: "incorrect_password",
+            message: "The password you have provided is incorrect.",
+            // included for backwards compat
+            failureCode: "6"
+        });
     }
 
     for (let index = 0; index < data.auth.bans.length; index++) {
@@ -127,9 +141,11 @@ router.post("/login", async (req, res) => {
           
         if(element.endTS > Date.now()) {
             return res.status(403).send({
-                message: "USER IS BANNED", 
+                code: "user_banned",
+                message: "The account you are trying to log into has been banned from Compensation VR.", 
                 endTimeStamp: element.endTS, 
                 reason: element.reason,
+                // included for backwards compat
                 failureCode: "7"
             });
         }
@@ -143,79 +159,62 @@ router.post("/login", async (req, res) => {
 
     const accessToken = jwt.sign(user, config.authentication.token_secret, { expiresIn: "30m" });
 
-    if(typeof data.auth.mfa_enabled == 'boolean' && !data.auth.mfa_enabled) {
-        const mongo = require('../index').mongoClient;
-        const coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
-        coll.insertOne({
-            date_time: new Date(),
-            type: "LOGIN"
+    if(!data.auth.mfa_enabled) {
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully logged in. Welcome back.",
+
+            userID,
+            username,
+            accessToken,
+            developer
         });
-        return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
     }
 
-    if(typeof data.auth.mfa_enabled == 'string' && data.auth.mfa_enabled === 'unverified') {
-        const mongo = require('../index').mongoClient;
-        const coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
-        coll.insertOne({
-            date_time: new Date(),
-            type: "LOGIN"
-        });
+    if (data.auth.mfa_enabled && !data.auth.mfa_verified) {
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully logged in. Welcome back.",
 
-        if(developer) return res.status(200).json({ message: "As a developer, your account has a large amount of control and permissions.\nTherefore, it is very important you secure your account.\nPlease enable Two-Factor Authentication at your next convenience.", userID: userID, username: username, accessToken: accessToken, developer: developer});
-        else return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
+            userID,
+            username,
+            accessToken,
+            developer,
+        });
     }
 
     if(typeof two_factor_code != 'string') {
-        if(typeof hwid != 'string') return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
-
-        if(data.auth.multi_factor_authenticated_logins.length < 1) return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
-
-        const MatchingLogins = data.auth.multi_factor_authenticated_logins.filter(item => {
-            // Return   IP match (include proxies)        HWID match    Less than 30 days since MFA login
-            return item.ips === req.ips && item.hwid === hwid && Date.now() < item.timestamp + 2592000000;
+        return res.status(400).json({
+            code: "missing_two_factor_code",
+            message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.",
+            // included for backwards compatibility, will be removed in v2
+            failureCode: "1"
         });
-
-
-        if (MatchingLogins.length > 0) {
-            const mongo = require('../index').mongoClient;
-            const coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
-            coll.insertOne({
-                date_time: new Date(),
-                type: "LOGIN"
-            });
-            return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer });
-        }
-
-        return res.status(400).send({message: "You have 2FA enabled on your account but you did not specify a valid 2 Factor Authentication token.", failureCode: "1"});
     }
 
-    Verify2faCode(userID, two_factor_code, async status => {
-        switch(status) {
-        case 'approved':
-            if(typeof hwid != 'string') return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
-            var login = {
-                ips: req.ips,
-                hwid: hwid,
-                timestamp: Date.now()
-            };
-            data.auth.multi_factor_authenticated_logins.push(login);
-            await helpers.PushPlayerData(userID, data);
-                
-            var mongo = require('../index').mongoClient;
-            var coll = mongo.db(config.database.mongodb_database_name).collection("analytics");
-            coll.insertOne({
-                date_time: new Date(),
-                type: "LOGIN"
-            });
-            return res.status(200).json({ userID: userID, username: username, accessToken: accessToken, developer: developer});
-        case 'denied':
-            return res.status(401).send({message: "2FA Denied.", failureCode: "2"});
-        case 'expired':
-            return res.status(401).send({message: "2FA Code Outdated", failureCode: "3"});
-        case 'pending':
-            return res.status(400).send({message: "2FA Denied.", failureCode: "4"});
-        }
+    const validCode = await verify({
+        secret: data.auth.mfa_secret,
+        token: two_factor_code,
     });
+
+    if (validCode) {
+        return res.status(200).json({
+            code: "success",
+            message: "Successfully logged in. Welcome back.",
+
+            userID,
+            username,
+            accessToken,
+            developer
+        });
+    } else {
+        return res.status(401).send({
+            code: "invalid_two_factor_code",
+            message: "You have provided an invalid two-factor authentication code.",
+            // included for backwards compat
+            failureCode: "2"
+        });
+    }
 });
 
 router.post("/refresh", middleware.authenticateToken, async (req, res) => {
@@ -234,10 +233,10 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 
     const developer = data.private.availableTags.includes("Developer");
 
-    const user = {username: data.public.username, id: req.user.id, developer: developer};
+    const user = {username: data.public.username, id: req.user.id, developer};
 
     const accessToken = jwt.sign(user, config.authentication.token_secret, { expiresIn: "30m" });
-    return res.status(200).json({ userID: req.user.id, username: data.public.username, accessToken: accessToken});
+    return res.status(200).json({ userID: req.user.id, username: data.public.username, accessToken: accessToken, developer });
 });
 
 //Call to create an account from a set of credentials.
@@ -257,15 +256,13 @@ router.post("/create", accountCreationLimit, async (req, res) => {
     if(check(nickname)) {
         helpers.auditLog(`Suspicious nickname on account creation: ${nickname} with ID ${id}. Request continued, please verify.`);
     }
-    if(check(nickname)) {
+    if(check(username)) {
         helpers.auditLog(`Suspicious username on account creation: ${username} with ID ${id}. Request continued, please verify.`);
     }
     
 
     data.public.nickname = nickname;
     data.public.username = username;
-
-    data.auth.username = username;
 
     const HASHED_PASSWORD = bcrypt.hashSync(password, 10);
 
@@ -295,7 +292,14 @@ router.post("/check", middleware.authenticateToken, async (req, res) => {
 
 router.get("/mfa-enabled", middleware.authenticateToken, async (req, res) => {
     const data = await helpers.PullPlayerData(req.user.id);
-    return res.status(200).send(`${data.auth.mfa_enabled}`);
+
+    // unfortunately this is necessary for backwards compat
+    // this should probably be refactored in a v2 (maybe just a json blurb with a few fields) somehow
+    if (!data.auth.mfa_enabled) {
+        return res.status(200).send("false");
+    } else {
+        return res.status(200).send(data.auth.mfa_verified ? "true" : "unverified");
+    }
 });
 
 router.get("/password-update", middleware.authenticateDeveloperToken, async (req, res) => {
@@ -349,31 +353,5 @@ router.get("/password-update", middleware.authenticateDeveloperToken, async (req
         throw ex;
     }
 });
-
-async function Verify2faUser(user_id, code, callback) {
-    var data = await helpers.PullPlayerData(user_id);
-    client.verify.services(config.authentication.twilio_service_sid)
-        .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
-        .factors(data.auth.mfa_factor_sid)
-        .update({authPayload: code})
-        .then(factor => {
-            callback(factor.status === 'verified');
-        });
-}
-
-async function Verify2faCode(user_id, code, callback) {
-    var data = await helpers.PullPlayerData(user_id);
-    client.verify.services(config.authentication.twilio_service_sid)
-        .entities(`COMPENSATION-VR-ACCOUNT-ID-${user_id}`)
-        .challenges
-        .create({authPayload: code, factorSid: data.auth.mfa_factor_sid})
-        .then(challenge => {
-            callback(challenge.status);
-            // challenge.status == 'approved';
-            // challenge.status == 'denied';
-            // challenge.status == 'expired';
-            // challenge.status == 'pending';
-        });
-}
 
 module.exports = router;

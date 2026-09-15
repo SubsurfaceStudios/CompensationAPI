@@ -64,6 +64,12 @@ async function PullPlayerData(id) {
     return account;
 }
 
+
+
+
+// !!!! FIXME: In the future, all of these PushPlayerData calls should be replaced with !!!!
+// atomic update operations. However, that would be a massive refactor as it stands
+// now, and since there's only one API server, it's not suuuuuper urgent.
 /**
  * Completely overwrites a player's account file/document.
  * @param {String} id The ID of the player whose data should be updated.

@@ -90,12 +90,6 @@
 	// Config related to the authentication process (login, 2FA, etc)
 	"authentication": {
 		// The secret used to sign all JWTs.
-		"token_secret": "YOUR-TOKEN-SIGNING-SECRET-HERE",
-		// Twilio account SID, used for 2FA.
-		"twilio_account_sid": "YOUR-TWILIO-ACCOUNT-SID-HERE",
-		// Twilio auth token, used for 2FA.
-		"twilio_auth_token": "YOUR-TWILIO-AUTH-TOKEN-HERE",
-		// Twilio service SID, used for 2FA.
-		"twilio_service_sid": "YOUR-TWILIO-SERVICE-SID-HERE"
+		"token_secret": "YOUR-TOKEN-SIGNING-SECRET-HERE"
 	}
 }

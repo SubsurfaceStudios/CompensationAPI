@@ -192,12 +192,12 @@ router.post("/login", async (req, res) => {
         });
     }
 
-    const validCode = await verify({
+    const verificationResult = await verify({
         secret: data.auth.mfa_secret,
         token: two_factor_code,
     });
 
-    if (validCode) {
+    if (verificationResult.valid) {
         return res.status(200).json({
             code: "success",
             message: "Successfully logged in. Welcome back.",

@@ -45,14 +45,14 @@ const imageMetadataTemplate = {
 
 const uploadRateLimit = rateLimit({
     'windowMs': 3600000,
-    'max': 10,
+    'max': config.images.upload_rate_limit,
     'legacyHeaders': true,
     'standardHeaders': true
 });
 
 const fetch_rate_limit = rateLimit({
     'windowMs': 60 * 1000,
-    'max': 50,
+    'max': config.images.fetch_rate_limit,
     'standardHeaders': true,
     'legacyHeaders': true
 });

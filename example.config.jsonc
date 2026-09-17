@@ -33,9 +33,15 @@
 		// Prevents users from uploading images entirely.
 		// Default: false
 		"disable_upload": false,
+
 		// The maximum size of uploaded images.
 		// Default: "10mb"
 		"max_size": "10mb",
+
+		// The maximum number of images a given player can upload in an *hour*.
+		"upload_rate_limit": 60,
+		// The maximum number of images a given player can upload in a *minute*.
+		"fetch_rate_limit": 120,
 
 		// The S3(-compatible) bucket that should be used for storing images.
 		"s3_bucket": "MyCVRImageBucket",

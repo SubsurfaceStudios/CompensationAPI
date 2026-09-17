@@ -73,7 +73,7 @@ const roomTemplate = {
 };
 
 router.use(express.text({
-    'limit': '50MB',
+    'limit': '100MB',
     'inflate': true
 }));
 
@@ -1119,7 +1119,16 @@ router.post('/new', authenticateToken, async (req, res) => {
                     viewSettings: true,
                     viewPermissions: true,
                     managePermissions: true,
-                    useCreationTool: true
+                    useCreationTool: true,
+                    kickPlayers: true,
+                    mutePlayers: true,
+                    manageSubrooms: true,
+                    deleteSubrooms: true,
+                    editDescription: true,
+                    setHomeSubroom: true,
+                    manageTags: true,
+                    manageContentFlags: true,
+                    setRoomPhoto: true
                 }
             },
             userPermissions: userPermissions,

@@ -196,7 +196,7 @@ class RoomSession {
     RemovePlayer(id) {
         if(typeof id != 'string') throw new TypeError("Invalid User ID input in RemovePlayer - Parameter 'id' must be a string.");
         var index = this.Players.indexOf(id);
-        this.Players.splice(index);
+        this.Players.splice(index, 1);
 
         console.log(`REMOVED PLAYER ${id} FROM INSTANCE ${this.InstanceId}`);
     }
@@ -216,7 +216,7 @@ class RoomSession {
 
         // clear from the main list
         var index = SubroomInstances[this.RoomId].indexOf(this);
-        SubroomInstances[this.RoomId].splice(index);
+        SubroomInstances[this.RoomId].splice(index, 1);
 
         // end event loops
         clearInterval(this.#eventLoopHandle);

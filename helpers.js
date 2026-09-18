@@ -169,10 +169,10 @@ async function RemoveAcquaintance(player1, player2, both) {
     var data2 = await PullPlayerData(player2);
 
     var index1 = data1.private.acquaintances.findIndex(item => item === player2);
-    if(index1 >= 0) data1.private.acquaintances.splice(index1);
+    if(index1 >= 0) data1.private.acquaintances.splice(index1, 1);
 
     var index2 = data2.private.acquaintances.findIndex(item => item === player1);
-    if(index2 >= 0 && both) data2.private.acquaintances.splice(index2);
+    if(index2 >= 0 && both) data2.private.acquaintances.splice(index2, 1);
 
     await PushPlayerData(player1, data1);
     await PushPlayerData(player2, data2);
@@ -189,10 +189,10 @@ async function RemoveFriend(player1, player2, both) {
     var data2 = await PullPlayerData(player2);
 
     var index1 = data1.private.friends.findIndex(item => item === player2);
-    if(index1 >= 0) data1.private.friends.splice(index1);
+    if(index1 >= 0) data1.private.friends.splice(index1, 1);
 
     var index2 = data2.private.friends.findIndex(item => item === player1);
-    if(index2 >= 0 && both) data2.private.friends.splice(index2);
+    if(index2 >= 0 && both) data2.private.friends.splice(index2, 1);
 
     await PushPlayerData(player1, data1);
     await PushPlayerData(player2, data2);
@@ -209,10 +209,10 @@ async function RemoveFavoriteFriend(player1, player2, both) {
     var data2 = await PullPlayerData(player2);
 
     var index1 = data1.private.favoriteFriends.findIndex(item => item === player2);
-    if(index1 >= 0) data1.private.favoriteFriends.splice(index1);
+    if(index1 >= 0) data1.private.favoriteFriends.splice(index1, 1);
 
     var index2 = data2.private.favoriteFriends.findIndex(item => item === player1);
-    if(index2 >= 0 && both) data2.private.favoriteFriends.splice(index2);
+    if(index2 >= 0 && both) data2.private.favoriteFriends.splice(index2, 1);
 
     await PushPlayerData(player1, data1);
     await PushPlayerData(player2, data2);
@@ -379,7 +379,7 @@ async function onPlayerReportedCallback(reportData) {
           
         var index = reportingData.auth.reportedUsers.findIndex(item => item === reportData.reportedUser);
         if(index >= 0) {
-            reportingData.auth.reportedUsers.splice(index);
+            reportingData.auth.reportedUsers.splice(index, 1);
             await PushPlayerData(reportData.reportingUser, reportingData);
         }
     } else if (reportedData.auth.recievedReports.length >= config.moderation?.timeout_after_reports ?? 3) {

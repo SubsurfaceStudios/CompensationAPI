@@ -460,21 +460,21 @@ WebSocketServerV2.on('connection', (Socket) => {
             // The invite itself is valid, now validate the player's location.
             if (typeof ws_connected_clients[ParsedContent.data.user_id] != 'object') {
                 // If the player is offline, revoke the invite & fail.
-                currentData.notifications.splice(inviteIndex);
+                currentData.notifications.splice(inviteIndex, 1);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
                 return;
             }
 
             if (typeof ws_connected_clients[ParsedContent.data.user_id].joinCode != 'string') {
                 // If the player is online, but doesn't have a join code, revoke the invite & fail.
-                currentData.notifications.splice(inviteIndex);
+                currentData.notifications.splice(inviteIndex, 1);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
                 return;
             }
 
             if (ws_connected_clients[ParsedContent.data.user_id].joinCode === ws_connected_clients[ConnectedUserData.uid].joinCode) {
                 // The player is already in the same room, fail.
-                currentData.notifications.splice(inviteIndex);
+                currentData.notifications.splice(inviteIndex, 1);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
                 return;
             }
@@ -485,14 +485,14 @@ WebSocketServerV2.on('connection', (Socket) => {
 
             if (typeof instance != 'object') {
                 // Instance is invalid for some reason, fail.
-                currentData.notifications.splice(inviteIndex);
+                currentData.notifications.splice(inviteIndex, 1);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
                 return;
             }
 
             if (instance.Players.length >= instance.MaxPlayers) {
                 // Instance is full, fail.
-                currentData.notifications.splice(inviteIndex);
+                currentData.notifications.splice(inviteIndex, 1);
                 await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
                 return;
             }
@@ -537,7 +537,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
             };
             
-            currentData.notifications.splice(inviteIndex);
+            currentData.notifications.splice(inviteIndex, 1);
             await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
 
             Socket.send(JSON.stringify(send, null, 5));
@@ -627,7 +627,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             if (inviteIndex === -1)
                 return;
 
-            currentData.notifications.splice(inviteIndex);
+            currentData.notifications.splice(inviteIndex, 1);
             await helpers.PushPlayerData(ConnectedUserData.uid, currentData);
 
             // eslint-disable-next-line no-redeclare

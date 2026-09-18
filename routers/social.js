@@ -219,7 +219,7 @@ router.post("/accept-request", middleware.authenticateToken, async (req, res) =>
 
     for (let index = 0; index < filteredNotifications.length; index++) {
         let itemIndex = recievingData.notifications.findIndex(item => item.template === notificationTemplates.friendRequest && item.parameters.sendingPlayer === target);
-        recievingData.notifications.splice(itemIndex);
+        recievingData.notifications.splice(itemIndex, 1);
     }
      
     if(filteredNotifications.length > 0) await helpers.PushPlayerData(req.user.id, recievingData);
@@ -236,7 +236,7 @@ router.post("/accept-request", middleware.authenticateToken, async (req, res) =>
     var sendingData = await helpers.PullPlayerData(target);
      
     var index = sendingData.private.friendRequestsSent.findIndex(item => item === req.user.id);
-    if(index >= 0) sendingData.private.friendRequestsSent.splice(index);
+    if(index >= 0) sendingData.private.friendRequestsSent.splice(index, 1);
     await helpers.PushPlayerData(target, sendingData);
 });
 
@@ -316,14 +316,14 @@ router.post("/decline-request", middleware.authenticateToken, async (req, res) =
 
     while(sendingData.private.friendRequestsSent.includes(sender)) {
         const index = sendingData.private.friendRequestsSent.findIndex(item => item === sender);
-        sendingData.private.friendRequestsSent.splice(index);
+        sendingData.private.friendRequestsSent.splice(index, 1);
     }
     await helpers.PushPlayerData(target, sendingData);
 
     var temp = recievingData.notifications.filter(item => item.template === notificationTemplates.friendRequest && item.parameters.sendingPlayer === target);
     for (let index = 0; index < temp.length; index++) {
         let itemIndex = recievingData.notifications.findIndex(item => item.template === notificationTemplates.friendRequest && item.parameters.sendingPlayer === target);
-        if(itemIndex >= 0) recievingData.notifications.splice(itemIndex);
+        if(itemIndex >= 0) recievingData.notifications.splice(itemIndex, 1);
         else break;
     }
 

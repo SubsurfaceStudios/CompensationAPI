@@ -1,9 +1,8 @@
 const router = require('express').Router();
 const helpers = require('../helpers');
 const middleware = require('../middleware');
-const regex = require('../data/badwords/regexp');
 const { authenticateDeveloperToken, authenticateToken_optional } = require('../middleware');
-const { PullPlayerData, PushPlayerData, check, config } = require('../helpers');
+const { PullPlayerData, PushPlayerData, config } = require('../helpers');
 const express = require('express');
 const Fuse = require('fuse.js');
 const { WebSocketV2_MessageTemplate } = require('../index');
@@ -150,10 +149,6 @@ router.post("/nickname", middleware.authenticateToken, async (req, res) => {
     const { nickname } = req.body;
     var data = await helpers.PullPlayerData(req.user.id);
 
-    //Filter nickname
-    if(check(nickname)) {
-        helpers.auditLog(`Suspicious nickname change! ${req.user.id} attempted to change nickname to ${nickname}. Request permitted, but please review it.`);
-    }
     data.public.nickname = nickname;
 
     await helpers.PushPlayerData(req.user.id, data);
@@ -166,10 +161,6 @@ router.post("/bio", middleware.authenticateToken, async (req, res) => {
     var { bio } = req.body;
 
     var data = await helpers.PullPlayerData(req.user.id);
-
-    if(regex.test(bio)) {
-        helpers.auditLog(`Suspicious nickname change! ${req.user.id} attempted to change nickname to ${bio}. Request permitted, but please review it.`);
-    }
 
     if(bio.length > 3000) return res.status(400).send("Bio is too long!");
 

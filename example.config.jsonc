@@ -74,7 +74,10 @@
 		// to prevent the webhook from being called.
 		"discord_webhook_url": "https://discord.com/YOUR-WEBHOOK-URL-HERE",
 		// The secret that should be used to verify Git webhooks.
-		"webhook_git_pull_secret": "YOUR-GIT-PULL-SECRET"
+		"webhook_git_pull_secret": "YOUR-GIT-PULL-SECRET",
+		// The path that should be used for your log file.
+		// Default: ./data/cvr.log
+		"audit_log_path": "./data/cvr.log"
 	},
 
 	// Used to configure the Automatic Error Reporting (AER) system.

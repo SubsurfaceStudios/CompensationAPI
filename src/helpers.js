@@ -8,6 +8,7 @@ const notificationTemplates = {
 };
 
 const jsonc = require('jsonc-parser');
+const path = require('node:path');
 let parseErrors = [];
 const config = jsonc.parse(
     require('node:fs').readFileSync("config.jsonc", "ascii"),
@@ -48,7 +49,6 @@ module.exports = {
     MergeArraysWithoutDuplication,
     BanPlayer,
     onPlayerReportedCallback,
-    check,
     config,
     S3,
 };
@@ -312,20 +312,30 @@ async function getAccountCount() {
  * @param {Boolean} isRaw Whether or not to wrap the text in a code block for Discord webhooks.
  */
 function auditLog(message, isRaw) {
-    const file = fs.readFileSync("./data/audit.json");
-    let data = JSON.parse(file);
-
-    const ts = Date.now();
-
-    const log = `${ts} - ${message}`;
-
-    data.push(log);
-    const final = JSON.stringify(data, null, "   ");
-    fs.writeFileSync("./data/audit.json", final);
-
+    const date = new Date();
+    const log = `${date.toISOString()}: ${message}`;
     console.log(log);
 
-    if (!config.debug.discord_webhook_url || !config.debug.discord_webhook_id) return;
+    const logPath = config.debug.audit_log_path || "./data/cvr.log";
+    const dir = path.dirname(logPath);
+
+    if (!fs.existsSync(dir))
+    {
+        fs.mkdirSync(dir, {
+            recursive: true
+        });
+    }
+
+    fs.appendFileSync(
+        logPath,
+        log + '\n'
+    );
+
+
+    if (!config.debug.discord_webhook_url || !config.debug.discord_webhook_id) {
+        return;
+    }
+
     const globalAuditMessage = 
           isRaw ? 
               `API audit log from server.\nID: \`${config.debug.discord_webhook_id}\`\nMessage:\n${message}` : 
@@ -413,20 +423,4 @@ async function BanPlayer(id, reason, duration, moderator) {
     let clients = require('./routers/ws/WebSocketServerV2').ws_connected_clients;
     if(!Object.keys(clients).includes(id)) return;
     clients[id].socket.close();
-}
-
-/**
- * Checks a string for potential profanity. This is not a foolproof method, and should not be used as a replacement for human moderation.
- * Susceptible to the [Scunthorpe Problem](https://en.wikipedia.org/wiki/Scunthorpe_problem).
- * @param {String} string The string to check for potential profanity.
- * @returns {Boolean} Whether or not the string contains the potential for profanity.
- */
-function check(string) {
-    const words = require('./data/badwords/array');
-    const tlc = string.toLowerCase();
-
-    for(const word of words) {
-        if(tlc.includes(word)) return true;
-    }
-    return false;
 }

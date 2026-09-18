@@ -3,7 +3,7 @@ const middleware = require('../middleware');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helpers = require('../helpers');
-const { PullPlayerData, check, PushPlayerData, config} = helpers;
+const { PullPlayerData, PushPlayerData, config } = helpers;
 const { default: rateLimit } = require('express-rate-limit');
 
 const { generateSecret, verify, generateURI } = require('otplib');
@@ -252,13 +252,6 @@ router.post("/create", accountCreationLimit, async (req, res) => {
     if(dupe !== null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
 
     const data = await helpers.PullPlayerData("ACCT_TEMPLATE");
-
-    if(check(nickname)) {
-        helpers.auditLog(`Suspicious nickname on account creation: ${nickname} with ID ${id}. Request continued, please verify.`);
-    }
-    if(check(username)) {
-        helpers.auditLog(`Suspicious username on account creation: ${username} with ID ${id}. Request continued, please verify.`);
-    }
     
 
     data.public.nickname = nickname;

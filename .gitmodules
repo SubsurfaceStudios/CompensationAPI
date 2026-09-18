@@ -1,3 +1,0 @@
-[submodule "data/badwords"]
-	path = data/badwords
-	url = https://github.com/MauriceButler/badwords.git

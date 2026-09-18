@@ -1,7 +1,12 @@
-node_modules
-config.jsonc
-data/audit.json
+# very very big
+node_modules/
+
+# likely sensitive information
+data/
 keys/
+
+# config file, might contain secrets etc
+config.jsonc
 
 # IDE stuff
 .vscode/*

@@ -194,6 +194,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                     name: instance.JoinCode,
                     baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                     spawn: subroom.versions[subroom.publicVersionId].spawn,
+                    roomId: room._id,
+                    subroomId: instance.SubroomId,
                     roomFaceData: {
                         _id: room._id,
                         name: room.name,
@@ -257,6 +259,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 name: final_selection.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                 spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomId: room._id,
+                subroomId: instance.SubroomId,
                 roomFaceData: {
                     _id: room._id,
                     name: room.name,
@@ -328,6 +332,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                 spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomId: room._id,
+                subroomId: instance.SubroomId,
                 roomFaceData: {
                     _id: room._id,
                     name: room.name,
@@ -398,6 +404,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                 spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomId: room._id,
+                subroomId: instance.SubroomId,
                 roomFaceData: {
                     _id: room._id,
                     name: room.name,
@@ -525,6 +533,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                 spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomId: room._id,
+                subroomId: instance.SubroomId,
                 roomFaceData: {
                     _id: room._id,
                     name: room.name,
@@ -599,6 +609,8 @@ WebSocketServerV2.on('connection', (Socket) => {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
                 spawn: subroom.versions[subroom.publicVersionId].spawn,
+                roomId: room._id,
+                subroomId: instance.SubroomId,
                 roomFaceData: {
                     _id: room._id,
                     name: room.name,
@@ -684,6 +696,8 @@ WebSocketServerV2.on('connection', (Socket) => {
             name: instance.JoinCode,
             baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
             spawn: subroom.versions[subroom.publicVersionId].spawn,
+            roomId: room._id,
+            subroomId: instance.SubroomId,
             roomFaceData: {
                 _id: room._id,
                 name: room.name,

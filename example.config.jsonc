@@ -3,6 +3,48 @@
 	// Default: 8080
 	"port": 8080,
 
+	// Taken directly from Photon PUN 2 configuration.
+	"photon": {
+		// Set this using the value found in your Photon dashboard.
+		"AppIdRealtime": "<YOUR-PHOTON-REALTIME-APP-ID>",
+		// Can be left blank.
+		"AppIdFusion": "",
+		// Can be left blank.
+		"AppIdChat": "",
+		// Set this using the value found in your Photon dashboard.
+		"AppIdVoice": "YOUR-PHOTON-VOICE-APP-ID",
+		// Set this to the version of CVR you use on your server.
+		"AppVersion": "2.2.0",
+		// Leave as-is.
+		"UseNameServer": true,
+		// Leave as-is.
+		"FixedRegion": "eu",
+		// Leave as-is.
+		"Server": "",
+		// Leave as-is.
+		"Port": 0,
+		// Leave as-is.
+		"ProxyServer": "",
+		// Leave as-is.
+		"Protocol": 0,
+		// Leave as-is.
+		"EnableProtocolFallback": true,
+		// Leave as-is.
+		"AuthMode": 0,
+		// Leave as-is.
+		"EnableLobbyStatistics": false,
+		// Leave as-is.
+		"NetworkLogging": 1,
+		// Leave as-is.
+		"IsMasterServerAddress": false,
+		// Leave as-is.
+		"IsBestRegion": false,
+		// Leave as-is.
+		"IsDefaultNameServer": true,
+		// Leave as-is.
+		"IsDefaultPort": true
+	},
+
 	// Configuration for the database used by the API.
 	// Right now, only MongoDB is supported. Sorry.
 	"database": {

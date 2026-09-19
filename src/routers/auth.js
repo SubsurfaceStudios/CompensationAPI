@@ -18,21 +18,8 @@ const accountCreationLimit = rateLimit({
 
 router.get('/photon-info', async (req, res) => {
     try {
-        const coll = require('../index').mongoClient.db(config.database.mongodb_database_name).collection("configuration");
-
-        const data = await coll.findOne(
-            {
-                _id: { $exists: true, $eq: "PhotonData" }
-            }
-        );
-
-        if (!data) return res.status(500).json({
-            code: "internal_error",
-            message: "This server is misconfigured and cannot serve your request."
-        });
-
-        return res.status(200).send(
-            data.data
+        return res.status(200).json(
+            config.photon
         );
     } catch (ex) {
         res.status(500).json({

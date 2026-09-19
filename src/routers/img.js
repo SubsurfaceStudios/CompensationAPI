@@ -159,7 +159,7 @@ router.get('/:id/embed', (req, res) => {
      <meta content="###img###" property="og:image">
      <meta content="Taken by ###nick### (@###user###) on ###time### ###tags###" property="og:description">
      <meta name="theme-color" content="#9702f4">
-     <meta content="summary_large_image" name="twitter:card">
+     <meta content="summary_large_image" name="twitter:summary_large_image">
      <meta http-equiv="refresh" content="0; URL=###img###">
      </head>
      </html>`;

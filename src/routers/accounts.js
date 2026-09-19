@@ -430,7 +430,7 @@ router.post('/set-pfp/:id', middleware.authenticateToken, async (req, res) => {
 
         var { id } = req.params;
 
-        var image_meta = await client.db(config.database.mongodb_database_name).collection("images").findOne({ _id: { $eq: parseInt(id), $exists: true } });
+        var image_meta = await client.db(config.database.mongodb_database_name).collection("images").findOne({ _id: { $eq: id, $exists: true } });
 
         if (image_meta == null) return res.status(404).json({
             code: "image_not_found",

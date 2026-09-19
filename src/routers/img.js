@@ -8,7 +8,7 @@ const NodeCache = require('node-cache');
 
 const config = helpers.config;
 const { default: rateLimit } = require('express-rate-limit');
-const { v1 } = require('uuid');
+const { v1, v7 } = require('uuid');
 
 router.use(express.text({limit: config.images.max_size ?? "10mb"}));
 
@@ -76,12 +76,9 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         var TakenByData = await helpers.PullPlayerData(req.user.id);
 
         const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
-        var collection = db.collection("configuration");
-
-        var doc = await collection.findOne({_id: 'ImageCount'});
 
         var MetaData = imageMetadataTemplate;
-        MetaData._id = doc.count + 1;
+        MetaData._id = v7();
 
         MetaData.takenBy.id = req.user.id;
         MetaData.takenBy.nickname = TakenByData.public.nickname;
@@ -107,11 +104,9 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         if (req.query.visibility == "unlisted") MetaData.visibility = "unlisted";
 
         // Push metadata to MongoDB
-          
-        collection.updateOne({_id: 'ImageCount'}, {$set: {count: MetaData._id}});
 
         // Switch to the Images collection.
-        collection = db.collection("images");
+        const collection = db.collection("images");
 
         collection.insertOne(MetaData);
 
@@ -143,12 +138,6 @@ router.get('/:id/embed', (req, res) => {
     // copied from /:id endpoint
     let {id} = req.params;
     if(typeof id != 'string') return res.status(400).send("You did not specify an image ID.");
-    try {
-        id = parseInt(id);
-        if(id < 1) return res.status(400).send("Image ID is never below 0.");
-    } catch {
-        return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
-    }
 
     // template for embed page
     let html = `<!DOCTYPE html>
@@ -199,13 +188,6 @@ router.get("/:id/info", async (req, res) => {
     if((config.images.disable_fetch ?? false) && !req.user.developer) return res.status(500).send({"message": "Access denied - image fetching is disabled."});
     var {id} = req.params;
     if(typeof id != 'string') return res.status(400).send("You did not specify an image ID.");
-    try {
-        id = parseInt(id);
-        if(id < 1) return res.status(400).send("Image ID is never below 0.");
-        if(isNaN(id))return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
-    } catch {
-        return res.status(400).send("Failed to parse image ID to integer, please try again with a valid URL-Encoded int.");
-    }
 
     const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
     var collection = db.collection("images");
@@ -227,27 +209,18 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         var {base64} = req.query;
 
         // Guard Clauses
-        if(typeof id != 'string') return res.status(400).send({message:"You did not specify an image ID."});
-        else try {
-            id = parseInt(id);
-
-            if(isNaN(id)) return res.status(400).send({message: "Invalid image ID specified."});
-            if(id < 1) return res.status(400).send({message: "Image IDs are never below 0."});
-        } catch {
-            return res.status(500).send({message: "Failed to parse image ID."});
+        if (typeof id != 'string') {
+            return res.status(400).json({
+                code: "no_image_id",
+                message: "You did not specify an image ID."
+            });
         }
 
         // Open database
         const db = require('../index').mongoClient.db(config.database.mongodb_database_name);
 
-        // Validate collection
-        var collection = db.collection("configuration");
-        const ImageCount = await collection.findOne({_id: "ImageCount"});
-
-        if(id > ImageCount.count) return res.status(404).send({message: "The database does not contain that many images."});
-
         // Switch collection to image data.
-        collection = db.collection("images");
+        const collection = db.collection("images");
 
         var ImageInfo = await collection.findOne({_id: {$exists: true, $eq: id}});
         if(ImageInfo == null) return res.status(404).send({code: "image_not_found", message: "That image does not exist."});

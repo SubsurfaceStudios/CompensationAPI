@@ -1530,7 +1530,7 @@ router.post("/room/:id/cover-image/set/:image_id", authenticateToken, requiresRo
         const image = await image_collection.findOne(
             {
                 _id: {
-                    $eq: parseInt(image_id),
+                    $eq: image_id,
                     $exists: true
                 }
             }

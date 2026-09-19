@@ -3,7 +3,7 @@ const { PullPlayerData, PushPlayerData, config } = require('../helpers');
 const middleware = require('../middleware');
 const { execSync } = require('node:child_process');
 const { authenticateTokenAndTag } = require('../middleware');
-const { v1 } = require('uuid');
+const { v7 } = require('uuid');
 
 //Check if a token is valid as developer.
 router.get("/check", middleware.authenticateDeveloperToken, async (req, res) => {
@@ -270,7 +270,7 @@ router.put("/quality-control/submit-test-case", authenticateTokenAndTag("QA Test
         });
 
         const test_case = {
-            _id: v1(),
+            _id: v7(),
             header: header,
             description: description,
             creator: req.user.id,

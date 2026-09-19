@@ -2,7 +2,7 @@ const router = require('express').Router();
 const helpers = require('../helpers');
 const { config } = helpers;
 const middleware = require('../middleware');
-const uuid = require('uuid');
+const { v7 } = require('uuid');
 
 const message_template = {
     _id: "aaaa-bbbb-cccc-dddd-0000",
@@ -103,7 +103,7 @@ router.route("/channels/:channel_id/messages")
             //#endregion
 	
             var message = message_template;
-            message._id = uuid.v1();
+            message._id = v7();
             message.author = req.user.id;
             message.content = content;
             message.server = channel.server_id;

@@ -8,7 +8,7 @@ const NodeCache = require('node-cache');
 
 const config = helpers.config;
 const { default: rateLimit } = require('express-rate-limit');
-const { v1, v7 } = require('uuid');
+const { v7 } = require('uuid');
 
 router.use(express.text({limit: config.images.max_size ?? "10mb"}));
 
@@ -95,7 +95,7 @@ router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req
         MetaData.takenInRoomId = room_id;
         MetaData.room.id = room_id;
 
-        const filename = `${v1()}.jpg`;
+        const filename = `${v7()}.jpg`;
         const url = `${config.images.domain}/${filename}`;
         MetaData.blobUrl = url;
 

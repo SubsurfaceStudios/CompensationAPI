@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const uuid = require('uuid');
+const { v7 } = require('uuid');
 const middleware = require('../middleware');
 const { config } = require('../helpers');
 
@@ -245,11 +245,11 @@ class RoomSession {
         this.Persistent = Persistent;
         this.FlaggedForRemoval = false;
 
-        this.InstanceId = uuid.v1();
+        this.InstanceId = v7();
         this.JoinCode = `CVR_ROOM.${this.RoomId}.INSTANCE.${this.InstanceId}`;
 
         // global instance handling
-        this.GlobalInstanceId = GlobalInstanceId == null ? uuid.v1() : GlobalInstanceId;
+        this.GlobalInstanceId = GlobalInstanceId == null ? v7() : GlobalInstanceId;
 
         if(typeof GlobalRoomInstances[RoomId] != 'object') GlobalRoomInstances[RoomId] = {};
 

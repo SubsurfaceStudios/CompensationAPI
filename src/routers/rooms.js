@@ -2,7 +2,7 @@ const router = require('express').Router();
 const {authenticateToken, authenticateToken_optional, authenticateDeveloperToken} = require('../middleware');
 const Fuse = require('fuse.js');
 const express = require('express');
-const { v1 } = require('uuid');
+const { v7 } = require('uuid');
 const { auditLog, PullPlayerData, config, S3 } = require('../helpers');
 const { default: rateLimit } = require('express-rate-limit');
 const { WebSocketV2_MessageTemplate } = require('../index');
@@ -357,7 +357,7 @@ router.post('/room/:id/subrooms/:subroom_id/versions/:version_id/associate-data'
             });
         }
 
-        const filename = `${v1()}.json`;
+        const filename = `${v7()}.json`;
         const blobUrl = `${config.rooms.domain}/${filename}`;
 
         const uploadCommand = new PutObjectCommand({
@@ -1065,7 +1065,7 @@ router.post('/new', authenticateToken, async (req, res) => {
         userPermissions[req.user.id] = "owner";
 
         const room = {
-            _id: v1(),
+            _id: v7(),
             name: name,
             description: "An empty room.",
             creator_id: req.user.id,

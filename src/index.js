@@ -19,8 +19,16 @@ var GlobalLimiter = RateLimit({
     standardHeaders: true,
     legacyHeaders: false
 });
-
 app.use(GlobalLimiter);
+
+// request tracing
+app.use((req, _, next) => {
+    if ((config.debug.request_trace_level || 0) > 0)
+    {
+        console.log(`${req.method} ${req.originalUrl}`);
+    }
+    next();
+});
 
 app.use(express.json({
     limit: '50mb'

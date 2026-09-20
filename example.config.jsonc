@@ -108,6 +108,7 @@
 		// every few minutes.
 		// Default: false
 		"trace_instances": false,
+		
 		// The identifier for this specific CVR server instance, used in the
 		// Discord webhook on audit logs. Leave blank, and the webhook won't
 		// be invoked.
@@ -115,11 +116,20 @@
 		// The URL that should be called to send a Discord webhook. Leave blank
 		// to prevent the webhook from being called.
 		"discord_webhook_url": "https://discord.com/YOUR-WEBHOOK-URL-HERE",
+
 		// The secret that should be used to verify Git webhooks.
 		"webhook_git_pull_secret": "YOUR-GIT-PULL-SECRET",
+
 		// The path that should be used for your log file.
 		// Default: ./data/cvr.log
-		"audit_log_path": "./data/cvr.log"
+		"audit_log_path": "./data/cvr.log",
+
+		// Sets the level of logging to be used on every request.
+		// Default: 1.
+		// Possible values:
+		// 0: None
+		// 1: HTTP method and URL
+		"request_trace_level": 1
 	},
 
 	// Used to configure the Automatic Error Reporting (AER) system.

@@ -225,19 +225,6 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, req
         // Validate metadata & assign ID.
         var decoupled_metadata = {
             baseSceneIndex: 9,
-            spawn: {
-                position: {
-                    x: 0,
-                    y: 0,
-                    z: 0
-                },
-                rotation: {
-                    x: 0,
-                    y: 0,
-                    z: 0,
-                    w: 1
-                }
-            },
             shortHandCommitMessage: "No Message",
             longHandCommitMessage: "No Description",
             author: "1",
@@ -247,27 +234,6 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, req
 
         // baseSceneIndex
         if(typeof input_metadata.baseSceneIndex == 'number') decoupled_metadata.baseSceneIndex = input_metadata.baseSceneIndex;
-        // Validate spawn location 
-        // WARNING: actually good comments coming up
-        if(
-            !( // NOT
-                typeof input_metadata.spawn == 'object' &&                      // Top level object
-                typeof input_metadata.spawn?.position == 'object' &&            // Level 2 - Position
-                typeof input_metadata.spawn?.rotation == 'object' &&            // Level 2 - Rotation
-
-                typeof input_metadata.spawn?.position?.x == 'number' &&         // Level 3 - X Coordinate
-                typeof input_metadata.spawn?.position?.y == 'number' &&         // Level 3 - Y Coordinate
-                typeof input_metadata.spawn?.position?.z == 'number' &&         // Level 3 - Z Coordinate
-
-                typeof input_metadata.spawn?.rotation?.x == 'number' &&         // Level 3 - X Quaternion Component
-                typeof input_metadata.spawn?.rotation?.y == 'number' &&         // Level 3 - Y Quaternion Component
-                typeof input_metadata.spawn?.rotation?.z == 'number' &&         // Level 3 - Z Quaternion Component
-                typeof input_metadata.spawn?.rotation?.w == 'number'            // Level 3 - W Quaternion Component
-            )
-        ) return res.status(400).json({
-            "code": "invalid_metadata",
-            "message": "The `spawn` parameter of your version metadata is not specified or is invalid."
-        });
 
         // shortHandCommitMessage
         if(typeof input_metadata.shortHandCommitMessage == 'string') decoupled_metadata.shortHandCommitMessage = input_metadata.shortHandCommitMessage;
@@ -1079,19 +1045,6 @@ router.post('/new', authenticateToken, async (req, res) => {
                     versions: [
                         {
                             baseSceneIndex: 15,
-                            spawn: {
-                                position: {
-                                    x: 0,
-                                    y: 0,
-                                    z: 0,
-                                },
-                                rotation: {
-                                    x: 0,
-                                    y: 0,
-                                    z: 0,
-                                    w: 0
-                                }
-                            },
                             shortHandCommitMessage: "Initial Commit",
                             longHandCommitMessage: "Initial Commit - Auto-Generated for your convenience by the Compensation VR API.",
                             author: req.user.id,
@@ -1673,19 +1626,6 @@ router.post("/room/:id/subrooms/:name/create", authenticateToken, requiresRoomPe
             versions: [
                 {
                     baseSceneIndex: 15,
-                    spawn: {
-                        position: {
-                            x: 0,
-                            y: 0,
-                            z: 0
-                        },
-                        rotation: {
-                            x: 0,
-                            y: 0,
-                            z: 0,
-                            w: 0
-                        }
-                    },
                     shortHandCommitMessage: "Initial Commit",
                     longHandCommitMessage: "Initial Commit - Auto-Generated for your convenience by the Compensation Social API.",
                     author: req.user.id,

@@ -193,7 +193,6 @@ WebSocketServerV2.on('connection', (Socket) => {
                 send.data = {
                     name: instance.JoinCode,
                     baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                    spawn: subroom.versions[subroom.publicVersionId].spawn,
                     roomId: room._id,
                     subroomId: instance.SubroomId,
                     roomFaceData: {
@@ -258,7 +257,6 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: final_selection.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn,
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -331,7 +329,6 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn,
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -403,7 +400,6 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn,
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -532,7 +528,6 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn,
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -608,7 +603,6 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.data = {
                 name: instance.JoinCode,
                 baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-                spawn: subroom.versions[subroom.publicVersionId].spawn,
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -695,7 +689,6 @@ WebSocketServerV2.on('connection', (Socket) => {
         send.data = {
             name: instance.JoinCode,
             baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
-            spawn: subroom.versions[subroom.publicVersionId].spawn,
             roomId: room._id,
             subroomId: instance.SubroomId,
             roomFaceData: {

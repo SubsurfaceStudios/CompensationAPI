@@ -144,11 +144,11 @@ router.get('/:id/embed', (req, res) => {
      <html lang="en">
      <head>
      <meta charset="UTF-8">
-     <meta content="Compensation VR" property="og:title">
+     <meta content="Compensation Social" property="og:title">
      <meta content="###img###" property="og:image">
-     <meta content="Taken by ###nick### (@###user###) on ###time### ###tags###" property="og:description">
+     <meta content="Taken by ###nick### (@###user###) on ###time###.\n###tags###" property="og:description">
      <meta name="theme-color" content="#9702f4">
-     <meta content="summary_large_image" name="twitter:summary_large_image">
+     <meta name="twitter:card" content="summary_large_image">
      <meta http-equiv="refresh" content="0; URL=###img###">
      </head>
      </html>`;

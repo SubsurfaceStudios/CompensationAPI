@@ -165,16 +165,16 @@ router.get('/:id/embed', (req, res) => {
             '###user###': doc.takenBy.username,
             '###time###': doc.takenOn.humanReadable,
             '###tags###': doc.social.tags.map(e => '#' + e).join(' '),
-            '###img###': config.images.domain + id
+            '###img###': doc.blobUrl
         })) {
             // escape html to prevent xss
-            replacement = replacement.replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;"); // html 4 doesn't support &apos; which is why we use &39; instead
+            replacement = replacement.replaceAll(/&/g, "&amp;")
+                .replaceAll(/</g, "&lt;")
+                .replaceAll(/>/g, "&gt;")
+                .replaceAll(/"/g, "&quot;")
+                .replaceAll(/'/g, "&#039;"); // html 4 doesn't support &apos; which is why we use &39; instead
                
-            html = html.replace(match, replacement);
+            html = html.replaceAll(match, replacement);
         }
 
         return res.status(200).send(html);

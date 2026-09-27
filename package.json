@@ -19,7 +19,6 @@
     "jsonc-parser": "^3.3.1",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.5.0",
-    "node-cache": "^5.1.2",
     "node-rsa": "^1.1.1",
     "otplib": "^13.5.0",
     "uuid": "^14.0.2",

@@ -133,8 +133,6 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
                
             if(!Object.keys(room.subrooms).includes(subroom_id)) return res.status(404).send({message: "subroom_not_found"});
 
-
-            
             const subroom = room.subrooms[subroom_id];
             
             if(version_id == 'latest') version_id = subroom.publicVersionId;
@@ -143,14 +141,7 @@ router.route("/room/:room_id/subrooms/:subroom_id/versions/:version_id/download"
                 "message": "There is no file associated with this version, so loading the room objects is unnecessary."
             });
 
-            const fetchResponse = await fetch(subroom.versions[version_id].blobUrl);
-            var buffer = Buffer.from(await fetchResponse.arrayBuffer());
-               
-            res.writeHead(200, {
-                'Content-Type': 'application/octet-stream',
-                'Content-Length': buffer.length
-            });
-            return res.end(buffer);
+            return res.redirect(301, subroom.versions[version_id].blobUrl);
         } catch (ex) {
             res.sendStatus(500);
             throw ex;

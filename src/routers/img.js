@@ -4,8 +4,6 @@ const middleware = require('../middleware');
 const express = require('express');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
-const NodeCache = require('node-cache');
-
 const config = helpers.config;
 const { default: rateLimit } = require('express-rate-limit');
 const { v7 } = require('uuid');
@@ -55,12 +53,6 @@ const fetch_rate_limit = rateLimit({
     'max': config.images.fetch_rate_limit,
     'standardHeaders': true,
     'legacyHeaders': true
-});
-
-// 24 hour cache
-const imgCache = new NodeCache({
-    "deleteOnExpire": true,
-    "stdTTL": 60 * 60 * 24
 });
 
 router.post("/upload", uploadRateLimit, middleware.authenticateToken, async (req, res) => {
@@ -206,7 +198,6 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         if((config.images.disable_fetch ?? false) && !req.user.developer) return res.status(500).send("Image fetching has been disabled by the system administrator.");
         // Setup of parameters
         var {id} = req.params;
-        var {base64} = req.query;
 
         // Guard Clauses
         if (typeof id != 'string') {
@@ -223,46 +214,9 @@ router.get("/:id", fetch_rate_limit, async (req, res) => {
         const collection = db.collection("images");
 
         var ImageInfo = await collection.findOne({_id: {$exists: true, $eq: id}});
-        if(ImageInfo == null) return res.status(404).send({code: "image_not_found", message: "That image does not exist."});
-
-        if (typeof base64 == 'undefined' || base64 !== 'true') {
-            var ImageBuffer;
-
-            if (!imgCache.has(id) || (config.images.disable_caching ?? false)) {
-                const imageResponse = await fetch(ImageInfo.blobUrl);
-                ImageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-            } else {
-                ImageBuffer = imgCache.get(id);
-            }
-               
-            res.writeHead(200, {
-                'Content-Type': 'image/jpeg',
-                'Content-Length': ImageBuffer.length,
-                'Cache-Control': 'public, max-age=604800'
-            });
-            res.end(ImageBuffer);
-
-            if(!imgCache.has(id) && !(config.images.disable_caching ?? false)) {
-                imgCache.set(id, ImageBuffer);
-                console.log(`Request submitted for uncached image ${id}, cached.`);
-            } else console.log(`Request submitted for cached image ${id}.`);
-        } else {
-            // eslint-disable-next-line no-redeclare
-            var ImageBuffer;
-            if(!imgCache.has(id) || (config.images.disable_caching ?? false)) {
-                const imageResponse = await fetch(ImageInfo.blobUrl);
-                ImageBuffer = await imageResponse.arrayBuffer();
-            } else {
-                ImageBuffer = imgCache.get(id);
-            }
-            var ImageBase64String = Buffer.from(ImageBuffer).toString('base64');
-
-            res.status(200).contentType('text/plain').send(ImageBase64String);
-            if(!imgCache.has(id) && !(config.images.disable_caching ?? false)) {
-                imgCache.set(id, ImageBuffer);
-                console.log(`Request submitted for uncached image ${id}, cached.`);
-            } else console.log(`Request submitted for cached image ${id}.`);
-        }
+        if (ImageInfo == null) return res.status(404).send({ code: "image_not_found", message: "That image does not exist." });
+        
+        return res.redirect(301, ImageInfo.blobUrl);
     } catch (ex) {
         res.status(500).send("Failed to retrieve image.");
         throw ex;

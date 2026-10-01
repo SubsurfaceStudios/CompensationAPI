@@ -146,7 +146,10 @@ WebSocketServerV2.on('connection', (Socket) => {
                 joinCode: null
             };
 
-            auditLog(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has connected. Online players: ${Object.keys(ws_connected_clients).length}`);
+            if (config.debug?.log_connection_events)
+            {
+                auditLog(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has connected. Online players: ${Object.keys(ws_connected_clients).length}`);
+            }
             return Socket.send(JSON.stringify(final_send, null, 5));
         case "join_or_create_matchmaking_instance":
             if (!ConnectedUserData.isAuthenticated)
@@ -741,7 +744,11 @@ WebSocketServerV2.on('connection', (Socket) => {
             return;
 
         delete ws_connected_clients[ConnectedUserData.uid];
-        auditLog(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has disconnected. Currently online players: ${Object.keys(ws_connected_clients).length}`);
+
+        if (config.debug?.log_connection_events)
+        {
+            auditLog(`User "${ConnectedUserData.nickname}" / @${ConnectedUserData.username} with ID ${ConnectedUserData.uid} has disconnected. Currently online players: ${Object.keys(ws_connected_clients).length}`);
+        }
 
         if (ConnectedUserData.matchmaking_InstanceId != null) {
             var instance = await MatchmakingAPI.GetInstanceById(ConnectedUserData.matchmaking_RoomId, ConnectedUserData.matchmaking_InstanceId);

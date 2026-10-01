@@ -129,7 +129,12 @@
 		// Possible values:
 		// 0: None
 		// 1: HTTP method and URL
-		"request_trace_level": 1
+		"request_trace_level": 1,
+
+		// Whether or not an audit log should be dispatched every time a
+		// player connects or disconnects from WebSocketServerV2.
+		// Default: false.
+		"log_connection_events": false
 	},
 
 	// Used to configure the Automatic Error Reporting (AER) system.

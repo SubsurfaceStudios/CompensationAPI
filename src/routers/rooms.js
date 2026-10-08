@@ -97,7 +97,7 @@ router.route("/room/:room_id/info")
                 const role = Object.keys(userPermissions).includes(req.user.id) ? userPermissions[req.user.id] : "everyone";
                 const permissions = rolePermissions[role];
 
-                if(!permissions.viewAndJoin && req.user.id !== room.creator_id) return res.status(403).send({message: "invalid_permissions"});
+                if(!permissions.viewAndJoin && req.user.id !== room.creator_id && !req.user.developer) return res.status(403).send({message: "invalid_permissions"});
             } else {
                 const permissions = rolePermissions.everyone;
 

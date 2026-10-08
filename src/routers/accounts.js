@@ -309,6 +309,10 @@ router.get("/search", async (req, res) => {
         break;
     }
 
+    if (!query) {
+        return res.status(200).json(all.map(x => x._id));
+    }
+
     const fuse = new Fuse(all, {
         includeScore: false,
         keys: [type]

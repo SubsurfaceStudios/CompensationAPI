@@ -414,7 +414,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                     homeSubroomId: room.homeSubroomId,
                     creator_id: room.creator_id
                 },
-                authorPublicData: (await helpers.PullPlayerData(room.creator_id)).public
+                authorPublicData: (await helpers.PullPlayerData(room.creator_id))?.public
             };
 
             Socket.send(JSON.stringify(send, null, 5));

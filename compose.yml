@@ -15,7 +15,7 @@ services:
   cvr-api:
     # in the future it might be wise to add a "stable" tag or one for each game version
     # but for now this works well enough
-    image: ghcr.io/SubsurfaceStudios/CompensationAPI:latest
+    image: ghcr.io/subsurfacestudios/compensationapi:latest
     container_name: cvr-api
     env_file:
       - .env

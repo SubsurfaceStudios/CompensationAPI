@@ -46,7 +46,7 @@ INSERT INTO subroom_version
 		TimestampTZ '2022-04-17T19:59:22.946Z',
 		UUID '00000000-0000-0000-0000-000000000000',
 		'AHH_Level1',
-		'Initial Commit',
+		'Initial Commit'
 	),
 	(
 		UUID '50773220-c023-11ec-bc87-43b3663f2319',
@@ -54,7 +54,7 @@ INSERT INTO subroom_version
 		TimestampTZ '2022-04-17T19:59:22.946Z',
 		UUID '00000000-0000-0000-0000-000000000000',
 		'AHH_Level2',
-		'Initial Commit',
+		'Initial Commit'
 	),
 	(
 		UUID '50773220-c023-11ec-bc87-43b3663f2319',
@@ -62,7 +62,7 @@ INSERT INTO subroom_version
 		TimestampTZ '2022-04-17T19:59:22.946Z',
 		UUID '00000000-0000-0000-0000-000000000000',
 		'AHH_Level3',
-		'Initial Commit',
+		'Initial Commit'
 	);
 
 COMMIT;

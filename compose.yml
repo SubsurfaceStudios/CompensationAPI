@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:18
+    container_name: cvr-postgres
+    environment:
+      # You should change this!
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - cvr-network
+  cvr-api:
+    # in the future it might be wise to add a "stable" tag or one for each game version
+    # but for now this works well enough
+    image: ghcr.io/SubsurfaceStudios/CompensationAPI:latest
+    container_name: cvr-api
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - cvr-network
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+
+networks:
+  cvr-network:
+    driver: bridge

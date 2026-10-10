@@ -1,27 +1,22 @@
-FROM node:24-alpine
-WORKDIR /var/lib/cvr
+# syntax=docker/dockerfile:1
 
-# dependencies
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm install --no-save
+# Build from source
+FROM golang:1.27 AS build
 
-# source
-COPY routers ./routers
-COPY index.js ./index.js
-COPY helpers.js ./helpers.js
-COPY middleware.js ./middleware.js
+WORKDIR /app
 
-# data / config
-COPY data ./data
-COPY keys ./keys
-COPY config.jsonc ./
+RUN --mount=type=bind,target=. go build -o /cvrapi .
 
-# set up app user
-RUN adduser -D -g "" cvr
-RUN chown cvr ./data/audit.json
-USER cvr
 
-# set command
+# Deploy binary to a lightweight image
+FROM gcr.io/distroless/base-debian12 AS build-release-stage
+
+WORKDIR /
+
+COPY --from=build /cvrapi /cvrapi
+
 EXPOSE 8080
-CMD ["node", "."]
+
+USER nonroot:nonroot
+
+ENTRYPOINT [ "/cvrapi" ]

@@ -1,0 +1,10 @@
+# editor config
+.vscode/
+
+# example config files
+example.config.jsonc
+example.compose.yml
+
+# docker config
+Dockerfile
+compose.yml

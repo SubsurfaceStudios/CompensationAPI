@@ -28,5 +28,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/SubsurfaceStudios/CompensationAPI:latest
-            ghcr.io/SubsurfaceStudios/CompensationAPI:${{ github.sha }}
+            ghcr.io/subsurfacestudios/compensationapi:latest
+            ghcr.io/subsurfacestudios/compensationapi:${{ github.sha }}

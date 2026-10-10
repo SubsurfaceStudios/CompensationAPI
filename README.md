@@ -1,16 +1,28 @@
-# Compensation Social API
-This was the repository containing all API code for the Compensation Social official servers.
-It has since been archived due to the official servers being shut down. If you wish to host
-your own server, we recommend creating a fork of this repository and continuing from there.
-  
-Best of luck, and we hope you enjoy Compensation Social!
+# About
+This repository contains the source code for the Compensation VR API, which is used
+to operate the official backend. We have also designed it to be reasonably straightforward
+to self-host, so that you can run your own private CVR server!
 
-# Website
+# Self-Hosting
+We've finally simplified the process to self-host your own Compensation VR instance!
 
-[compensationvr.tk](https://compensationvr.tk)
+You can run the following commands to get a basic CVR instance running locally,
+and you can modify `compose.yml` and `.env` as necessary to fit your needs.
 
-# Creators
-We are [Subsurface Studios](https://subsurface.az-raven.com)! We are a group of independent
-developers working to make better games for all. We work to test our games more rigorously,
-invest more time and energy, and generally create more polished experiences than those around
-us. For more information, check out https://subsurface.az-raven.com.
+```bash
+# Make a directory for the config files
+mkdir cvr-api
+cd cvr-api
+
+# Fetch the Docker Compose configuration
+curl -o compose.yml "https://raw.githubusercontent.com/SubsurfaceStudios/CompensationAPI/refs/heads/main/compose.yml"
+
+# Fetch the example environment variables, and put them in .env
+curl -o .env "https://raw.githubusercontent.com/SubsurfaceStudios/CompensationAPI/refs/heads/main/.env.example"
+
+# You can edit the compose.yml and .env here as you please.
+# You'll probably want to change things like the database password before running the API for the first time.
+
+# Now it's time to run the instance!
+docker compose up
+```

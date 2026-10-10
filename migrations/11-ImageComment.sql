@@ -1,0 +1,24 @@
+CREATE TABLE IF NOT EXISTS image_comment (
+	image_id UUID
+		NOT NULL
+		REFERENCES image (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+	
+	player_id UUID
+		NOT NULL
+		REFERENCES player (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+	
+	posted TimestampTZ
+		NOT NULL
+		DEFAULT NOW(),
+	
+	content Text
+		NOT NULL,
+	
+	PRIMARY KEY (image_id, player_id, posted)
+);

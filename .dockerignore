@@ -1,0 +1,2 @@
+# Make sure .env doesn't end up in an image somehow.
+.env

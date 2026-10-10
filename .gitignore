@@ -1,13 +1,5 @@
-# very very big
-node_modules/
-
-# likely sensitive information
-data/
-keys/
-
-# config file, might contain secrets etc
-config.jsonc
-compose.yml
-
 # IDE stuff
 .vscode/*
+
+# Configuration file
+.env

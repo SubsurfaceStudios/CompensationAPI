@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS player_session (
+	secret Text
+		NOT NULL
+		PRIMARY KEY,
+	player_id UUID
+		NOT NULL
+		REFERENCES player (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+
+	began TimestampTZ
+		NOT NULL
+		DEFAULT NOW(),
+	expires TimestampTZ
+		NOT NULL
+		DEFAULT NOW() + INTERVAL '24 hours',
+
+	name Text
+		NOT NULL
+);

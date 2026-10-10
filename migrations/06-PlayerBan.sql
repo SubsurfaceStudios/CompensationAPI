@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS player_ban (
+	player_id UUID
+		NOT NULL
+		REFERENCES player (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+
+	began TimestampTZ
+		NOT NULL
+		DEFAULT NOW(),
+
+	moderator_id UUID
+		REFERENCES player (id)
+		ON DELETE SET NULL (moderator_id)
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+
+	PRIMARY KEY (player_id, began)
+);

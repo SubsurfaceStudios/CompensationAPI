@@ -1,0 +1,70 @@
+-- -- Note that we don't create an Apartment!
+-- -- During the API rewrite, we're switching to creating a new Apartment for every player,
+-- -- so that they can customize it however they like!
+
+-- BEGIN DEFERRABLE;
+-- SET CONSTRAINTS ALL DEFERRED;
+
+-- INSERT INTO room
+-- 	(id, owner_id, name, created, description, visits) VALUES
+-- 	-- A Helpful Hand
+-- 	(
+-- 		UUID '50773220-c023-11ec-bc87-43b3663f2319',
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'AHelpfulHand',
+-- 		TimestampTZ '2022-04-17T19:59:22.946Z'
+-- 		'Haul yourself up towering cliffs, now with friends!',
+-- 		62
+-- 	),
+-- 	-- Conclusion
+-- 	(
+-- 		UUID '57a4f930-fc0c-11ed-9615-4d3496a9f251'
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'Conclusion',
+-- 		TimestampTZ '2023-05-26T21:28:37.900Z',
+-- 		'We had a good run, now it''s time to close things out.',
+-- 		6
+-- 	),
+-- 	-- Airsoft
+-- 	(
+-- 		UUID 'e2b3da10-d088-11ec-8aad-eb1cae999f60',
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'Airsoft',
+-- 		TimestampTZ '1970-01-01T00:00:00.000',
+-- 		'Airsoft is a competitive gamemode designed to challenge players'' proficiency in close combat.',
+-- 		116
+-- 	),
+-- 	(
+-- 		UUID '779c9970-c024-11ec-bc87-43b3663f2319',
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'Island',
+-- 		TimestampTZ '2022-04-17T19:59:22.946Z',
+-- 		'Hang out and enjoy yourself on a cozy island, with two cabins and a boat.',
+-- 		73
+-- 	),
+-- 	(
+-- 		UUID 'c9cd6ff0-0b95-11ed-b31e-398ed32edb38',
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'Ampitheater',
+-- 		TimestampTZ '1970-01-01T00:00:00.000',
+-- 		'An ampitheater for official presentations.'
+-- 		40
+-- 	),
+-- 	(
+-- 		UUID '7a0499e0-b1a8-11f1-8878-4bed40532797',
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'Ashes',
+-- 		TimestampTZ '2026-09-16T08:27:38.494',
+-- 		'...',
+-- 		1
+-- 	),
+-- 	(
+-- 		UUID '01a0f714-ecf5-738c-8df1-cbf3d1ac9cb8',
+-- 		UUID '00000000-0000-0000-0000-000000000000',
+-- 		'Lounge',
+-- 		TimestampTZ '2022-04-17T19:59:22.946Z',
+-- 		'Hang out with friends in a warm and clean social space, with all the comforts of home!',
+-- 		356
+-- 	);
+
+-- COMMIT;

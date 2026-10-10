@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS room_instance (
+	id UUID
+		NOT NULL
+		PRIMARY KEY,
+
+	room_id UUID
+		NOT NULL
+		REFERENCES room (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+	
+	is_public Boolean
+		NOT NULL
+		DEFAULT true
+);

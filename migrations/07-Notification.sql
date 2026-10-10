@@ -1,0 +1,32 @@
+CREATE TABLE IF NOT EXISTS notification (
+	id UUID
+		NOT NULL
+		PRIMARY KEY,
+
+	sender_id UUID
+		NOT NULL
+		REFERENCES player (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+	recipient_id UUID
+		NOT NULL
+		REFERENCES player (id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE,
+
+	received TimestampTZ
+		NOT NULL
+		DEFAULT NOW(),
+	ttl Interval,
+
+	summary Text
+		NOT NULL,
+	content Text
+		NOT NULL,
+	type Text
+		NOT NULL,
+	priority Text
+		NOT NULL
+);

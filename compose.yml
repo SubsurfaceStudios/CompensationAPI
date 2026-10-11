@@ -10,25 +10,25 @@ services:
     volumes:
       - ./migrations:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql
-    networks:
-      - cvr-network
-  cvr-api:
-    # in the future it might be wise to add a "stable" tag or one for each game version
-    # but for now this works well enough
-    image: ghcr.io/subsurfacestudios/compensationapi:latest
-    container_name: cvr-api
-    env_file:
-      - .env
-    ports:
-      - "127.0.0.1:8080:8080"
-    networks:
-      - cvr-network
-    depends_on:
-      - db
+  #   networks:
+  #     - cvr-network
+  # cvr-api:
+  #   # in the future it might be wise to add a "stable" tag or one for each game version
+  #   # but for now this works well enough
+  #   image: ghcr.io/subsurfacestudios/compensationapi:latest
+  #   container_name: cvr-api
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "127.0.0.1:8080:8080"
+  #   networks:
+  #     - cvr-network
+  #   depends_on:
+  #     - db
 
 volumes:
   postgres_data:
 
-networks:
-  cvr-network:
-    driver: bridge
+# networks:
+#   cvr-network:
+#     driver: bridge

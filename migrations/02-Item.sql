@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS item (
 	name TEXT
 		NOT NULL,
 
-	type TEXT,
+	slot TEXT
+		NOT NULL,
 	prefab TEXT
 		NOT NULL,
 

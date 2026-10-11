@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/SubsurfaceStudios/CompensationAPI/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -17,27 +18,26 @@ func GetHealthStatus(pool *pgxpool.Pool) gin.HandlerFunc {
 		err := pool.QueryRow(c, "SELECT now() - pg_postmaster_start_time() AS uptime, version() as version;").Scan(&uptime, &version)
 		if err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"code":    "database_error",
-				"message": "Degraded: Unable to read simple stats from database.",
-				"success": false,
-				"api": gin.H{
-					"go":  runtime.Version(),
-					"gin": gin.Version,
+				"Code":    "database_error",
+				"Message": "Degraded: Unable to read simple stats from database.",
+				"Success": false,
+				"Data": gin.H{
+					"API": gin.H{
+						"Go":  runtime.Version(),
+						"gin": gin.Version,
+					},
 				},
 			})
 			return
 		}
 
-		c.JSON(200, gin.H{
-			"code":    "success",
-			"message": "Pong!",
-			"success": true,
-			"database": gin.H{
-				"uptime":  uptime.String(),
-				"version": version,
+		responses.OK(c, gin.H{
+			"Database": gin.H{
+				"Uptime":  uptime.String(),
+				"Version": version,
 			},
-			"api": gin.H{
-				"go":  runtime.Version(),
+			"API": gin.H{
+				"Go":  runtime.Version(),
 				"gin": gin.Version,
 			},
 		})

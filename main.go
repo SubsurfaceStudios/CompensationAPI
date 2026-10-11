@@ -6,13 +6,14 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
-	"github.com/SubsurfaceStudios/CompensationAPI/common"
+	"github.com/SubsurfaceStudios/CompensationAPI/database"
+	"github.com/SubsurfaceStudios/CompensationAPI/players"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// Database setup
-	pool, err := common.CreateConnectionPool()
+	pool, err := database.CreateConnectionPool()
 	if err != nil {
 		log.Fatalf("[DB] Unable to connect to database: %v\n", err)
 	}
@@ -23,6 +24,8 @@ func main() {
 
 	r.GET("/", GetHealthStatus(pool))
 	r.GET("/health/v1", GetHealthStatus(pool))
+
+	r.GET("/players/:id", players.GetPlayerById(pool))
 
 	// Begin listening
 	log.Fatal(r.Run(os.Getenv("LISTEN_ADDRESS")))

@@ -34,9 +34,15 @@ ALTER TABLE player ADD COLUMN
 	room_instance_id UUID;
 ALTER TABLE player ADD COLUMN
 	subroom_name Text;
-ALTER TABLE player ADD CONSTRAINT must_have_valid_location
+ALTER TABLE player ADD
 	FOREIGN KEY (room_instance_id, subroom_name)
 		REFERENCES subroom_instance (room_instance_id, subroom)
 		ON DELETE SET NULL (room_instance_id, subroom_name)
+		ON UPDATE CASCADE
+		DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE player ADD
+	FOREIGN KEY (room_instance_id)
+		REFERENCES room_instance (id)
+		ON DELETE SET NULL
 		ON UPDATE CASCADE
 		DEFERRABLE INITIALLY IMMEDIATE;

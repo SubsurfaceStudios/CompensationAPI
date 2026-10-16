@@ -1,11 +1,14 @@
 # syntax=docker/dockerfile:1
 
 # Build from source
-FROM golang:1.27 AS build
+FROM --platform=$BUILDPLATFORM golang:alpine AS build
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 
-RUN --mount=type=bind,target=. go build -o /cvrapi .
+RUN --mount=type=bind,target=. GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /cvrapi .
 
 
 # Deploy binary to a lightweight image

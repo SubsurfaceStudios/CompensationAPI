@@ -3,3 +3,5 @@
 
 # Configuration file
 .env
+
+compose.yml

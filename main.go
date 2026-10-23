@@ -13,7 +13,8 @@ import (
 
 func main() {
 	// Database setup
-	pool, err := database.CreateConnectionPool()
+	// FIXME handle database url not set
+	pool, err := database.CreateConnectionPool(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("[DB] Unable to connect to database: %v\n", err)
 	}
@@ -26,6 +27,7 @@ func main() {
 	r.GET("/health/v1", GetHealthStatus(pool))
 
 	r.GET("/players/:id", players.GetPlayerById(pool))
+	// r.POST("/players", players.RegisterPlayer(pool))
 
 	// Begin listening
 	log.Fatal(r.Run(os.Getenv("LISTEN_ADDRESS")))

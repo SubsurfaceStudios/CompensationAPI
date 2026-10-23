@@ -1,6 +1,7 @@
 package responses
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,12 +26,35 @@ type Meta struct {
 	TotalPages int `json:"TotalPages,omitempty"`
 }
 
+func Err(c *gin.Context, message string) {
+	c.JSON(
+		http.StatusInternalServerError,
+		Response{
+			Success: false,
+			Error: &ErrorInfo{
+				Code:    "internal_server_error",
+				Message: message,
+			},
+		},
+	)
+}
+
 func Fail(c *gin.Context, status int, code string, message string) {
 	c.JSON(status, Response{
 		Success: false,
 		Error: &ErrorInfo{
 			Code:    code,
 			Message: message,
+		},
+	})
+}
+
+func Unimplemented(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, Response{
+		Success: false,
+		Error: &ErrorInfo{
+			Code:    "unimplemented",
+			Message: fmt.Sprintf("The endpoint '%s' is not implemented.", c.Request.URL.Path),
 		},
 	})
 }

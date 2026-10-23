@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,8 +9,8 @@ import (
 	pgxUUID "github.com/vgarvardt/pgx-google-uuid/v5"
 )
 
-func CreateConnectionPool() (p *pgxpool.Pool, err error) {
-	config, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
+func CreateConnectionPool(connectionString string) (p *pgxpool.Pool, err error) {
+	config, err := pgxpool.ParseConfig(connectionString)
 	if err != nil {
 		return nil, err
 	}

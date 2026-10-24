@@ -59,6 +59,18 @@ func (suite *DatabaseTestSuite) TearDownSubTest(suiteName, testName string) {
 	}
 }
 
+func (suite *DatabaseTestSuite) TestRepeatedMigrations() {
+	// Technically we only need to do this once, because the
+	// migrations are already run once during setup of the suite,
+	// but it doesn't hurt and it makes certain they're run more than once.
+	for range 2 {
+		err := suite.db.RunMigrations(suite.T().Context())
+		if err != nil {
+			suite.T().Fatal(err)
+		}
+	}
+}
+
 func TestSuiteDB(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
 }

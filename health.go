@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetHealthStatus(db *database.Postgres) gin.HandlerFunc {
+func GetHealthStatus(db database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		result, err := db.GetHealthInfo(c)
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetPlayerById(db *database.Postgres) gin.HandlerFunc {
+func GetPlayerById(db database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		responses.Unimplemented(c)
 		// // fetch ID param
@@ -92,7 +92,6 @@ func GetPlayerById(db *database.Postgres) gin.HandlerFunc {
 
 		// 	outfit[item.Slot] = item
 		// }
-		// outfitRows.Close()
 
 		// // send final result
 		// responses.OK(c, gin.H{

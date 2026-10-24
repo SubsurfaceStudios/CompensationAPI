@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS Image (
 );
 
 -- add profile_picture to player
-ALTER TABLE player ADD COLUMN
+ALTER TABLE player ADD COLUMN IF NOT EXISTS
 	profile_picture UUID
 		REFERENCES image (id)
 		ON DELETE SET NULL (profile_picture)

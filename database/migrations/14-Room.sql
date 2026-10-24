@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS room (
 		ON UPDATE CASCADE
 );
 -- add spawn_room to player
-ALTER TABLE player ADD COLUMN
+ALTER TABLE player ADD COLUMN IF NOT EXISTS
 	spawn_room UUID
 		REFERENCES room (id)
 		ON DELETE SET NULL (spawn_room)

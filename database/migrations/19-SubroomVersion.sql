@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS subroom_version (
 	PRIMARY KEY (room_id, subroom_name, created)
 );
 
-ALTER TABLE subroom ADD COLUMN
+ALTER TABLE subroom ADD COLUMN IF NOT EXISTS
 	public_version_timestamp TimestampTZ
 		NOT NULL;
 		

@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS subroom_instance (
 );
 
 -- add instance info to player
-ALTER TABLE player ADD COLUMN
+ALTER TABLE player ADD COLUMN IF NOT EXISTS
 	room_instance_id UUID;
-ALTER TABLE player ADD COLUMN
+ALTER TABLE player ADD COLUMN IF NOT EXISTS
 	subroom_name Text;
 ALTER TABLE player ADD
 	FOREIGN KEY (room_instance_id, subroom_name)

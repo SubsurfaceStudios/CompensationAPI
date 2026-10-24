@@ -15,7 +15,8 @@ INSERT INTO room
 		TimestampTZ '2022-04-17T19:59:22.946Z',
 		'Haul yourself up towering cliffs, now with friends!',
 		62
-	);
+	)
+	ON CONFLICT DO NOTHING;
 
 INSERT INTO subroom
 	(room_id, subroom_name, public_version_timestamp, player_cap) VALUES
@@ -36,7 +37,8 @@ INSERT INTO subroom
 		'Level 3',
 		TimestampTZ '2022-04-17T19:59:22.946Z',
 		20
-	);
+	)
+	ON CONFLICT DO NOTHING;
 
 INSERT INTO subroom_version
 	(room_id, subroom_name, created, author_id, base_scene_name, summary) VALUES
@@ -63,6 +65,7 @@ INSERT INTO subroom_version
 		UUID '00000000-0000-0000-0000-000000000000',
 		'AHH_Level3',
 		'Initial Commit'
-	);
+	)
+	ON CONFLICT DO NOTHING;
 
 COMMIT;

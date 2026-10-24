@@ -7,10 +7,10 @@ INSERT INTO player
 		'system',
 		TimestampTZ '2021-02-11T16:36:17.134Z',
 		'XXX',
-		'CVR',
+		'Sierra',
 		'Official',
 		'It / Its',
-		'This is the official account of Compensation VR!'
+		'This is the official account of Sierra!'
 	)
 	ON CONFLICT DO NOTHING;
 

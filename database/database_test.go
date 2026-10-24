@@ -59,6 +59,6 @@ func (suite *DatabaseTestSuite) TearDownSubTest(suiteName, testName string) {
 	}
 }
 
-func TestDatabaseTestSuite(t *testing.T) {
+func TestSuiteDB(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
 }

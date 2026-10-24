@@ -2,7 +2,6 @@ package testhelpers
 
 import (
 	"context"
-	"path/filepath"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -18,8 +17,7 @@ type PostgresContainer struct {
 func CreatePostgresContainer(c context.Context) (*PostgresContainer, error) {
 	pgContainer, err := postgres.Run(c,
 		"postgres:18-alpine",
-		postgres.WithInitScripts(filepath.Join("..", "migrations")),
-		postgres.WithDatabase("sierra-test-db"),
+		postgres.WithDatabase("postgres"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("postgres"),
 		testcontainers.WithWaitStrategy(

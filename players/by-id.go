@@ -1,12 +1,12 @@
 package players
 
 import (
+	"github.com/SubsurfaceStudios/CompensationAPI/database"
 	"github.com/SubsurfaceStudios/CompensationAPI/responses"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetPlayerById(pool *pgxpool.Pool) gin.HandlerFunc {
+func GetPlayerById(db *database.Postgres) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		responses.Unimplemented(c)
 		// // fetch ID param

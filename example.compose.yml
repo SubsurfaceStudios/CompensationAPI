@@ -8,7 +8,6 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - ./migrations:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql
     networks:
       - sierra-network

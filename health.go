@@ -3,19 +3,15 @@ package main
 import (
 	"net/http"
 	"runtime"
-	"time"
 
+	"github.com/SubsurfaceStudios/CompensationAPI/database"
 	"github.com/SubsurfaceStudios/CompensationAPI/responses"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetHealthStatus(pool *pgxpool.Pool) gin.HandlerFunc {
+func GetHealthStatus(db *database.Postgres) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var uptime time.Duration
-		var version string
-
-		err := pool.QueryRow(c, "SELECT now() - pg_postmaster_start_time() AS uptime, version() as version;").Scan(&uptime, &version)
+		result, err := db.GetHealthInfo(c)
 		if err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"Code":    "database_error",
@@ -32,10 +28,7 @@ func GetHealthStatus(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		responses.OK(c, gin.H{
-			"Database": gin.H{
-				"Uptime":  uptime.String(),
-				"Version": version,
-			},
+			"Database": result,
 			"API": gin.H{
 				"Go":  runtime.Version(),
 				"gin": gin.Version,

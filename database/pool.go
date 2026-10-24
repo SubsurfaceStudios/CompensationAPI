@@ -9,7 +9,7 @@ import (
 	pgxUUID "github.com/vgarvardt/pgx-google-uuid/v5"
 )
 
-func CreateConnectionPool(connectionString string) (p *pgxpool.Pool, err error) {
+func createConnectionPool(connectionString string) (p *pgxpool.Pool, err error) {
 	config, err := pgxpool.ParseConfig(connectionString)
 	if err != nil {
 		return nil, err

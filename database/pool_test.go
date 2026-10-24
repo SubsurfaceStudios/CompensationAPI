@@ -1,9 +1,8 @@
-package database_test
+package database
 
 import (
 	"testing"
 
-	"github.com/SubsurfaceStudios/CompensationAPI/database"
 	"github.com/SubsurfaceStudios/CompensationAPI/testhelpers"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +17,7 @@ func TestCreateConnectionPool(t *testing.T) {
 
 	defer container.PostgresContainer.Terminate(t.Context())
 
-	pool, err := database.CreateConnectionPool(container.ConnectionString)
+	pool, err := createConnectionPool(container.ConnectionString)
 
 	if err != nil {
 		t.Error(err)

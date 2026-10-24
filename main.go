@@ -8,8 +8,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 
 	"github.com/SubsurfaceStudios/CompensationAPI/database"
-	"github.com/SubsurfaceStudios/CompensationAPI/players"
-	"github.com/gin-gonic/gin"
+	"github.com/SubsurfaceStudios/CompensationAPI/routing"
 )
 
 func main() {
@@ -27,13 +26,7 @@ func main() {
 	}
 
 	// Create router
-	r := gin.Default()
-
-	r.GET("/", GetHealthStatus(db))
-	r.GET("/health/v1", GetHealthStatus(db))
-
-	r.GET("/players/:id", players.GetPlayerById(db))
-	// r.POST("/players", players.RegisterPlayer(pool))
+	r := routing.SetupRouter(db)
 
 	// Begin listening
 	log.Fatal(r.Run(os.Getenv("LISTEN_ADDRESS")))

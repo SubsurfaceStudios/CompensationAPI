@@ -34,5 +34,4 @@ func (suite *PlayerTestSuite) TestGetUserByIDTable() {
 			}
 		})
 	}
-
 }

@@ -1,10 +1,12 @@
 package players_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/SubsurfaceStudios/CompensationAPI/database"
 	"github.com/SubsurfaceStudios/CompensationAPI/testhelpers"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -61,4 +63,9 @@ func (suite *PlayerTestSuite) TearDownSubTest(suiteName, testName string) {
 
 func TestSuitePlayer(t *testing.T) {
 	suite.Run(t, new(PlayerTestSuite))
+}
+
+func TestMain(m *testing.M) {
+	gin.SetMode(gin.TestMode)
+	os.Exit(m.Run())
 }

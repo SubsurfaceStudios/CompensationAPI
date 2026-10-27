@@ -142,3 +142,9 @@ func (pg *Postgres) GetPlayerPublic(c context.Context, id uuid.UUID) (player *Pl
 
 	return player, nil
 }
+
+func (pg *Postgres) GetPlayerID(c context.Context, username string) (id uuid.UUID, err error) {
+	err = pg.pool.QueryRow(c, "SELECT id FROM player WHERE LOWER(username) = LOWER($1);", username).Scan(&id)
+
+	return id, err
+}

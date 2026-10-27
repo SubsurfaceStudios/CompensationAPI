@@ -49,9 +49,7 @@ func (suite *DatabaseTestSuite) TestGetValidPlayer() {
 }
 
 func (suite *DatabaseTestSuite) TestGetNonexistentPlayer() {
-	testId, err := uuid.NewV7()
-
-	suite.Nil(err)
+	testId := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 
 	result, err := suite.db.GetPlayerPublic(
 		suite.T().Context(),
@@ -61,4 +59,29 @@ func (suite *DatabaseTestSuite) TestGetNonexistentPlayer() {
 	suite.NotNil(err)
 	suite.ErrorIs(err, pgx.ErrNoRows)
 	suite.Nil(result)
+}
+
+func (suite *DatabaseTestSuite) TestGetNonexistentPlayerID() {
+	const username = "devtest"
+
+	_, err := suite.db.GetPlayerID(
+		suite.T().Context(),
+		username,
+	)
+
+	suite.NotNil(err)
+	suite.ErrorIs(err, pgx.ErrNoRows)
+}
+
+func (suite *DatabaseTestSuite) TestGetKnownPlayerID() {
+	const username = "system"
+	expectedID := uuid.MustParse("00000000-0000-0000-0000-000000000000")
+
+	result, err := suite.db.GetPlayerID(
+		suite.T().Context(),
+		username,
+	)
+
+	suite.Nil(err)
+	suite.Equal(result, expectedID)
 }

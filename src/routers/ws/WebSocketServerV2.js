@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const { MatchmakingModes } = require('../matchmaking');
 const { WebSocketV2_MessageTemplate } = require("../../index");
 const { auditLog, config } = require('../../helpers');
+const { LEGACY_SCENE_IDs } = require('../rooms');
 
 /**
  * @typedef Connection
@@ -195,7 +196,7 @@ WebSocketServerV2.on('connection', (Socket) => {
                 send.code = "join_or_create_photon_room";
                 send.data = {
                     name: instance.JoinCode,
-                    baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                    baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
                     roomId: room._id,
                     subroomId: instance.SubroomId,
                     roomFaceData: {
@@ -259,7 +260,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             var subroom = room.subrooms[ParsedContent.data.subroomId];
             send.data = {
                 name: final_selection.JoinCode,
-                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -331,7 +332,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.code = "join_or_create_photon_room";
             send.data = {
                 name: instance.JoinCode,
-                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -402,7 +403,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             send.code = "join_or_create_photon_room";
             send.data = {
                 name: instance.JoinCode,
-                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -530,7 +531,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             var subroom = room.subrooms[instance.SubroomId];
             send.data = {
                 name: instance.JoinCode,
-                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -605,7 +606,7 @@ WebSocketServerV2.on('connection', (Socket) => {
             var subroom = room.subrooms[instance.SubroomId];
             send.data = {
                 name: instance.JoinCode,
-                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+                baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
                 roomId: room._id,
                 subroomId: instance.SubroomId,
                 roomFaceData: {
@@ -691,7 +692,7 @@ WebSocketServerV2.on('connection', (Socket) => {
         var subroom = roomData.subrooms[instance.SubroomId];
         send.data = {
             name: instance.JoinCode,
-            baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneIndex,
+            baseSceneId: subroom.versions[subroom.publicVersionId].baseSceneId || LEGACY_SCENE_IDs[subroom.versions[subroom.publicVersionId].baseSceneIndex],
             roomId: room._id,
             subroomId: instance.SubroomId,
             roomFaceData: {

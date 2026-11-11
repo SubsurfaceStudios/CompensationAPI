@@ -10,6 +10,28 @@ const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
 // Base URL: /api/rooms/...
 
+const LEGACY_SCENE_IDs = {
+    0: "4c847598-ff30-483f-99c7-46ffddb1449e", // Scenes/Login
+    1: "e06ca875-43f9-42c9-b187-60411d09f50d", // Old "Multiplayer" Scene
+    2: "b4567d62-0301-428a-8679-d3749ad77f9b", // Apartment
+    3: "87bc1dbd-1541-475b-b3f2-a72532faa718", // Legacy Lounge
+    4: "74975b75-4047-4905-b2b7-c1fa154a14cd", // Tag
+    5: "4f825e7c-3552-4b49-ba9e-0697ff14258f", // "DisconnectDorm"
+    6: "50f786bc-f714-4797-8d83-e7cd7d031594", // "AHH_Level0"
+    7: "cc892a7a-87f7-4c1e-95e1-be9f439f1866", // "AHH_Level1"
+    8: "843658d5-5ac0-41b7-a620-8319f3ee92ee", // "BaskBall_Outside"
+    9: "cb7d26a3-490b-47ca-bb4c-de1ec38b50a6", // "RosesBasement"
+    10: "17e8e8be-a4af-40f7-9f24-951a7608d6b4", // "Waterhouse" (island)
+    11: "f7ad8917-ff07-4a26-b34d-9e321d3066e3", // Lounge V3
+    12: "affe6d26-5455-4155-bebc-140b53c62e67", // "AirsoftBaseTesting"
+    13: "bc3d9517-7aac-48f6-8f90-6f17e2face48", // "AirsoftWetWork"
+    14: "79231c3f-cc83-4b4c-9376-341c072f3b92", // Ampitheater
+    15: "eda84f21-1e18-4bdf-93c4-ec89feea9f77", // "BaseScene"
+    16: "c5dbe4fd-9536-419f-9cc6-63c08be7b778", // "Conclusion"
+    17: "6a574069-9088-4719-840e-c9115ce3a2f0", // "Ashes"
+    18: "53dd9911-3194-45bb-b620-c668e9abf4af" // Lounge V4
+};
+
 /**
  * @readonly
  * @enum {string}
@@ -215,7 +237,7 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, req
 
         // Validate metadata & assign ID.
         var decoupled_metadata = {
-            baseSceneIndex: 9,
+            baseSceneId: LEGACY_SCENE_IDs[9],
             shortHandCommitMessage: "No Message",
             longHandCommitMessage: "No Description",
             author: "1",
@@ -224,7 +246,10 @@ router.put('/room/:id/subrooms/:subroom_id/versions/new', authenticateToken, req
         };
 
         // baseSceneIndex
-        if(typeof input_metadata.baseSceneIndex == 'number') decoupled_metadata.baseSceneIndex = input_metadata.baseSceneIndex;
+        if (typeof input_metadata.baseSceneIndex == 'number') decoupled_metadata.baseSceneId = LEGACY_SCENE_IDs[input_metadata.baseSceneIndex];
+        
+        // baseSceneId
+        if (typeof input_metadata.baseScene == 'string') decoupled_metadata.baseSceneId = input_metadata.baseScene;
 
         // shortHandCommitMessage
         if(typeof input_metadata.shortHandCommitMessage == 'string') decoupled_metadata.shortHandCommitMessage = input_metadata.shortHandCommitMessage;
@@ -1035,7 +1060,7 @@ router.post('/new', authenticateToken, async (req, res) => {
                     maxPlayers: 20,
                     versions: [
                         {
-                            baseSceneIndex: 15,
+                            baseSceneId: LEGACY_SCENE_IDs[15],
                             shortHandCommitMessage: "Initial Commit",
                             longHandCommitMessage: "Initial Commit - Auto-Generated for your convenience by the Compensation VR API.",
                             author: req.user.id,
@@ -1616,7 +1641,7 @@ router.post("/room/:id/subrooms/:name/create", authenticateToken, requiresRoomPe
             maxPlayers: 20,
             versions: [
                 {
-                    baseSceneIndex: 15,
+                    baseSceneId: LEGACY_SCENE_IDs[15],
                     shortHandCommitMessage: "Initial Commit",
                     longHandCommitMessage: "Initial Commit - Auto-Generated for your convenience by the Compensation Social API.",
                     author: req.user.id,
@@ -1953,5 +1978,6 @@ async function roomAuditLog(room_id, user_id, event) {
 
 module.exports = {
     Router: router,
-    roomAuditLog: roomAuditLog
+    roomAuditLog,
+    LEGACY_SCENE_IDs,
 };

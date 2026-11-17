@@ -70,6 +70,9 @@ const messaging = require('./routers/messages');
 app.use("/api/messaging", messaging.router);
 // /api/settings/*
 app.use("/api/settings", require('./routers/settings'));
+// /api/sessions/*
+const sessions = require('./routers/sessions');
+app.use("/api/sessions", sessions.router);
 
 
 //#endregion

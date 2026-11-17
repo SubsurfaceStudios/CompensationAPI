@@ -156,6 +156,10 @@
 	// Config related to the authentication process (login, 2FA, etc)
 	"authentication": {
 		// The secret used to sign all JWTs.
-		"token_secret": "YOUR-TOKEN-SIGNING-SECRET-HERE"
+		"token_secret": "YOUR-TOKEN-SIGNING-SECRET-HERE",
+
+		// How long should user sessions last without being bumped?
+		// Measured in days, default 60.
+		"session_duration": 60
 	}
 }

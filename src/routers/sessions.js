@@ -12,7 +12,7 @@ const SESSION_DURATION_DAYS = Number(helpers.config.authentication?.session_dura
 router.post('/', async (req, res) => {
 	try {
 		// read request body
-		const { username, password, two_factor_code } = req.body;
+		const { Username: username, Password: password, TwoFactorCode: two_factor_code } = req.body;
 
 		// get account ID from username
 		const userId = await helpers.getUserID(username);

@@ -113,6 +113,13 @@ router.post('/', async (req, res) => {
 
 		const accessToken = jwt.sign(user, helpers.config.authentication.token_secret, { expiresIn: `${tokenExpirationTime}s` });
 
+		const pfp = await db.collection('images').findOne({
+			_id: {
+				$exists: true,
+				$eq: data.public.profile_picture_id
+			}
+		});
+
 		return res.status(200).json({
 			Success: true,
 			Data: {
@@ -120,6 +127,8 @@ router.post('/', async (req, res) => {
 					ID: userId,
 					Username: username,
 					Nickname: data.public.nickname,
+					ProfilePictureID: pfp?._id,
+					ProfilePictureURL: pfp?.blobUrl,
 				},
 				SpawnRoomID: "apartment", // FIXME this should correspond with a player's apartment ID on the new api
 				Session: sessionId,

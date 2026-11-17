@@ -6,7 +6,7 @@ const helpers = require('../helpers');
 const { PullPlayerData, PushPlayerData, config } = helpers;
 const { default: rateLimit } = require('express-rate-limit');
 
-const { generateSecret, verify, generateURI } = require('otplib');
+const { generateSecret, generateURI } = require('otplib');
 
 // Users can now only create 1 account per day.
 const accountCreationLimit = rateLimit({

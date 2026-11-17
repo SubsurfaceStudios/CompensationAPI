@@ -1,7 +1,9 @@
+const { verify } = require('otplib');
 const { randomBytes } = require('node:crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helpers = require('../helpers');
+
 
 const db = require('../index').mongoClient.db(helpers.config.database.mongodb_database_name);
 const router = require('express').Router();
@@ -194,7 +196,7 @@ router.post('/tokens', async (req, res) => {
 					expires: sessionExpiration
 				}
 			}
-		)
+		);
 
 		// read user data
 		const data = await helpers.PullPlayerData(session.userId);
@@ -239,7 +241,7 @@ router.post('/tokens', async (req, res) => {
 			Data: {
 				Player: {
 					ID: session.userId,
-					Username: username,
+					Username: data.public.username,
 					Nickname: data.public.nickname,
 					ProfilePictureID: pfp?._id,
 					ProfilePictureURL: pfp?.blobUrl,

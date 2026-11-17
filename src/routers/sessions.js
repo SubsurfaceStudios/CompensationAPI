@@ -103,18 +103,29 @@ router.post('/', async (req, res) => {
 
 		// issue initial access token
 		const developer = data.private.availableTags.includes("Developer");
-		const user = {username: username, id: userId, developer: developer};
-		const accessToken = jwt.sign(user, helpers.config.authentication.token_secret, { expiresIn: "30m" });
+		const user = { username: username, id: userId, developer: developer };
+		
+		// 30 minutes, in seconds
+		const tokenExpirationTime = 30 * 60;
+
+		const accessToken = jwt.sign(user, helpers.config.authentication.token_secret, { expiresIn: `${tokenExpirationTime}s` });
 
 		return res.status(200).json({
 			Success: true,
 			Data: {
-				Message: `Welcome back, ${data.public.nickname}!`,
-				SessionID: sessionId,
-				Expires: sessionExpiration,
-				InitialToken: accessToken,
+				Player: {
+					ID: userId,
+					Username: username,
+					Nickname: data.public.nickname,
+				},
+				SpawnRoomID: "apartment", // FIXME this should correspond with a player's apartment ID on the new api
+				Session: sessionId,
+				Token: {
+					Value: accessToken,
+					ExpiresIn: 30 * 60, // 30 minutes * 60 seconds per minute
+					ExpiresAt: (Date.now() / 1000) + tokenExpirationTime // the unix timestamp of when the token expires
+				},
 				IsAdmin: developer,
-				Username: username,
 			},
 		});
 	} catch (ex) {

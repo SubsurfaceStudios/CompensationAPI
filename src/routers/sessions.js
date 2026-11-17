@@ -20,8 +20,11 @@ router.post('/', async (req, res) => {
 		// verify account exists
 		if (userId === null) {
 			return res.status(404).json({
-				code: "user_not_found",
-				message: "There is no account with that username.",
+				Success: false,
+				Error: {
+					Code: "user_not_found",
+					Message: "There is no account with that username.",
+				}
 			});
 		}
 
@@ -43,11 +46,14 @@ router.post('/', async (req, res) => {
 			
 			if(element.endTS > Date.now()) {
 				return res.status(403).send({
-					code: "user_banned",
-					message: "You have been banned.", 
-					data: {
-						expires: element.endTS,
-						reason: element.reason,
+					Success: false,
+					Error: {
+						Code: "user_banned",
+						Message: "You have been banned.", 
+					},
+					Data: {
+						Expires: element.endTS,
+						Reason: element.reason,
 					}
 				});
 			}
@@ -57,8 +63,11 @@ router.post('/', async (req, res) => {
 		if (data.auth.mfa_enabled && data.auth.mfa_verified) {
 			if(typeof two_factor_code != 'string') {
 				return res.status(400).json({
-					code: "missing_two_factor_code",
-					message: "You have Two-Factor Authentication enabled on your account but you did not specify a valid code.",
+					Success: false,
+					Error: {
+						Code: "missing_two_factor_code",
+						Message: "You have Two-Factor Authentication enabled on your account but you did not specify a valid code.",
+					}
 				});
 			}
 
@@ -69,8 +78,11 @@ router.post('/', async (req, res) => {
 
 			if (!verificationResult.valid) {
 				return res.status(401).send({
-					code: "invalid_two_factor_code",
-					message: "You have provided an invalid two-factor authentication code.",
+					Success: false,
+					Error: {
+						Code: "invalid_two_factor_code",
+						Message: "You have provided an invalid two-factor authentication code.",
+					}
 				});
 			}
 		}
@@ -95,20 +107,23 @@ router.post('/', async (req, res) => {
 		const accessToken = jwt.sign(user, helpers.config.authentication.token_secret, { expiresIn: "30m" });
 
 		return res.status(200).json({
-			code: "success",
-			message: `Welcome back, ${data.public.nickname}!`,
-			data: {
-				sessionId: sessionId,
-				expires: sessionExpiration,
-				initialToken: accessToken,
-				isDeveloper: developer,
-				username: username,
+			Success: true,
+			Data: {
+				Message: `Welcome back, ${data.public.nickname}!`,
+				SessionID: sessionId,
+				Expires: sessionExpiration,
+				InitialToken: accessToken,
+				IsAdmin: developer,
+				Username: username,
 			},
 		});
 	} catch (ex) {
 		res.status(500).json({
-			code: "internal_server_error",
-			message: "An internal server error occurred while processing your request. Please try again later."
+			Success: false,
+			Error: {
+				Code: "internal_server_error",
+				Message: "An internal server error occurred while processing your request. Please try again later."
+			}
 		});
 		throw ex;
 	}

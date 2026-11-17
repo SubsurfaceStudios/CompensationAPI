@@ -35,8 +35,11 @@ router.post('/', async (req, res) => {
 		const passwordMatches = bcrypt.compareSync(password, data.auth.HASHED_PASSWORD);
 		if(!passwordMatches) {
 			return res.status(403).send({
-				code: "incorrect_password",
-				message: "The password you have provided is incorrect.",
+				Success: false,
+				Error: {
+					Code: "incorrect_password",
+					Message: "The password you have provided is incorrect.",
+				}
 			});
 		}
 

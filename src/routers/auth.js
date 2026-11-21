@@ -4,17 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helpers = require('../helpers');
 const { PullPlayerData, PushPlayerData, config } = helpers;
-const { default: rateLimit } = require('express-rate-limit');
 
 const { generateSecret, generateURI } = require('otplib');
-
-// Users can now only create 1 account per day.
-const accountCreationLimit = rateLimit({
-    'windowMs': 86400000,
-    'max': 1,
-    'legacyHeaders': true,
-    'standardHeaders': true
-});
 
 router.get('/photon-info', async (req, res) => {
     try {
@@ -109,46 +100,6 @@ router.post("/refresh", middleware.authenticateToken, async (req, res) => {
 
     const accessToken = jwt.sign(user, config.authentication.token_secret, { expiresIn: "30m" });
     return res.status(200).json({ userID: req.user.id, username: data.public.username, accessToken: accessToken, developer });
-});
-
-//Call to create an account from a set of credentials.
-router.post("/create", accountCreationLimit, async (req, res) => {
-    var { username, nickname, password } = req.body;
-    const id = `${await helpers.getAccountCount() + 1}`;
-
-    if(typeof username != 'string' || typeof password != 'string') return res.status(400).send("Username or password empty or null.");
-    if(typeof nickname != 'string') nickname = username;
-
-    const dupe = await helpers.getUserID(username);
-
-    if(dupe !== null) return res.status(400).send("Account already exists with that username. Please choose a different username.");
-
-    const data = await helpers.PullPlayerData("ACCT_TEMPLATE");
-    
-
-    data.public.nickname = nickname;
-    data.public.username = username;
-
-    const HASHED_PASSWORD = bcrypt.hashSync(password, 10);
-
-    data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
-    data._id = id;
-
-    helpers.PushPlayerData(id, data);
-    res.sendStatus(200);
-
-    const client = require('../index').mongoClient;
-    const db = client.db(config.database.mongodb_database_name);
-    const collection = db.collection("servers");
-
-    var server = await collection.findOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}});
-    if(server === null) return helpers.auditLog("The official server was not found. This is a critical error.", false);
-
-    server.users[id] = {};
-
-    console.log(await collection.updateOne({_id: {$eq: "a8ec2c20-a4c7-11ec-896d-419328454766", $exists: true}}, {$set: {users: server.users}}, {upsert: true}));
-
-    helpers.auditLog(`Created account ${username} with id ${id}.`, false);
 });
 
 router.post("/check", middleware.authenticateToken, async (req, res) => {

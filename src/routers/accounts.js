@@ -7,8 +7,23 @@ const express = require('express');
 const Fuse = require('fuse.js');
 const { WebSocketV2_MessageTemplate } = require('../index');
 const { MatchmakingModes, GetInstances } = require('./matchmaking');
+const { v7 } = require('uuid');
+const bcrypt = require('bcryptjs');
+const { rateLimit } = require('express-rate-limit');
+const { randomBytes } = require('node:crypto');
+const { SESSION_DURATION_DAYS } = require('./sessions');
+const jwt = require('jsonwebtoken');
 
 router.use(express.urlencoded({extended: false}));
+
+// Users can now only create 1 account per day.
+const accountCreationLimit = rateLimit({
+    windowMs: 86400000,
+    max: 1,
+    legacyHeaders: true,
+    standardHeaders: true,
+    skipFailedRequests: true,
+});
 
 //Call to get the public account data of a user.
 router.get("/:id/public", authenticateToken_optional, async (req, res) => {
@@ -462,4 +477,109 @@ router.post('/set-pfp/:id', middleware.authenticateToken, async (req, res) => {
         throw ex;
     }
 });
+
+// POST /api/accounts - registers a new user
+router.post('/', accountCreationLimit, async (req, res) => {
+    try {
+        var { Username: username, Password: password } = req.body;
+        const id = v7();
+    
+        // TODO verify against regex
+        if (!username || typeof username != 'string') {
+            return res.status(422).json({
+                Success: false,
+                Error: {
+                    Code: "invalid_username",
+                    Message: "You did not provide a username, or the username you provided was invalid."
+                }
+            });
+        }
+
+        if (!password || typeof password != 'string') {
+            return res.status(422).json({
+                Success: false,
+                Error: {
+                    Code: "invalid_password",
+                    Message: "You did not provide a password, or the password you provided was invalid."
+                }
+            });
+        }
+    
+        const existingAccount = await helpers.getUserID(username);
+        if (existingAccount) {
+            return res.status(409).json({
+                Code: "username_taken",
+                Message: "An account already exists with the username you provided. Please select another username."
+            });
+        }
+    
+        const data = await helpers.PullPlayerData("ACCT_TEMPLATE");
+    
+        data.public.nickname = username;
+        data.public.username = username;
+    
+        const HASHED_PASSWORD = bcrypt.hashSync(password, 10);
+    
+        data.auth.HASHED_PASSWORD = HASHED_PASSWORD;
+        data._id = id;
+    
+        helpers.PushPlayerData(id, data);
+
+        helpers.auditLog(`Created account ${username} with id ${id}.`, false);
+        
+        const db = require('../index').mongoClient.db(helpers.config.database.mongodb_database_name);
+
+        // issue session
+        const sessionExpiration = new Date();
+        sessionExpiration.setDate(sessionExpiration.getDate() + SESSION_DURATION_DAYS);
+
+        const sessionId = randomBytes(64).toString('base64url');
+        
+        await db.collection('sessions').insertOne({
+            _id: sessionId,
+            userId: id,
+            expires: sessionExpiration,
+            userAgent: req.headers['user-agent'],
+            ip: req.ip,
+        });
+
+        // issue initial access token
+        const user = { username: username, id, developer: false };
+        
+        // 30 minutes, in seconds
+        const tokenExpirationTime = 30 * 60;
+
+        const accessToken = jwt.sign(user, helpers.config.authentication.token_secret, { expiresIn: `${tokenExpirationTime}s` });
+
+        return res.status(200).json({
+            Success: true,
+            Data: {
+                Player: {
+                    ID: id,
+                    Username: username,
+                    Nickname: username,
+                },
+                SpawnRoomID: "apartment", // FIXME this should be the player's unique appt ID
+                Session: sessionId,
+                Token: {
+					Value: accessToken,
+					ExpiresIn: 30 * 60, // 30 minutes * 60 seconds per minute
+					ExpiresAt: (Date.now() / 1000) + tokenExpirationTime // the unix timestamp of when the token expires
+				},
+				IsAdmin: false,
+            }
+        });
+    
+    } catch (ex) {
+        res.status(500).json({
+            Success: false,
+            Error: {
+                Code: "internal_server_error",
+                Message: "An internal server error occurred, and we were unable to register your account."
+            }
+        });
+        throw ex;
+    }
+});
+
 module.exports = router;

@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
 				Session: sessionId,
 				Token: {
 					Value: accessToken,
-					ExpiresIn: 30 * 60, // 30 minutes * 60 seconds per minute
+					ExpiresIn: tokenExpirationTime, // 30 minutes * 60 seconds per minute
 					ExpiresAt: (Date.now() / 1000) + tokenExpirationTime // the unix timestamp of when the token expires
 				},
 				IsAdmin: developer,
@@ -270,5 +270,6 @@ router.post('/tokens', async (req, res) => {
 });
 
 module.exports = {
-	router
+	router,
+	SESSION_DURATION_DAYS
 };

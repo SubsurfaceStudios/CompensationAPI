@@ -4,8 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helpers = require('../helpers');
 
-
-const db = require('../index').mongoClient.db(helpers.config.database.mongodb_database_name);
 const router = require('express').Router();
 
 const SESSION_DURATION_DAYS = Number(helpers.config.authentication?.session_duration) || 60;
@@ -13,6 +11,8 @@ const SESSION_DURATION_DAYS = Number(helpers.config.authentication?.session_dura
 // POST /api/sessions/
 router.post('/', async (req, res) => {
 	try {
+		const db = require('../index').mongoClient.db(helpers.config.database.mongodb_database_name);
+
 		// read request body
 		const { Username: username, Password: password, TwoFactorCode: two_factor_code } = req.body;
 
@@ -157,6 +157,8 @@ router.post('/', async (req, res) => {
 // POST /api/sessions/tokens - generate new access token from session
 router.post('/tokens', async (req, res) => {
 	try {
+		const db = require('../index').mongoClient.db(helpers.config.database.mongodb_database_name);
+		
 		// read request body
 		const { SessionID: sessionId } = req.body;
 
